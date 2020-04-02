@@ -1,0 +1,44 @@
+{
+  "name": "coop_quasar",
+  "version": "0.0.1",
+  "description": "its",
+  "productName": "app.quasar",
+  "cordovaId": "org.coopgsis.com",
+  "capacitorId": "",
+  "author": "drv12 <liohtian@gmail.com>",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "@chenfengyuan/vue-qrcode": "^1.0.2",
+    "@firebase/app": "^0.5.4",
+    "@firebase/firestore": "^1.10.2",
+    "@quasar/extras": "^1.0.0",
+    "apexcharts": "^3.15.6",
+    "axios": "^0.18.1",
+    "firebase": "^7.7.0",
+    "firebase-admin": "^8.9.2",
+    "firebase-functions": "^3.3.0",
+    "jspdf": "^1.5.3",
+    "nodemailer": "^6.4.2",
+    "quasar": "^1.0.0",
+    "sweetalert2": "^9.8.2",
+    "vue": "^2.6.11",
+    "vue-apexcharts": "^1.5.2",
+    "vue-firestore": "^0.3.30",
+    "vue-qrcode-reader": "^2.1.1",
+    "vuex": "^3.1.2"
+  },
+  "devDependencies": {
+    "@quasar/app": "^1.0.0"
+  },
+  "engines": {
+    "node": ">= 10.18.1",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  },
+  "browserslist": [
+    "last 1 version, not dead, ie >= 11"
+  ]
+}
