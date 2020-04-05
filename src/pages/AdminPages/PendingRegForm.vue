@@ -2,7 +2,7 @@
 <div class="q-pa-md">
    <div class="q-pa-md doc-container" id="printdiv">
       <div class="row  justify-center">
-        <div 
+        <div
           class="col-xs-12 col-sm-12 col-md-10 q-pa-md"
           >
 
@@ -12,7 +12,6 @@
           >
               <q-card-section>
                 <q-form
-                @reset="onReset"
                 class="q-gutter-md"
                 >
                     <div>
@@ -23,15 +22,15 @@
                         </strong>
 
                         <q-separator class= "q-mb-md q-pt-xs" color="secondary" inset hidden = 'true'/>
-                        
+
                         <q-input standard v-model="PenReg.FirstName" label="First Name"
                         readonly
                         />
                         <q-input standard v-model="PenReg.LastName" label="Last Name"
                         readonly
                         />
-                        <q-select v-model="PenReg.CivilStatus" 
-                        label="Civil Status" 
+                        <q-select v-model="PenReg.CivilStatus"
+                        label="Civil Status"
                         readonly
                         />
                         <strong class="row justify-center items-center" style="color: #26A69A;">
@@ -50,7 +49,7 @@
                            Current Address
                         </strong>
                         <q-separator class= "q-mb-md q-pt-xs" color="secondary" inset hidden = 'true'/>
-                        
+
                         <q-input standard v-model="PenReg.Address" label="Address"
                         readonly
                         />
@@ -95,7 +94,10 @@
                         readonly
                         type="number"
                         />
-                        
+
+
+
+
                         <div v-if="PenReg.Designation == 'Driver'">
                           <strong class="row justify-center items-center" style="color: #26A69A;">
                             License Details
@@ -104,38 +106,52 @@
 
                           <img :src="PenReg.imageUrlLic" width='300' height='150'>
 
-                        <q-input standard v-model="PenReg.LicenseNo" label="License Number"
-                        readonly
-                        />
-                        <q-input standard stack-label v-model="PenReg.LicenseExp" label="License Expiration Date"
-                        type="date"
-                        readonly
-                        />                    
-                        </div> 
+                          <q-input standard v-model="PenReg.LicenseNo" label="License Number"
+                          readonly
+                          />
+                          <q-input standard stack-label v-model="PenReg.LicenseExp" label="License Expiration Date"
+                          type="date"
+                          readonly
+                          />
+                        </div>
+                        <div v-else >
+                          <strong class="row justify-center items-center" style="color: #26A69A;">
+                              ID Presented
+                          </strong>
+                          <q-separator class= "q-mb-md q-pt-xs" color="secondary" inset hidden = 'true'/>
+                          <div class="row justify-center q-pt-sm">
+                            <q-img
+                              :src="PenReg.imageUrlLic"
+                              spinner-color="white"
+                              style="height: 140px; max-width: 150px"
+                            />
+                          </div>
+
+                        </div>
                     </div>
                 </q-form>
               </q-card-section>
               <q-separator/>
               <div class="row justify-center">
-                <q-btn 
-                class="col q-ma-md" 
-                color="teal-4" 
+                <q-btn
+                class="col q-ma-md"
+                color="teal-4"
                 label="Approve"
-                @click="regMember(); loadPreReg(mid)"
+                @click="regMember()"
                 />
-                <q-btn class="col q-ma-md" 
+                <q-btn class="col q-ma-md"
                 @click="rejectMember"
                 to="/admin/pendingreg/"
-                color="teal-4" 
+                color="teal-4"
                 label="Reject"/>
               </div>
           </q-card>
-          
+
         </div>
-      </div>    
-    </div> 
+      </div>
+    </div>
 </div>
-</template> 
+</template>
 
 <script>
 import { firebaseDb, firefirestore } from 'boot/firebase';
@@ -154,26 +170,104 @@ export default {
     return {
         // Doc
         PenReg: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),
+        // PenReg: {
+        //   ref: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),
+        //   objects: true,
+        //   resolve: (data) => {
+        //     console.log(data)
+        //   }
+        // },
+        lastMember: firebaseDb.collection('MemberData').orderBy('timestamp', 'desc').limit(1),
         MemberData: firebaseDb.collection('MemberData'),
-        MemberID: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
+        // MemberID: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
     }
   },
+
   methods: {
-    regMember(){
-      this.mid = 'NGTSC'+ (this.MemberID.MemberID + 1)
-      this.PenReg.timestamp = firefirestore.FieldValue.serverTimestamp()
-      this.$firestore.MemberData.doc(this.mid).set(this.PenReg)
+    regMember () {
+        function pad(num, size) {
+          var s = num + ''
+          while (s.length < size) s = '0' + s;
+          return s
+        }
+        if (this.MemberData.length != 0) {
+          let lastMember = this.lastMember[0]
+          var lastId = lastMember['.key']
+          var lastNumber = lastId.slice(-3)
+          var date = new Date()
+          var id = 'NGTSC' + date.getFullYear() + pad(++lastNumber, 3)
 
-      const increment = firefirestore.FieldValue.increment(1)
-      this.$firestore.MemberID.update({ MemberID: increment })
+          this.$firestore.MemberData.doc(id).set({
+            ...this.PenReg,
+            timestamp: firefirestore.FieldValue.serverTimestamp()
+          })
+          .then(() => {
+            this.$firestore.PenReg.delete()
+            this.$q.notify({
+              icon: 'info',
+              message: 'Approved',
+              color: 'positive'
+            })
+            this.loadPreReg(id)
+          })
+          .catch(err => {
+            console.log(err)
+            this.$q.notify({
+              icon: 'info',
+              message: 'An error occur',
+              color: 'negative'
+            })
+          })
 
-      this.$firestore.PenReg.delete()
+        } else {
+          var date = new Date()
+          let id = 'NGTSC' + date.getFullYear() + '000'
+          // delete this.PenReg['.key']
+          this.$firestore.MemberData.doc(id).set({
+            ...this.PenReg,
+            timestamp: firefirestore.FieldValue.serverTimestamp()
+          })
+          .then(() => {
+            this.$firestore.PenReg.delete()
+            this.$q.notify({
+              icon: 'info',
+              message: 'Approved',
+              color: 'positive'
+            })
+            this.loadPreReg(id)
+          })
+          .catch(err => {
+            console.log(err)
+            this.$q.notify({
+              icon: 'info',
+              message: 'An error occur',
+              color: 'negative'
+            })
+          })
+        }
+
+
+      // this.mid = 'NGTSC'+ (this.MemberID.MemberID + 1)
+      //
+      // this.PenReg.timestamp = firefirestore.FieldValue.serverTimestamp()
+      // this.$firestore.MemberData.doc(this.mid).set(this.PenReg)
+      // const increment = firefirestore.FieldValue.increment(1)
+
+      // this.$firestore.MemberID.update({ MemberID: increment })
+
+
+    },
+    async approveMember () {
+
+        var mid = await this.regMember
+        console.log(mid)
+
     },
     rejectMember(){
       this.$firestore.PenReg.delete()
     },
     loadPreReg(id) {
-            this.$router.push('/admin/profile/' + id)
+      this.$router.push('/admin/profile/' + id)
     }
     // printDiv(divName){
 		// 	const prtHtml = document.getElementById(divName).innerHTML;

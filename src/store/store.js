@@ -77,18 +77,18 @@ const actions = {
                         }else if(dsg == 'Driver' || dsg == 'Operator'){
                             localStorage.setItem('Designation', '858ba4765e53c712ef672a9570474b1d')
                         }
-                        
+
                             commit('setDesignation', {
                                 Designation: userDetails.Designation
                                 }
                             )
                     }
-                    else 
+                    else
                     {
                         // doc.data() will be undefined in this case
                         console.log("No such document!");
                     }
-                    
+
                 }).then(() => {
                     commit('setLoading', false)
                 })

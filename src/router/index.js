@@ -26,54 +26,54 @@ export default function ({store}) {
     base: process.env.VUE_ROUTER_BASE
   })
 
-  Router.beforeEach((to,from, next) => {
-    to.matched.some( route =>{
-      let dsg = localStorage.getItem('Designation')
-
-      if(route.meta.requiresAuth){
-        if(dsg == null){
-          next(
-          )
-        } else {
-          next (
-            { path: '/'}
-          )
-        }
-      }
-  
-      if(route.meta.isAdmin){
-        if(dsg == 'e3afed0047b08059d0fada10f400c1e5'){
-          next()
-        } else {
-          next (
-            { path: '/'}
-          )
-        }
-      }
-  
-      if(route.meta.isCollector){
-        if(dsg == '8fc330d76e990ab6964af08ea1e47d2e'){
-          next()
-        } else {
-          next (
-            { path: '/'}
-          )
-        }
-      }
-
-      if(route.meta.isMember){
-        if(dsg == '858ba4765e53c712ef672a9570474b1d'){
-          next()
-        } else {
-          console.log('Member')
-          next (
-            { path: '/'}
-            )
-        }
-      }
-
-      next()
-    })
-  })
+  // Router.beforeEach((to,from, next) => {
+  //   to.matched.some( route =>{
+  //     let dsg = localStorage.getItem('Designation')
+  //
+  //     if(route.meta.requiresAuth){
+  //       if(dsg == null){
+  //         next(
+  //         )
+  //       } else {
+  //         next (
+  //           { path: '/'}
+  //         )
+  //       }
+  //     }
+  //
+  //     if(route.meta.isAdmin){
+  //       if(dsg == 'e3afed0047b08059d0fada10f400c1e5'){
+  //         next()
+  //       } else {
+  //         next (
+  //           { path: '/'}
+  //         )
+  //       }
+  //     }
+  //
+  //     if(route.meta.isCollector){
+  //       if(dsg == '8fc330d76e990ab6964af08ea1e47d2e'){
+  //         next()
+  //       } else {
+  //         next (
+  //           { path: '/'}
+  //         )
+  //       }
+  //     }
+  //
+  //     if(route.meta.isMember){
+  //       if(dsg == '858ba4765e53c712ef672a9570474b1d'){
+  //         next()
+  //       } else {
+  //         console.log('Member')
+  //         next (
+  //           { path: '/'}
+  //           )
+  //       }
+  //     }
+  //
+  //     next()
+  //   })
+  // })
   return Router
 }

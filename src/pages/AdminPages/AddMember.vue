@@ -3,129 +3,127 @@
     <q-page>
     <h6 class="q-ma-none q-pl-md q-pt-md text-teal">Members <q-icon name="mdi-arrow-right-box" /> Add Members</h6>
      <q-separator />
-       <div class="q-pa-md">    
+       <div class="q-pa-md">
          <div class="q-gutter-y-md full-width">
-        <q-form 
+        <q-form
         @submit="onSubmit"
         @reset="Clear" >
           <div class="q-pa-md">
             <q-card class="q-pa-md">
            <q-card-section horizontal class="col">
              <!-- <span class="text-uppercase text-blue">Drivers Details</span> -->
-             <div class="row">
-
-                        <!-- Start of Upload Image -->
-                   <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
-                     <div class="q-pa-md q-mt-xl q-pt-xl">
+                   <div class="row">
+                      <!-- Start of Upload Image -->
+                      <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
+                        <div class="q-pa-md q-mt-xl q-pt-xl">
                           <div style=" text-align: center;">
                             <q-spinner
                               color="teal"
-                              width='150' 
+                              width='150'
                               height='150'
                               v-if="loading"
                             />
-                            <img 
+                            <img
                             v-if="!loading"
-                            :src="MemberData.imageUrlPro" 
-                            width='150' 
-                            height='150' 
+                            :src="MemberData.imageUrlPro"
+                            width='150'
+                            height='150'
                             style="border-radius: 50%;">
                           </div>
-                       <q-input 
-                       color="teal-4"
-                       type="file"
-                       hint="Profile Picture"
-                       accept="image/*"
-                       @change="onFilePickedPro">
-                        <template v-slot:prepend>
-                          <q-icon name="attach_file" />
-                        </template>
-                      </q-input>
-                     </div>
-                   </div>
+                           <q-input
+                           color="teal-4"
+                           type="file"
+                           hint="Profile Picture"
+                           accept="image/*"
+                           @change="onFilePickedPro">
+                            <template v-slot:prepend>
+                              <q-icon name="attach_file" />
+                            </template>
+                          </q-input>
+                        </div>
+                      </div>
                       <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
                         <div class="col-lg-4 col-md-12 col-sm-12 col-xs-12">
                           <div class="q-pa-sm">
-                          <div style=" text-align: center;">
-                              <q-spinner
-                                color="teal"
-                                width='160' 
-                                height='90'
-                                v-if="loading1"
-                              />
-                                  <img 
-                                  v-if="!loading1"
-                                  :src="MemberData.imageUrlLic"
-                                  width='368' 
-                                  >
-                          </div>
-                                <q-input 
-                                type="file"
-                                hint="License / Valid ID"
-                                accept="image/*"
-                                @change="onFilePickedLic">
-                                  <template v-slot:prepend>
-                                    <q-icon name="attach_file" />
-                                  </template>
-                                </q-input>
+                            <div style=" text-align: center;">
+                                <q-spinner
+                                  color="teal"
+                                  width='160'
+                                  height='90'
+                                  v-if="loading1"
+                                />
+                                    <img
+                                    v-if="!loading1"
+                                    :src="MemberData.imageUrlLic"
+                                    width='368'
+                                    >
+                            </div>
+                              <q-input
+                              type="file"
+                              hint="License / Valid ID"
+                              accept="image/*"
+                              @change="onFilePickedLic">
+                                <template v-slot:prepend>
+                                  <q-icon name="attach_file" />
+                                </template>
+                              </q-input>
                             </div>
                           </div>
                         </div>
-                          <!-- <div class="col-sm-12">
+                        <!-- <div class="col-sm-12">
                             <qrcode :value='qrvalue' :options="{ width: 200 }"></qrcode>
                         </div> -->
-              <!-- Start of Firstname -->
-                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                          <div class="q-pa-md">
-                            <q-input color="teal" v-model="MemberData.FirstName" label="First name"
-                            lazy-rules=""
-                            :rules="[ val => val && val.length > 0 || 'Please type something']">
-                            <template v-slot:before>
-                              <q-icon name="mdi-human-handsup" />
+                      <!-- Start of Firstname -->
+                      <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                        <div class="q-pa-md">
+                          <q-input color="teal" v-model="MemberData.FirstName" label="First name"
+                          lazy-rules=""
+                          :rules="[ val => val && val.length > 0 || 'Please type something']">
+                          <template v-slot:before>
+                            <q-icon name="mdi-human-handsup" />
+                          </template>
+                          </q-input>
+                        </div>
+                      </div>
+                      <!-- End of Firstname -->
+                      <!-- Start of Lastname -->
+                      <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                        <div class="q-pa-md">
+                          <q-input color="teal-4" v-model="MemberData.LastName" label="Last name"
+                          lazy-rules=""
+                          :rules="[ val => val && val.length > 0 || 'Please type something']"
+                          >
+                          <template v-slot:before>
+                            <q-icon name="mdi-human-handsdown" />
+                          </template>
+                          </q-input>
+                        </div>
+                      </div>
+                      <!-- End of Lastname -->
+                      <!-- Start of Designation -->
+                      <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                        <div class="q-pa-md">
+                          <q-select color="teal-4" v-model="MemberData.Designation" :options="options" label="Designation"
+                          lazy-rules
+                          :rules="[ val => val && val.length > 0 || 'Please select something']"
+                          @popup-hide="DesignationChange">
+                          <template class="q-pa-md" v-slot:before>
+                              <q-icon name="account_box" />
                             </template>
-                            </q-input>
+                          </q-select>
+                          <!-- <q-input
+                          color="blue-12"
+                            disable
+                            v-model="driversposition"
+                            label="Designation"
+                          >
+                            <template class="q-pa-md" v-slot:before>
+                              <q-icon name="account_box" />
+                            </template>
+                          </q-input> -->
                           </div>
                         </div>
-                        <!-- End of Firstname -->
-               <!-- Start of Lastname -->
-                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                          <div class="q-pa-md">
-                            <q-input color="teal-4" v-model="MemberData.LastName" label="Last name" 
-                            lazy-rules=""
-                            :rules="[ val => val && val.length > 0 || 'Please type something']"
-                            >
-                            <template v-slot:before>
-                              <q-icon name="mdi-human-handsdown" />
-                            </template>
-                            </q-input>
-                          </div>
-                        </div>
-                        <!-- End of Lastname -->
-               <!-- Start of Designation -->
-               <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                 <div class="q-pa-md">
-                  <q-select color="teal-4" v-model="MemberData.Designation" :options="options" label="Designation"
-                  lazy-rules
-                  :rules="[ val => val && val.length > 0 || 'Please select something']"
-                  @popup-hide="DesignationChange">
-                  <template class="q-pa-md" v-slot:before>
-                      <q-icon name="account_box" />
-                    </template>
-                  </q-select>
-                  <!-- <q-input
-                  color="blue-12"
-                    disable
-                    v-model="driversposition"
-                    label="Designation"
-                  >
-                    <template class="q-pa-md" v-slot:before>
-                      <q-icon name="account_box" />
-                    </template>
-                  </q-input> -->
-                   </div>
-                   </div>
-                   <!-- End of Designation -->
-                   
+                        <!-- End of Designation -->
                         <!-- Start of Member ID -->
                         <!-- <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class="q-pa-md">
@@ -137,11 +135,11 @@
                           </div>
                         </div> -->
                         <!-- End of Member ID -->
-                        <!-- Start of Date -->
+                        <!-- Start of Birthday -->
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class="q-pa-md">
                              <!-- di ko gets -->
-                            <q-input color="teal-4" label="Year/Month/Date" v-model="MemberData.BirthDate" mask="date" hint="Birthday" 
+                            <!-- <q-input color="teal-4" label="Year/Month/Date" v-model="MemberData.BirthDate" mask="date" hint="Birthday"
                             lazy-rules
                             :rules="['date'][ val => val && val.length > 0 || 'Please type something']"
                             >
@@ -152,14 +150,44 @@
                                     transition-show="scale"
                                     transition-hide="scale"
                                   >
-                                    <!-- <q-date v-model="driversentrydate" @input="() => $refs.qDateProxy.hide()" /> -->
+                                    <q-date v-model="driversentrydate" @input="() => $refs.qDateProxy.hide()" />
                                   </q-popup-proxy>
                                 </q-icon>
+                              </template>
+                            </q-input> -->
+                            <!-- new birthday datepicker -->
+                            <q-input v-model="MemberData.BirthDate" :rules="['MemberData.BirthDate']" label="Birthday">
+                             <template v-slot:prepend>
+                               <q-icon name="event" class="cursor-pointer" />
+                             </template>
+
+                             <template v-slot:append>
+                               <q-icon name="date_range" class="cursor-pointer">
+                                 <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
+                                   <q-date  v-model="MemberData.BirthDate" mask="MM/DD/YYYY" @input="() => $refs.qDateProxy.hide()" />
+                                 </q-popup-proxy>
+                               </q-icon>
+                             </template>
+                           </q-input>
+
+
+                          </div>
+                        </div>
+                        <!-- End of Birthday -->
+                        <!-- Start of Birth place -->
+                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                          <div class="q-pa-md">
+                            <q-input color="teal-4" label="Birth place" v-model="MemberData.BirthPlace"
+                            lazy-rules
+                            :rules="[ val => val && val.length > 0 || 'Please input something']"
+                            >
+                              <template v-slot:before>
+                                <q-icon name="mdi-home-map-marker" />
                               </template>
                             </q-input>
                           </div>
                         </div>
-                        <!-- End of Date -->
+                        <!-- End of Birth place -->
                         <!-- Start of Status -->
                           <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                             <div class="q-pa-md">
@@ -178,27 +206,58 @@
                             </div>
                             </div>
                           <!-- End of Status -->
-                        <!-- Start of Occupation -->
-                          <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Operator'">
-                            <div class="q-pa-md">
-                              <q-input color="teal-4" 
-                              label="Occupation" 
-                              v-model="MemberData.Occupation"
-                              id="myInput"
-                              lazy-rules
-                              :rules="[ val => val && val.length > 0 || 'Please input something']"
-                              >
-                                <template v-slot:before>
-                                  <q-icon name="mdi-briefcase" />
-                                </template>
-                              </q-input>
+                          <!-- Start of Occupation -->
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Operator'">
+                              <div class="q-pa-md">
+                                <q-input color="teal-4"
+                                label="Occupation"
+                                v-model="MemberData.Occupation"
+                                id="myInput"
+                                lazy-rules
+                                :rules="[ val => val && val.length > 0 || 'Please input something']"
+                                >
+                                  <template v-slot:before>
+                                    <q-icon name="mdi-briefcase" />
+                                  </template>
+                                </q-input>
+                              </div>
                             </div>
-                          </div>
-                        <!-- End of Occupation -->
-                        <!-- Start of Employer or Office -->
+                          <!-- End of Occupation -->
+                          <!-- Start of Employer or Office -->
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Driver'">
+                              <div class="q-pa-md">
+                                <q-input color="teal-4" v-model="MemberData.Occupation" label="Occupation"
+                                lazy-rules
+                                :rules="[ val => val && val.length > 0 || 'Please input something']"
+                                >
+                                  <template v-slot:before>
+                                    <q-icon name="mdi-briefcase" />
+                                  </template>
+                                </q-input>
+                              </div>
+                            </div>
+                          <!-- End of Employer or Office -->
+                          <!-- Start of Employer or Office -->
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Operator'">
+                              <div class="q-pa-md">
+                                <q-input color="teal-4" v-model="MemberData.EmployerCompany" label="Employer or Office"
+                                lazy-rules
+                                :rules="[ val => val && val.length > 0 || 'Please input something']"
+                                >
+                                  <template v-slot:before>
+                                    <q-icon name="mdi-briefcase" />
+                                  </template>
+                                </q-input>
+                              </div>
+                            </div>
+                          <!-- End of Employer or Office -->
+
+                          <!-- Start of Driver Operator Unit -->
                           <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Driver'">
                             <div class="q-pa-md">
-                              <q-input color="teal-4" v-model="MemberData.Occupation" label="Occupation" 
+                              <q-input color="teal-4" v-model="Operator" label="Operator"
+                              :loading="loadingState"
+                              @input="verifyoperator"
                               lazy-rules
                               :rules="[ val => val && val.length > 0 || 'Please input something']"
                               >
@@ -208,86 +267,55 @@
                               </q-input>
                             </div>
                           </div>
-                        <!-- Start of Employer or Office -->
-                        <!-- Start of Employer or Office -->
-                          <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Operator'">
-                            <div class="q-pa-md">
-                              <q-input color="teal-4" v-model="MemberData.EmployerCompany" label="Employer or Office" 
-                              lazy-rules
-                              :rules="[ val => val && val.length > 0 || 'Please input something']"
-                              >
-                                <template v-slot:before>
-                                  <q-icon name="mdi-briefcase" />
-                                </template>
-                              </q-input>
-                            </div>
-                          </div>
-                        <!-- Start of Employer or Office -->
+                          <!-- End of Driver Operator Unit -->
 
-                        <!-- Start of Driver Unit -->
-                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12" v-if="MemberData.Designation == 'Driver'">
-                          <div class="q-pa-md">
-                            <q-input color="teal-4" v-model="Operator" label="Operator" 
-                            :loading="loadingState"
-                            @input="verifyoperator"
-                            lazy-rules
-                            :rules="[ val => val && val.length > 0 || 'Please input something']"
-                            >
-                              <template v-slot:before>
-                                <q-icon name="mdi-briefcase" />
-                              </template>
-                            </q-input>
-                          </div>
-                        </div>
-                        <!-- Start of Driver Unit -->
-                        
-                        <!-- Start of Other sources of Income -->
-                          <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                            <div class="q-pa-md">
-                              <q-input color="teal-4" v-model="MemberData.OtherIncome" label="Other sources of Income" 
-                              lazy-rules
-                              :rules="[ val => val && val.length > 0 || 'Please input something']"
-                              >
-                                <template v-slot:before>
-                                  <q-icon name="mdi-briefcase" />
-                                </template>
-                              </q-input>
+                          <!-- Start of Other sources of Income -->
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                              <div class="q-pa-md">
+                                <q-input color="teal-4" v-model="MemberData.OtherIncome" label="Other sources of Income"
+                                lazy-rules
+                                :rules="[ val => val && val.length > 0 || 'Please input something']"
+                                >
+                                  <template v-slot:before>
+                                    <q-icon name="mdi-briefcase" />
+                                  </template>
+                                </q-input>
+                              </div>
                             </div>
-                          </div>
-                        <!-- Start of Other sources of Income -->
-                        <!-- Start of Nearest Relative -->
-                          <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                            <div class="q-pa-md">
-                              <q-input color="teal-4" v-model="MemberData.RelativeName" label="Nearest Relative" 
-                              lazy-rules
-                              :rules="[ val => val && val.length > 0 || 'Please input something']"
-                              >
-                                <template v-slot:before>
-                                  <q-icon name="mdi-briefcase" />
-                                </template>
-                              </q-input>
+                          <!-- Start of Other sources of Income -->
+                          <!-- Start of Nearest Relative -->
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                              <div class="q-pa-md">
+                                <q-input color="teal-4" v-model="MemberData.RelativeName" label="Nearest Relative"
+                                lazy-rules
+                                :rules="[ val => val && val.length > 0 || 'Please input something']"
+                                >
+                                  <template v-slot:before>
+                                    <q-icon name="mdi-briefcase" />
+                                  </template>
+                                </q-input>
+                              </div>
                             </div>
-                          </div>
-                        <!-- Start of Nearest Relative -->
-                        <!-- Start of Relationships -->
-                          <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                            <div class="q-pa-md">
-                              <q-input color="teal-4" v-model="MemberData.Relationship" label="Relationship" 
-                              lazy-rules
-                              :rules="[ val => val && val.length > 0 || 'Please input something']"
-                              >
-                                <template v-slot:before>
-                                  <q-icon name="mdi-briefcase" />
-                                </template>
-                              </q-input>
+                          <!-- Start of Nearest Relative -->
+                          <!-- Start of Relationships -->
+                            <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
+                              <div class="q-pa-md">
+                                <q-input color="teal-4" v-model="MemberData.Relationship" label="Relationship"
+                                lazy-rules
+                                :rules="[ val => val && val.length > 0 || 'Please input something']"
+                                >
+                                  <template v-slot:before>
+                                    <q-icon name="mdi-briefcase" />
+                                  </template>
+                                </q-input>
+                              </div>
                             </div>
-                          </div>
-                        <!-- Start of Relationships -->
+                          <!-- Start of Relationships -->
                           <!-- Start of Number of dependents -->
                           <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                             <div class="q-pa-md">
                               <q-input color="teal-4" v-model="MemberData.NoDependents" label="Number of dependents"
-                              type="number" 
+                              type="number"
                               lazy-rules
                               :rules="[ val => val && val.length > 0 || 'Please input something']"
                               >
@@ -298,25 +326,12 @@
                             </div>
                           </div>
                         <!-- Start of Number of dependents -->
-                        
-                        <!-- Start of Birth place -->
-                        <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
-                          <div class="q-pa-md">
-                            <q-input color="teal-4" label="Birth place" v-model="MemberData.BirthPlace"
-                            lazy-rules
-                            :rules="[ val => val && val.length > 0 || 'Please input something']"
-                            >
-                              <template v-slot:before>
-                                <q-icon name="mdi-home-map-marker" />
-                              </template>
-                            </q-input>
-                          </div>
-                        </div>
-                        <!-- End of Birth place -->
+
+
                         <!-- Start of Address -->
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class=" q-pa-md">
-                            <q-input color="teal-4" v-model="MemberData.Address" label="Address" autogrow 
+                            <q-input color="teal-4" v-model="MemberData.Address" label="Address" autogrow
                             lazy-rules
                             :rules="[ val => val && val.length > 0 || 'Please input something']"
                             >
@@ -330,7 +345,7 @@
                         <!-- Start of Phone -->
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class="q-pa-md">
-                            <q-input color="teal-4" v-model="MemberData.Phone" label="Phone" mask="(##) - (####) - (#####)" 
+                            <q-input color="teal-4" v-model="MemberData.Phone" label="Phone" mask="(##) - (####) - (#####)"
                             lazy-rules
                             :rules="[ val => val && val.length > 0 || 'Please input something']"
                             >
@@ -356,10 +371,10 @@
                           </div>
                         </div>
                         <!-- End of Email -->
-                       
-                  
-                  <!-- ############################################################################# -->
-                        <!-- Start of License number --> 
+
+
+                        <!-- ############################################################################# -->
+                        <!-- Start of License number -->
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class="q-pa-md">
                             <q-input color="teal-4" v-model="MemberData.LicenseNo" label="License number"
@@ -376,31 +391,45 @@
                         <!-- Start of Expiration date of Drivers License -->
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class="q-pa-md">
-                              <q-input
-                                color="teal-4"
-                                label="Year/Month/Date"
-                                v-model="MemberData.LicenseExp"
-                                mask="date"
-                                :rules="['date']"
-                                hint="Expiration Date"
-                              >
-                                <template class="q-pa-none q-md-none" v-slot:before>
-                                  <q-icon name="event" class="cursor-pointer">
-                                    <q-popup-proxy
-                                      ref="qDateProxy"
-                                      transition-show="scale"
-                                      transition-hide="scale"
-                                    >
-                                      <q-date
-                                        v-model="MemberData.LicenseExp"
-                                        @input="() => $refs.qDateProxy.hide()"
-                                      />
-                                    </q-popup-proxy>
-                                  </q-icon>
-                                </template>
-                              </q-input>
+                            <!-- <q-input
+                              color="teal-4"
+                              label="Expiration Date"
+                              v-model="MemberData.LicenseExp"
+                              mask="YYYY/MM/DD"
+                              hint="Year/Month/Date"
+                            >
+                              <template class="q-pa-none q-md-none" v-slot:append>
+                                <q-icon name="event" class="cursor-pointer">
+                                  <q-popup-proxy
+                                    ref="qDateProxy"
+                                    transition-show="scale"
+                                    transition-hide="scale"
+                                  >
+                                    <q-date
+                                      v-model="MemberData.LicenseExp"
+                                      @input="() => $refs.qDateProxy.hide()"
+                                    />
+                                  </q-popup-proxy>
+                                </q-icon>
+                              </template>
+                            </q-input> -->
+
+
+                            <q-input v-model="MemberData.LicenseExp" :rules="['MemberData.LicenseExp']" label="Expired Date" hint="Year/Month/Date">
+                             <template v-slot:prepend>
+                               <q-icon name="event" class="cursor-pointer" />
+                             </template>
+
+                             <template v-slot:append>
+                               <q-icon name="date_range" class="cursor-pointer">
+                                 <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
+                                   <q-date  v-model="MemberData.LicenseExp" mask="YYYY/MM/DD" @input="() => $refs.qDateProxy.hide()" />
+                                 </q-popup-proxy>
+                               </q-icon>
+                             </template>
+                           </q-input>
                           </div>
-                        </div> 
+                        </div>
 
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
                           <div class="q-pa-md">
@@ -409,23 +438,24 @@
                         </div>
 
                         <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12 q-mb-lg q-pb-md">
-                            <div class="q-pa-md">
-                            </div>
+                          <div class="q-pa-md">
+                          </div>
                         </div>
-                        <!-- End of Row -->
-                         <div class="absolute-bottom-right">
-                            <q-btn class="q-mr-md text-white" icon="cancel" type="reset" label="Reset" color="red-6" />
-                            <q-btn type="submit" class="text-white" icon="check" label="Register" color="teal-6" />
-                         </div>
+
+                        <div class="absolute-bottom-right">
+                          <q-btn class="q-mr-md text-white" icon="cancel" type="reset" label="Reset" color="red-6" />
+                          <q-btn type="submit" class="text-white" icon="check" label="Register" color="teal-6" />
+                        </div>
                       </div>
+                      <!-- End of Row -->
                     </q-card-section>
-                   </q-card>
-                  </div>
+                  </q-card>
+                </div>
               </q-form>
-          </div>   
-       </div>  
-    </q-page> 
-    
+          </div>
+       </div>
+    </q-page>
+
 
     <q-dialog v-model="unitdialog" persistent>
       <q-card class="my-card">
@@ -439,7 +469,7 @@
           <!-- Start of Driver Unit -->
           <div class="col-lg-4 col-md-6 col-sm-12 col-xs-12">
             <div class="q-pa-md">
-              <q-input color="teal-4" v-model="Operator" label="Operator" 
+              <q-input color="teal-4" v-model="Operator" label="Operator"
               :loading="loadingState"
               @input="verifyoperator"
               lazy-rules
@@ -486,56 +516,56 @@
     </q-dialog>
   </div>
 </template>
-    
+
 <script>
 import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 import Swal from 'sweetalert2'
 
 export default {
-    data(){
-        return{
-          unitdialog: false,
-          loadingState: false,
-            bar1: false,
-            bar2: false,
-            choices: false,
-            page: 1,
-            MemberData: {
-              FirstName: '',
-              LastName: '',
-              CivilStatus: '',
-              BirthPlace: '',
-              BirthDate: '1997/11/11',
-              Address:'',
-              Phone:'',
-              Email:'',
-              Occupation: '',
-              PlateNo: [],
-              EmployerCompany: '',
-              Salary: '',
-              OtherIncome: '',
-              RelativeName: '',
-              Relationship: '',
-              NoDependents: '',
-              LicenseNo:'',
-              LicenseExp:'1997/11/11',
-              MembershipFee: 'To be Paid',
-              Designation: '',
-              imageUrlPro: 'https://image.shutterstock.com/image-vector/social-member-vector-icon-person-260nw-1139787308.jpg',
-              imageUrlLic: 'https://www.pinoydriver.com/resources/wp-content/uploads/2019/06/foreign-drivers-license-ph.png',
-              timestamp: '',
-            },
-            PlateNo: '',
-            options: ['Operator', 'Driver'],
-            civilstatusoptions: ['Single', 'Married', 'Widow'],
-            loading: false,
-            loading1: false,
-            verifyunit: false,
-            UnitsOperator: {},
-              verify: false,
-              Operator: ''
-            }
-            OperatorDetails: {}
+    data () {
+      return {
+        unitdialog: false,
+        loadingState: false,
+        bar1: false,
+        bar2: false,
+        choices: false,
+        page: 1,
+        MemberData: {
+          FirstName: '',
+          LastName: '',
+          CivilStatus: '',
+          BirthPlace: '',
+          BirthDate: '01/01/1993',
+          Address:'',
+          Phone:'',
+          Email:'',
+          Occupation: '',
+          PlateNo: [],
+          EmployerCompany: '',
+          Salary: '',
+          OtherIncome: '',
+          RelativeName: '',
+          Relationship: '',
+          NoDependents: '',
+          LicenseNo:'',
+          LicenseExp:'1997/11/11',
+          MembershipFee: 'To be Paid',
+          Designation: '',
+          imageUrlPro: 'https://image.shutterstock.com/image-vector/social-member-vector-icon-person-260nw-1139787308.jpg',
+          imageUrlLic: 'https://www.pinoydriver.com/resources/wp-content/uploads/2019/06/foreign-drivers-license-ph.png',
+          timestamp: '',
+        },
+        PlateNo: '',
+        options: ['Operator', 'Driver'],
+        civilstatusoptions: ['Single', 'Married', 'Widow'],
+        loading: false,
+        loading1: false,
+        verifyunit: false,
+        UnitsOperator: {},
+        verify: false,
+        Operator: ''
+      }
+      OperatorDetails: {}
     },
   firestore: function () {
     return {
@@ -607,7 +637,7 @@ export default {
           // })
           this.verify = false
         }
-        
+
       },
      onSubmit () {
       Swal.fire({
@@ -719,7 +749,7 @@ export default {
             .then(() => {
               console.log('MemberID Incremented')
             })
-        }) 
+        })
         this.$q.notify({
           color: 'green-4',
           textColor: 'white',
@@ -766,10 +796,10 @@ export default {
         this.date = '',
         this.Lastname = '',
         this.phone = ''
-      } 
+      }
  },
  computed: {
-   
+
   },
   mounted () {
     // this.addLine()

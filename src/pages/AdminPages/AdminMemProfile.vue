@@ -51,23 +51,35 @@
               </q-dialog>
             </div>
             <!-- end membership payment -->
-            
+
             <q-btn flat round icon="event"/>
             <q-btn @click="contract = !contract" flat color="teal-4">
             Print Contract
             </q-btn>
             <q-btn flat color="teal-4" @click="qrdialog = !qrdialog; GenQr()">
-            Print ID        
+            Print ID
             </q-btn>
             <q-btn flat color="teal-4" @click="bar = !bar; listDrivers();" v-if="MemberData.Designation == 'Operator'">
-            Unit/s Details       
+            Unit/s Details
             </q-btn>
             <q-btn flat color="teal-4" @click="bar = !bar; driverUnit();"  v-if="MemberData.Designation == 'Driver'">
-            Jeepney       
+            Jeepney
             </q-btn>
-            <q-btn flat @click="upd = !upd; updateMemberData()" color="teal-4">
-            Update
-            </q-btn>
+
+            <div class="">
+              <div v-if="upd">
+                <q-btn flat @click="upd = !upd, onUpdateMemberData()" color="teal-4">
+                Update
+                </q-btn>
+              </div>
+
+              <div v-else>
+                <q-btn flat @click="updateMemberData()" color="teal-4" label="Save" />
+                <q-btn flat @click="cancelUpdate()" color="teal-4" label="Cancel" />
+              </div>
+
+            </div>
+
             <q-btn flat color="teal-4">
             Resign
             </q-btn>
@@ -86,7 +98,7 @@
             />
             <q-spinner
             color="primary"
-            width='150' 
+            width='150'
             height='150'
             v-if="loading"
             />
@@ -95,12 +107,12 @@
 
 
             <div class="text-h5 q-mt-sm q-ma-md">Member ID: {{ penRegId }}</div>
-            <!-- <div class="text-h6 q-mt-sm q-ma-md" 
+            <!-- <div class="text-h6 q-mt-sm q-ma-md"
             v-if="MemberData.Designation == 'Driver'">Operator: {{ MemberData.Operator.Name }}</div> -->
             <div class="q-pa-md">
-              <q-input 
-              v-model="MemberData.FirstName" 
-              label="First Name" 
+              <q-input
+              v-model="MemberData.FirstName"
+              label="First Name"
               :readonly="upd"
               >
                 <template v-slot:before>
@@ -198,7 +210,7 @@
                 </template>
               </q-input>
             </div>
-          
+
         </q-card-section>
 
         <q-card-section class="col-md-4 col-sm-12 col-xs-12 q-pt-md">
@@ -206,7 +218,7 @@
           <div class="col-sm-4">
             <q-spinner
             color="primary"
-            width='150' 
+            width='150'
             height='150'
             v-if="loading1"
             />
@@ -270,7 +282,7 @@
 
 <q-dialog v-model="bar">
   <q-card class="my-card" style="width: 700px; max-width: 80vw;">
-    
+
     <q-bar>
       <q-space />
       <q-btn dense flat icon="close" v-close-popup>
@@ -293,7 +305,7 @@
             </div>
 
             <div class="q-pa-md">
-              <q-input v-model="MemberData.PlateNo" label="Plate No" 
+              <q-input v-model="MemberData.PlateNo" label="Plate No"
               @input="plateNoVerify()"
               :loading="loadingState"
               >
@@ -313,8 +325,8 @@
       <q-card-section class="row items-center q-pa-md" v-for="(data, id) in UnitsDriver" :key="id">
         <div class="full-width">
           <div class="q-pb-md">
-              <q-input :value=id label="Plate No" 
-              outlined 
+              <q-input :value=id label="Plate No"
+              outlined
               >
                 <template v-slot:before>
                  <q-icon name="mdi-jeepney" />
@@ -332,7 +344,7 @@
             </div>
 
         <div class="q-pa-md" v-if="addDriverDialog">
-          <q-input v-model="Driver" label="Driver" 
+          <q-input v-model="Driver" label="Driver"
             @input="driverVerify()"
             :loading="loadingState"
             >
@@ -341,10 +353,10 @@
               </template>
               <q-btn flat icon="save"></q-btn>
             </q-input>
-        </div> 
+        </div>
 
           <div v-for="(dat, i) in data" :key="i" class="q-pa-md">
-            <q-input :value="dat.FirstName +' '+ dat.LastName" label="Driver" 
+            <q-input :value="dat.FirstName +' '+ dat.LastName" label="Driver"
               @input="driverVerify()"
               readonly
               >
@@ -358,13 +370,13 @@
       </q-card-section>
     </div>
   </q-card>
-</q-dialog> 
+</q-dialog>
 
 <!-- <q-dialog v-model="addDriverDialog" persistent >
   <q-card class="my-card">
     <q-card-section class="row items-center q-pa-md">
       <div class="q-pa-md">
-        <q-input v-model="Driver" label="Driver" 
+        <q-input v-model="Driver" label="Driver"
           @input="driverVerify()"
           :loading="loadingState"
           >
@@ -383,7 +395,7 @@
           Cancel
         </q-btn>
       </q-card-actions>
-  </q-card>  
+  </q-card>
 </q-dialog> -->
 
 
@@ -440,7 +452,7 @@
             >
               <p>&nbsp;</p>
               <h6 class="h6">APPLICATION FOR MEMBERSHIP</h6>
-              
+
               <span style="padding-left: 150px;">I hereby apply for membership to the <strong>New GSIS Transport Service Cooperative.</strong></span>
                 <br><span style="text-align: left;">&nbsp;I agree to obey faithfully its rules and regulations as set down in its Articles of Cooperation and Bylaws, the decisions of the general membership meetings and those of the Board of Directors.</span>
                 <br><span style="text-align: left; padding-left: 30px;">I hereby pledge to:</span>
@@ -458,7 +470,7 @@
                 </ol>
                 <br><span style="float:right"> .................................................</span>
                 <p style="float:right">Signature</p>
-                  
+
                 <!-- <p style="padding-left: 90px;">&nbsp;Date</p> -->
                 <p style="padding-left: 75px;"><span style="text-decoration: underline;"><span class="w8qArf">&nbsp; {{ datetodaydata }} </span><span class="LrzXr"> </span></span></p>
                 <p style="padding-left: 100px;">Date</p>
@@ -467,17 +479,17 @@
 
                 <div id="personaldata">
                 <strong>PERSONAL DATA</strong>
-                  <br> <span style="float:left"> Name: {{ MemberData.FirstName }}  {{ MemberData.LastName }} </span> 
-                      <span style="float:right">Civil Status:  {{ MemberData.CivilStatus }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
-                      <br><span style="float:left"> BirthPlace: {{ MemberData.BirthPlace }} </span> 
-                    <span style="float:right"> Date of birth:  {{ MemberData.BirthDate }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
-                    <br><span style="float:left"> Present Address: {{ MemberData.Address }} </span> 
-                  <br><span style="float:left"> Occupation: {{ MemberData.Occupation }} </span> 
+                  <br> <span style="float:left"> Name: {{ MemberData.FirstName }}  {{ MemberData.LastName }} </span>
+                      <span style="float:right">Civil Status:  {{ MemberData.CivilStatus }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                      <br><span style="float:left"> BirthPlace: {{ MemberData.BirthPlace }} </span>
+                    <span style="float:right"> Date of birth:  {{ MemberData.BirthDate }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                    <br><span style="float:left"> Present Address: {{ MemberData.Address }} </span>
+                  <br><span style="float:left"> Occupation: {{ MemberData.Occupation }} </span>
                 <br><span style="float:left"> Employer or office: {{ MemberData.EmployerCompany }} </span>
-                <span style="float:right"> Salary:  {{ MemberData.Salary }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
-                <br><span style="float:left"> Other sources of income: {{ MemberData.OtherIncome }} </span> 
+                <span style="float:right"> Salary:  {{ MemberData.Salary }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                <br><span style="float:left"> Other sources of income: {{ MemberData.OtherIncome }} </span>
                 <br><span style="float:left"> Nearest relative: {{ MemberData.RelativeName }} </span>
-                <span style="float:right"> Relationship: {{ MemberData.Relationship }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
+                <span style="float:right"> Relationship: {{ MemberData.Relationship }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
                 <br><span style="float:left"> Number of Dependents: {{ MemberData.NoDependents }} </span>
 
                 <p>&nbsp;</p>
@@ -488,7 +500,7 @@
         </q-card-section>
                   </q-card>
 
-    </q-dialog>    
+    </q-dialog>
 
     </div>
 </template>
@@ -506,34 +518,35 @@ Vue.component(VueQrcode.name, VueQrcode);
 export default {
     data(){
         return{
-            addDriverDialog: false,
-            loadingState: false,
-            contract: false,
-            inception: false,
-            qrvalue: '',
-            bar: false,
-            qrdialog: false,
-            upd: true,
-            loading: false,
-            loading1: false,
-            datetodaydata: '',
-            inception: false,
-            Payment: {
-              MemberID: this.penRegId,
-              OrNo: '',
-              TransactionID: '',
-              MembershipFee: 500,
-              Total: 500,
-              timestamp: ''
-            },
-            Unit: {
-              Operator: '',
-              PlateNo: ''
-            },
-            Driver: '',
-            UnitsDriver: {},
-            drvOperator: '',
-            verifyPlateNo: true
+          addDriverDialog: false,
+          loadingState: false,
+          contract: false,
+          inception: false,
+          qrvalue: '',
+          bar: false,
+          qrdialog: false,
+          upd: true,
+          loading: false,
+          loading1: false,
+          datetodaydata: '',
+          inception: false,
+          Payment: {
+            MemberID: this.penRegId,
+            OrNo: '',
+            TransactionID: '',
+            MembershipFee: 500,
+            Total: 500,
+            timestamp: ''
+          },
+          Unit: {
+            Operator: '',
+            PlateNo: ''
+          },
+          Driver: '',
+          UnitsDriver: {},
+          drvOperator: '',
+          verifyPlateNo: true,
+          tempMemData: {}
         }
     },
     props: ['penRegId'],
@@ -581,7 +594,7 @@ export default {
                 },
                 title: 'Plate No Exists!!',
                 text: 'success',
-              }              
+              }
             )
           this.verifyPlateNo = true
           this.loadingState = false
@@ -611,13 +624,13 @@ export default {
           })
       },
       listDrivers(){
-        
+
         var UnitDriver = {}
         var test = []
         var mb =this.$firestore.Members
         var set = this.$set
         var key
-        
+
           this.MemberData.PlateNo.forEach(function(key, index){
             mb.where('PlateNo', '==' , key)
             .get()
@@ -638,7 +651,6 @@ export default {
 
           this.UnitsDriver = UnitDriver
           console.log('resolvec', this.UnitsDriver)
-        
       },
       removedriver(id, key){
         Swal.fire({
@@ -654,7 +666,7 @@ export default {
           confirmButtonText: 'Yes, remove it!'
         }).then((result) => {
           if (result.value) {
-            
+
             this.UnitsDriver.splice(key, 1);
             this.$firestore.Members.doc(id).update({
               PlateNo: ''
@@ -667,7 +679,7 @@ export default {
                 },
                 title: 'Removed!',
                 text: 'Driver has been removed.',
-              }              
+              }
             )
           }
         })
@@ -679,26 +691,38 @@ export default {
             window.location.reload();
       },
       GenQr(){
-      if(this.MemberData.Designation == 'Driver'){
+        if(this.MemberData.Designation == 'Driver'){
 
-        var op
+          var op
 
-        this.$firestore.Units.doc(this.MemberData.PlateNo)
-        .get()
-        .then((doc) => {
-          op = doc.data().Operator
-          })
-          .then(() => {
-            this.qrvalue = 
-            'Driver: ' + this.MemberData['.key'] +' '+ 'Operator: ' + op
-          })
-      }else{
-        this.qrvalue = 'Operator: ' + this.MemberData['.key']
-      }
-    
+          this.$firestore.Units.doc(this.MemberData.PlateNo)
+          .get()
+          .then((doc) => {
+            op = doc.data().Operator
+            })
+            .then(() => {
+              this.qrvalue =
+              'Driver: ' + this.MemberData['.key'] +' '+ 'Operator: ' + op
+            })
+        }else{
+          this.qrvalue = 'Operator: ' + this.MemberData['.key']
+        }
+
+      },
+      onUpdateMemberData () {
+        this.tempMemData = this.MemberData
+        let temp = this.$store.getters['subModules/getPlainValue'](this.MemberData)
+        this.MemberData = temp
       },
       updateMemberData () {
-          this.$firestore.MemberData.set(this.MemberData);
+        this.$firestore.MemberData.set(this.MemberData)
+        .then(() => {
+          this.upd = !this.upd
+        })
+      },
+      cancelUpdate () {
+        this.MemberData = this.tempMemData
+        this.upd = !this.upd
       },
       //new code
       OrTid(){
@@ -749,7 +773,7 @@ export default {
         },
       onFileClick1(){
         this.$refs.fileInput1.click()
-      },  
+      },
       onFileClick2(){
         this.$refs.fileInput2.click()
       },
@@ -770,7 +794,7 @@ export default {
             this.loading = false
           })
         })
-      }, 
+      },
       onFilePickedLic(e){
         this.loading1 = true
         let file = e.target.files[0]
@@ -810,11 +834,11 @@ export default {
 
     .my-swal2 {
         z-index: 300000;
-      }  
+      }
 
     .my-swal3 {
         z-index: 300000;
-      }  
+      }
 
 		.id-card-holder {
 			width: 300px;
@@ -846,7 +870,7 @@ export default {
 		    border-radius: 5px 0 0 5px;
 		}
 		.id-card {
-			
+
 			background-color: #fff;
 			padding: 10px;
 			border-radius: 10px;
