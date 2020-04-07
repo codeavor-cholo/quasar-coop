@@ -51,16 +51,16 @@
               </q-dialog>
             </div>
             <!-- end membership payment -->
-            
+
             <q-btn flat round icon="event"/>
             <q-btn @click="printDiv('page')" flat color="teal-4">
             Print Contract
             </q-btn>
             <q-btn flat color="teal-4" @click="qrdialog = !qrdialog; GenQr()">
-            Print ID        
+            Print ID
             </q-btn>
             <q-btn flat color="teal-4" @click="bar = !bar" v-if="MemberData.Designation == 'Operator'">
-            Drivers       
+            Drivers
             </q-btn>
             <!-- <q-btn flat @click="upd = !upd; updateMemberData()" color="teal-4">
             Update
@@ -83,7 +83,7 @@
             />
             <q-spinner
             color="primary"
-            width='150' 
+            width='150'
             height='150'
             v-if="loading"
             />
@@ -92,12 +92,12 @@
 
 
             <div class="text-h5 q-mt-sm q-ma-md">Member ID: {{ penRegId }}</div>
-            <div class="text-h6 q-mt-sm q-ma-md" 
+            <div class="text-h6 q-mt-sm q-ma-md"
             v-if="MemberData.Designation == 'Driver'">Operator: {{ MemberData.Operator.Name }}</div>
             <div class="q-pa-md">
-              <q-input 
-              v-model="MemberData.FirstName" 
-              label="First Name" 
+              <q-input
+              v-model="MemberData.FirstName"
+              label="First Name"
               :readonly="upd"
               >
                 <template v-slot:before>
@@ -195,7 +195,7 @@
                 </template>
               </q-input>
             </div>
-          
+
         </q-card-section>
 
         <q-card-section class="col-md-4 col-sm-12 col-xs-12 q-pt-md">
@@ -203,7 +203,7 @@
           <div class="col-sm-4">
             <q-spinner
             color="primary"
-            width='150' 
+            width='150'
             height='150'
             v-if="loading1"
             />
@@ -282,11 +282,11 @@
 
       <q-card-section class="q-pt-none">
         <div class="row col-lg-4 col-md-12 col-sm-12 col-xs-12 q-pa-md">
-          <div class="col-lg-4 col-md-12 col-sm-12 col-xs-12"> 
+          <div class="col-lg-4 col-md-12 col-sm-12 col-xs-12">
               <div class="q-pa-md">
-                <q-input color="teal-4" 
+                <q-input color="teal-4"
                 v-model="Driver"
-                label="Driver" 
+                label="Driver"
                 v-on:keyup.enter="addDriver();"
                 >
                   <template v-slot:before>
@@ -305,9 +305,9 @@
             </div>
         </div>
       </q-card-section>
-    </div>     
+    </div>
   </q-card>
-</q-dialog> 
+</q-dialog>
 
 
   <q-dialog v-model="qrdialog">
@@ -362,7 +362,7 @@
             >
               <p>&nbsp;</p>
               <h6 class="h6">APPLICATION FOR MEMBERSHIP</h6>
-              
+
               <span style="padding-left: 150px;">I hereby apply for membership to the <strong>New GSIS Transport Service Cooperative.</strong></span>
                 <br><span style="text-align: left;">&nbsp;I agree to obey faithfully its rules and regulations as set down in its Articles of Cooperation and Bylaws, the decisions of the general membership meetings and those of the Board of Directors.</span>
                 <br><span style="text-align: left; padding-left: 30px;">I hereby pledge to:</span>
@@ -380,7 +380,7 @@
                 </ol>
                 <br><span style="float:right"> .................................................</span>
                 <p style="float:right">Signature</p>
-                  
+
                 <!-- <p style="padding-left: 90px;">&nbsp;Date</p> -->
                 <p style="padding-left: 75px;"><span style="text-decoration: underline;"><span class="w8qArf">&nbsp; {{ datetodaydata }} </span><span class="LrzXr"> </span></span></p>
                 <p style="padding-left: 100px;">Date</p>
@@ -389,17 +389,17 @@
 
                 <div id="personaldata">
                 <strong>PERSONAL DATA</strong>
-                  <br> <span style="float:left"> Name: {{ MemberData.FirstName }}  {{ MemberData.LastName }} </span> 
-                      <span style="float:right">Civil Status:  {{ MemberData.CivilStatus }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
-                      <br><span style="float:left"> BirthPlace: {{ MemberData.BirthPlace }} </span> 
-                    <span style="float:right"> Date of birth:  {{ MemberData.BirthDate }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
-                    <br><span style="float:left"> Present Address: {{ MemberData.Address }} </span> 
-                  <br><span style="float:left"> Occupation: {{ MemberData.Occupation }} </span> 
+                  <br> <span style="float:left"> Name: {{ MemberData.FirstName }}  {{ MemberData.LastName }} </span>
+                      <span style="float:right">Civil Status:  {{ MemberData.CivilStatus }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                      <br><span style="float:left"> BirthPlace: {{ MemberData.BirthPlace }} </span>
+                    <span style="float:right"> Date of birth:  {{ MemberData.BirthDate }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                    <br><span style="float:left"> Present Address: {{ MemberData.Address }} </span>
+                  <br><span style="float:left"> Occupation: {{ MemberData.Occupation }} </span>
                 <br><span style="float:left"> Employer or office: {{ MemberData.EmployerCompany }} </span>
-                <span style="float:right"> Salary:  {{ MemberData.Salary }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
-                <br><span style="float:left"> Other sources of income: {{ MemberData.OtherIncome }} </span> 
+                <span style="float:right"> Salary:  {{ MemberData.Salary }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
+                <br><span style="float:left"> Other sources of income: {{ MemberData.OtherIncome }} </span>
                 <br><span style="float:left"> Nearest relative: {{ MemberData.RelativeName }} </span>
-                <span style="float:right"> Relationship: {{ MemberData.Relationship }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span> 
+                <span style="float:right"> Relationship: {{ MemberData.Relationship }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
                 <br><span style="float:left"> Number of Dependents: {{ MemberData.NoDependents }} </span>
 
                 <p>&nbsp;</p>
@@ -504,22 +504,22 @@ export default {
         //       FirstName:  this.MemberData.FirstName,
         //       LastName: this.MemberData.LastName
         //     }
-          
+
         //     this.$firestore.Units.doc(this.Unit.PlateNo).update({
         //     Driver: firefirestore.FieldValue.arrayUnion(newdriver)
         //   })
         // },
       },
       GenQr(){
-      
+
       if(this.MemberData.Designation == 'Driver'){
-          this.qrvalue = 
+          this.qrvalue =
             'Driver: ' + this.MemberData['.key'] +' '+ 'Operator: ' + this.MemberData.Operator.MemberID
-          
+
       }else{
         this.qrvalue = 'Operator: ' + this.MemberData['.key']
       }
-    
+
       },
       // updateMemberData () {
       //     this.$firestore.MemberData.set(this.MemberData);
@@ -573,7 +573,7 @@ export default {
         },
       onFileClick1(){
         this.$refs.fileInput1.click()
-      },  
+      },
       onFileClick2(){
         this.$refs.fileInput2.click()
       },
@@ -594,7 +594,7 @@ export default {
             this.loading = false
           })
         })
-      }, 
+      },
       onFilePickedLic(e){
         this.loading1 = true
         let file = e.target.files[0]
@@ -658,7 +658,7 @@ export default {
 		    border-radius: 5px 0 0 5px;
 		}
 		.id-card {
-			
+
 			background-color: #fff;
 			padding: 10px;
 			border-radius: 10px;

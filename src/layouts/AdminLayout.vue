@@ -50,11 +50,11 @@
             expand-separator
             icon="people"
             label="MEMBERS"
-            
+
             :content-inset-level=".6"
             >
                  <q-item
-                    expand-separator 
+                    expand-separator
                     to="/admin/addmember"
                     exact
                     >
@@ -64,7 +64,7 @@
                       <q-item-section class="text-uppercase">Add Member</q-item-section>
                   </q-item>
                     <q-item
-                    expand-separator 
+                    expand-separator
                     to="/admin/allmember"
                     exact
                     >
@@ -73,8 +73,8 @@
                     </q-item-section>
                       <q-item-section class="text-uppercase">All Members</q-item-section>
                   </q-item>
-                   <!-- <q-item
-                    expand-separator 
+                   <q-item
+                    expand-separator
                     to="/admin/pendingreg"
                     exact
                     >
@@ -82,7 +82,7 @@
                       <q-icon name="mdi-timer" />
                     </q-item-section>
                       <q-item-section class="text-uppercase">Pending Registration</q-item-section>
-                  </q-item> -->
+                  </q-item>
            </q-expansion-item>
           <!-- End of Sidemenu Member -->
          <!-- Start of Payment Member -->
@@ -93,7 +93,7 @@
             :content-inset-level="0.5"
             >
                  <q-item
-                    expand-separator 
+                    expand-separator
                    :content-inset-level="0.5"
                     to="/admin/addpayment"
                     exact
@@ -104,7 +104,7 @@
                     <q-item-section class="text-uppercase">Add Payment</q-item-section>
                 </q-item>
                 <q-item
-                    expand-separator 
+                    expand-separator
                    :content-inset-level="0.5"
                     to="/admin/allpayment"
                     exact
@@ -124,7 +124,7 @@
               :content-inset-level="0.5"
             >
                <q-item
-                    expand-separator 
+                    expand-separator
                    :content-inset-level="0.5"
                     to="/admin/billings"
                     exact
@@ -138,12 +138,12 @@
             <!-- End of Tracking -->
             <q-expansion-item
               expanded-separator
-              icon="mdi-credit-card" 
-              label="Withdrawals" 
+              icon="mdi-credit-card"
+              label="Withdrawals"
               :content-inset-level="0.5"
             >
               <q-item
-                    expand-separator 
+                    expand-separator
                    :content-inset-level="0.5"
                     to="/admin/savings"
                     exact
@@ -154,7 +154,7 @@
                     <q-item-section class="text-uppercase">Savings</q-item-section>
                 </q-item>
                  <q-item
-                    expand-separator 
+                    expand-separator
                    :content-inset-level="0.5"
                     to="/admin/loans"
                     exact
@@ -167,12 +167,12 @@
             </q-expansion-item>
              <q-expansion-item
               expanded-separator
-              icon="fas fa-user-circle" 
-              label="Manage" 
+              icon="fas fa-user-circle"
+              label="Manage"
               :content-inset-level="0.5"
             >
               <q-item
-                    expand-separator 
+                    expand-separator
                    :content-inset-level="0.5"
                     to="/admin/addstaff"
                     exact

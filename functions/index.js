@@ -19,7 +19,7 @@ exports.AddUserRole = functions.auth.user().onCreate(async (authUser) => {
     if (authUser.email) {
       const customClaims = {
        // customer: true,
-       //as of now once nag-Create ng user dapat Admin 
+       //as of now once nag-Create ng user dapat Admin
           admin: true,
       };
       try {
@@ -28,23 +28,23 @@ exports.AddUserRole = functions.auth.user().onCreate(async (authUser) => {
           email: authUser.email,
           role: customClaims
         })
-  
+
       } catch (error) {
         console.log(error)
       }
-  
-  
+
+
     }
-  
+
     // return db.collection("roles").doc(user.uid).set({
     //   email: user.email,
     //   subscriber: true
     // }).catch(error => {
     //   console.log(error)
     // })
-  
+
   });
-  
+
  exports.setUserRole = functions.https.onCall(async (data, context) => {
 
   if (!context.auth.token.admin) return
@@ -56,7 +56,7 @@ exports.AddUserRole = functions.auth.user().onCreate(async (authUser) => {
     return db.collection("MemberData").doc(data.uid).update({
       role: data.role
     })
- 
+
   } catch (error) {
     console.log(error)
   }
