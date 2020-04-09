@@ -8,3 +8,8 @@ export const getPlainValue = (state) => (dataObject) => {
   }, obj)
   return obj
 }
+
+export const currencyToNumber = (state) => (value) => {
+  let val = value.toString()
+  return parseInt(val.replace(/\,/g,''))
+}

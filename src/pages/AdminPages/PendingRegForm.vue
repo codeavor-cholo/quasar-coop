@@ -177,7 +177,7 @@ export default {
         //     console.log(data)
         //   }
         // },
-        lastMember: firebaseDb.collection('MemberData').orderBy('timestamp', 'desc').limit(1),
+        lastMember: firebaseDb.collection('MemberData').orderBy('timestamp', 'desc').limit(5),
         MemberData: firebaseDb.collection('MemberData'),
         // MemberID: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
     }
@@ -197,8 +197,10 @@ export default {
           var date = new Date()
           var id = 'NGTSC' + date.getFullYear() + pad(++lastNumber, 3)
 
+          console.log(id, 'not empty member data id to reg')
           this.$firestore.MemberData.doc(id).set({
             ...this.PenReg,
+            isNewMember: true,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
           .then(() => {
@@ -223,8 +225,10 @@ export default {
           var date = new Date()
           let id = 'NGTSC' + date.getFullYear() + '000'
           // delete this.PenReg['.key']
+          console.log('empty memberdata', id)
           this.$firestore.MemberData.doc(id).set({
             ...this.PenReg,
+            isNewMember: true,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
           .then(() => {
@@ -255,12 +259,6 @@ export default {
 
       // this.$firestore.MemberID.update({ MemberID: increment })
 
-
-    },
-    async approveMember () {
-
-        var mid = await this.regMember
-        console.log(mid)
 
     },
     rejectMember(){

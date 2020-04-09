@@ -36,6 +36,7 @@ const actions = {
             }
         })
         .catch(function(error) {
+          console.log(error, 'errore was')
             Swal.fire({
                 title: 'Error!',
                 text: error,
