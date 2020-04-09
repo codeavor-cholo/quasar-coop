@@ -16,7 +16,7 @@
                             <q-btn fab color="secondary" @click="scanner=!scanner"
                             style="height: 70px; width: 70px;" >QR Scanner </q-btn>
                         </q-page-sticky>
-                        <q-btn label="test" @click="test" />
+                        <!-- <q-btn label="test" @click="test" /> -->
                      </div>
 
                     <!-- Start of Transaction ID -->
@@ -116,11 +116,11 @@
 
                      <!-- if designation is Operator -->
                      <!-- start of Driver List -->
-                     <div v-if="MemberDetails.Designation === 'Operator'" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                     <!-- <div v-if="MemberDetails.Designation === 'Operator'" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
                        <div class="q-pa-xs">
                          <q-select
                           v-model="DriverList"
-                          :options="optionsToReturn"
+                          :options="driverListOpt"
                           label="Driver List"
                           multiple
                           emit-value
@@ -142,7 +142,6 @@
                               v-on="scope.itemEvents"
                             >
                               <q-item-section avatar>
-                                <!-- <q-toggle v-model="DriverList" :val="scope.opt.value" /> -->
                                 <q-checkbox v-model="DriverList" :val="scope.opt.value" />
                               </q-item-section>
                               <q-item-section>
@@ -153,15 +152,106 @@
                           </template>
                         </q-select>
                        </div>
-                      </div>
+                      </div> -->
 
                      <!-- end of Driver List -->
 
                      <!-- Start of Membership Fee -->
                      <div  class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
                        <q-separator inset spaced> </q-separator>
-                       <span class="text-bold text-uppercase text-teal-4">Fees</span>
+                       <p class="text-bold text-uppercase text-teal-4">Fees</p>
+
                        <q-checkbox v-if="MemberDetails.isNewMember" label="Pay membership fee only" v-model="isPayonlyMembership" @input="onPayonlyMembership"/>
+                       <!-- Start of Include Other member -->
+                       <div v-if="MemberDetails.Designation === 'Driver'" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                         <q-checkbox
+                         v-if="!isPayonlyMembership"
+                          v-model="isIncludeOthers"
+                          label="Include Operator"
+                          />
+
+                          <div v-if="isIncludeOthers">
+                            <q-card class="my-card">
+                              <q-card-section>
+                                <div class="text-subtitle2">Operator Fee</div>
+                              </q-card-section>
+                              <q-card-section>
+                                <!-- start of include management fee -->
+                                <q-field
+                                   dense
+                                   readonly
+                                   prefix="₱ "
+                                   v-model="includeFee.ManagementFee"
+                                   label="Management Fee"
+                                  >
+                                  <template v-slot:control="{ id, floatingLabel, value, emitValue }">
+                                    <input readonly :id="id" class="q-field__input text-left" :value="value" @change="e => emitValue(e.target.value)" v-money="moneyFormatForDirective" v-show="floatingLabel">
+                                  </template>
+                                </q-field>
+                                <!-- end of include management fee -->
+                                <!-- Start of include Share of Stocks -->
+                                <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                  <div class="q-pa-xs">
+                                    <q-field
+                                       dense
+                                       prefix="₱ "
+                                       v-model="includeFee.ShareCapital"
+                                       label="Share of Stocks"
+                                      >
+                                        <template v-slot:control="{ id, floatingLabel, value, emitValue }">
+                                          <input :id="id" class="q-field__input text-left" :value="value" @change="e => emitValue(e.target.value)" v-money="moneyFormatForDirective" v-show="floatingLabel">
+                                        </template>
+                                      </q-field>
+                                  </div>
+                                </div>
+                                <!-- End of include Share of Stocks -->
+
+                                <!-- Start of include Savings Deposit -->
+                               <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                                 <div class="q-pa-xs">
+                                   <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.SavingsDeposit" label="Savings Deposit" mask="######" /> -->
+
+                                   <q-field
+                                      dense
+                                      prefix="₱ "
+                                      v-model="includeFee.SavingsDeposit"
+                                      label="Savings Deposit"
+                                     >
+                                       <template v-slot:control="{ id, floatingLabel, value, emitValue }">
+                                         <input :id="id" class="q-field__input text-left" :value="value" @change="e => emitValue(e.target.value)" v-money="moneyFormatForDirective" v-show="floatingLabel">
+                                       </template>
+                                     </q-field>
+                                 </div>
+                               </div>
+                               <!-- End of include Savings Deposit -->
+
+                               <!-- Start of Advances -->
+                              <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
+                                <div class="q-pa-xs">
+                                  <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.Advances" label="Advances to Members" mask="######" /> -->
+
+                                  <q-field
+                                     dense
+                                     prefix="₱ "
+                                     v-model="includeFee.Advances"
+                                     label="Advances to Member"
+                                    >
+                                      <template v-slot:control="{ id, floatingLabel, value, emitValue }">
+                                        <input :id="id" class="q-field__input text-left" :value="value" @change="e => emitValue(e.target.value)" v-money="moneyFormatForDirective" v-show="floatingLabel">
+                                      </template>
+                                    </q-field>
+                                </div>
+                              </div>
+                              <!-- End of Advances -->
+
+
+                              </q-card-section>
+                            </q-card>
+                          </div>
+                       </div>
+                       <!-- End of Include Other member -->
+
+
                        <div v-if="MemberDetails.isNewMember" class="q-pa-xs">
                          <!-- <q-input prefix="₱" dense color="teal-4" readonly type="number" v-model="Payment.MembershipFee" label="Membership Fee" mask="######" /> -->
 
@@ -181,10 +271,10 @@
                      <!-- End of Membership Fee -->
 
                      <div v-if="!isPayonlyMembership" class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
-                       <!-- Start of Management Fee -->
+                       <!-- Start of include Management Fee -->
                        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
                          <div class="q-pa-xs">
-                           <!-- <q-input prefix="₱" dense color="teal-4" readonly type="number" v-model="Payment.ManagementFee" label="Management Fee" mask="######" /> -->
+                           <!-- include operator fees to paid in paying if designation is driver -->
 
                            <q-field
                               dense
@@ -202,12 +292,9 @@
                          </div>
                        </div>
                        <!-- End of Management Fee -->
-                       <!-- Start of Share of Stocks -->
+                       <!-- Start of include Share of Stocks -->
                        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
                          <div class="q-pa-xs">
-                           <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.ShareCapital" label="Share of Stocks" mask="######" /> -->
-
-
 
                            <q-field
                               dense
@@ -221,8 +308,8 @@
                              </q-field>
                          </div>
                        </div>
-                       <!-- End of Share of Stocks -->
-                        <!-- Start of Savings Deposit -->
+                       <!-- End of include Share of Stocks -->
+                        <!-- Start of include Savings Deposit -->
                        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
                          <div class="q-pa-xs">
                            <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.SavingsDeposit" label="Savings Deposit" mask="######" /> -->
@@ -239,9 +326,9 @@
                              </q-field>
                          </div>
                        </div>
-                       <!-- End of Savings Deposit -->
+                       <!-- End of include Savings Deposit -->
 
-                        <!-- Start of Advances -->
+                        <!-- Start of include Advances -->
                        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
                          <div class="q-pa-xs">
                            <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.Advances" label="Advances to Members" mask="######" /> -->
@@ -258,7 +345,7 @@
                              </q-field>
                          </div>
                        </div>
-                       <!-- End of Advances -->
+                       <!-- End of include Advances -->
                        <!-- Start of Accounts Recievable -->
 
                        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
@@ -386,7 +473,8 @@
                         v-if="alone"
                         />
 
-                      <q-btn class="text-teal-4" icon-right="check" label="Add Payment" color="white" @click="PayFeeDriver"/>
+                      <!-- <q-btn class="text-teal-4" icon-right="check" label="Add Payment" color="white" @click="PayFeeDriver"/> -->
+                      <q-btn class="text-teal-4" icon-right="check" label="Add Payment" color="white" @click="confirmPayment"/>
                     </div>
                   </div>
                 </div>
@@ -539,11 +627,11 @@ export default {
           MemberID: '',
           OrNo: '',
           TransactionID: '',
-          ShareCapital: 30,
           MembershipFee: 500,
           ManagementFee: 15,
-          Advances: 0,
+          ShareCapital: 30,
           SavingsDeposit: 0,
+          Advances: 0,
           Others: 0,
           OthersDes: '',
           Total: 0,
@@ -561,6 +649,13 @@ export default {
           OthersDes: 0,
           Total: 0,
           timestamp: ''
+        },
+        // test first for include operator
+        includeFee: {
+          ManagementFee: 65,
+          ShareCapital: 30,
+          SavingsDeposit: 0,
+          Advances: 0
         },
         DriverName: '',
         OperatorName: '',
@@ -584,33 +679,35 @@ export default {
           precision: 0,
           masked: false
         },
-        optionsToReturn: []
+        driverListOpt: [],
+        isIncludeOthers: false,
       }
     },
     firestore () {
       return {
         // Doc
         // Transactions: firebaseDb.collection('Transactions').doc('2020-04-07').collection('Payment'),
-        lastTransaction: {
-          ref: firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1),
-          objects: false,
-          resolve: (data) => {
-            if (data.length != 0) {
-              // has data
-              this.Payment.TransactionID = ++data[0].TransactionID
-              this.Payment.OrNo = ++data[0].OrNo
-            } else {
-              // empty Transactions
-              var transacIdFormat = 100000
-              var ORFormat = 1000000
-              this.Payment.TransactionID = transacIdFormat
-              this.Payment.OrNo = ORFormat
-            }
-          },
-          reject: (err) => {
-            console.log(err)
-          }
-        },
+        // lastTransaction: {
+        //   ref: firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1),
+        //   objects: false,
+        //   resolve: (data) => {
+        //     if (data.length != 0) {
+        //       // has data
+        //       console.log('hey')
+        //       this.Payment.TransactionID = ++data[0].TransactionID
+        //       this.Payment.OrNo = ++data[0].OrNo
+        //     } else {
+        //       // empty Transactions
+        //       var transacIdFormat = 100000
+        //       var ORFormat = 1000000
+        //       this.Payment.TransactionID = transacIdFormat
+        //       this.Payment.OrNo = ORFormat
+        //     }
+        //   },
+        //   reject: (err) => {
+        //     console.log(err)
+        //   }
+        // },
         // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
         MemberData: firebaseDb.collection('MemberData'),
         testData: firebaseDb.collection('MemberData').where('Designation', '==', 'Driver')
@@ -618,12 +715,154 @@ export default {
     },
     methods: {
       async test () {
-        var a = parseInt(this.Payment.SavingsDeposit.replace(/\,/g,''))
-        console.log(this.currencyToNumber('200,000'))
+        firebaseDb.collection('MemberData').doc(this.Payment.MemberID).update({
+          isNewMember: false
+        }).then(() => {
+          console.log('true')
+        }).catch((err) => {
+          console.log(err)
+        })
         // let drivers = await this.getDrivers('NGTSC2020012')
       },
+      genTransactionID () {
+        return new Promise((resolve) => {
+          let query = firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1)
+          query.get().then(snapshot => {
+            if (!snapshot.empty) {
+              snapshot.forEach(doc => {
+                resolve(doc.data().TransactionID)
+              })
+            } else {
+              resolve(null)
+            }
+          })
+        })
+      },
+      genORNo () {
+        return new Promise((resolve) => {
+          let query = firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1)
+          query.get().then(snapshot => {
+            if (!snapshot.empty) {
+              snapshot.forEach(doc => {
+                resolve(doc.data().OrNo)
+              })
+            } else {
+              resolve(null)
+            }
+          })
+        })
+      },
+      confirmPayment () {
+        this.$q.dialog({
+           title: 'Confirm Payment',
+           message: 'Confirm Payment?',
+           cancel: true,
+           persistent: true
+        }).onOk(() => {
+          this.PayFee()
+        })
+      },
+      async PayFee () {
+        // format the payment
+        // save the payment to database
+        // unahin muna si driver pag nag bayad
+        // separate ung transactions id in every payment.
+        // for driver check if ung gusto lng bayaran is ung sakanya
+        // then save ung date for unpaid fee dun kay operator as well as for operator -> driver
+        let vm = this
+        var payment = {
+          MemberID: this.Payment.MemberID,
+          OrNo: this.Payment.OrNo,
+          TransactionID: this.Payment.TransactionID,
+          TransactionType: 'Payment',
+          Designation: this.MemberDetails.Designation,
+          MembershipFee: Number(this.Payment.MembershipFee),
+          ManagementFee: Number(this.Payment.ManagementFee),
+          ShareCapital: Number(this.Payment.ShareCapital),
+          SavingsDeposit: Number(this.Payment.SavingsDeposit),
+          Advances: Number(this.Payment.Advances),
+          OthersDes: this.Payment.OthersDes,
+          OthersAmount: Number(this.Payment.Others),
+          Operator: this.MemberDetails.Operator,
+          isIncludeOperator: this.isIncludeOthers,
+          paidForOperator: this.isIncludeOthers ? {
+            ManagementFee: Number(this.includeFee.ManagementFee),
+            ShareCapital: Number(this.includeFee.ShareCapital),
+            SavingsDeposit: Number(this.includeFee.SavingsDeposit),
+            Advances: Number(this.includeFee.Advances),
+          } : null,
+          Total: this.TotalAmount,
+          AmountPaid: this.AmountPaid,
+          timestamp: firefirestore.FieldValue.serverTimestamp()
+        }
+
+        console.log(payment, 'payment')
+
+        firebaseDb.collection('Transactions').add(payment)
+          .then(async () => {
+            this.$forceUpdate()
+            // if member is paid also for membership set isNewMember to false
+            if (payment.MembershipFee > 0) {
+              await firebaseDb.collection('MemberData').doc(this.Payment.MemberID).update({
+                isNewMember: false
+              })
+            }
+
+            // generate another payment for paying operator by the driver
+            let genTransactID = await this.genTransactionID()
+            let genORNo = await this.genORNo()
+            if (this.isIncludeOthers) {
+              let includeOperatorPayment = {
+                OrNo: ++genORNo,
+                MemberID: this.MemberDetails.Operator.MemberID,
+                TransactionID: ++genTransactID,
+                TransactionType: 'Payment',
+                Designation: 'Operator',
+                MembershipFee: 0,
+                ManagementFee: Number(this.includeFee.ManagementFee),
+                ShareCapital: Number(this.includeFee.ShareCapital),
+                SavingsDeposit: Number(this.includeFee.SavingsDeposit),
+                Advances: Number(this.includeFee.Advances),
+                OthersDes: 0,
+                OthersAmount: 0,
+                Total: this.getIncludeOperatorPaymentTotal,
+                timestamp: firefirestore.FieldValue.serverTimestamp()
+              }
+              // console.log(includeOperatorPayment, 'includeo peratorearsa')
+              firebaseDb.collection('Transactions').add(includeOperatorPayment)
+                .then(() => {
+                  vm.$q.notify({
+                    icon: 'info',
+                    color: 'positive',
+                    message: 'Payment Success'
+                  })
+                  // proceed to print out receipt
+                }).catch(err => {
+                  vm.$q.notify({
+                    icon: 'info',
+                    color: 'positive',
+                    message: 'An error occur'
+                  })
+                  console.log(err)
+                })
+            } else {
+              vm.$q.notify({
+                icon: 'info',
+                color: 'positive',
+                message: 'Payment Success'
+              })
+            }
+          }).catch(err => {
+            this.$q.notify({
+              icon: 'info',
+              color: 'negative',
+              message: err.message
+            })
+          })
+
+
+      },
       computeShareCapitalTotal (val) {
-        console.log(val, 'drivers')
         let ShareCapitalBaseFee = this.getShareCapitalBaseFee
 
         // number of driver * ShareOfStock + operator SC
@@ -631,20 +870,16 @@ export default {
       },
       OperatorDriverListOpt () {
         if (this.MemberDetails.Designation === 'Operator') {
-          console.log(this.Payment.MemberID)
-          console.log('is operator')
           let options = []
           this.getDrivers(this.Payment.MemberID).then((drivers) => {
-            console.log(drivers, 'drivers')
             let opts = drivers.map(d => {
               return {
                 label: d.LastName + ', ' + d.FirstName,
                 value: d.MemberID
               }
             })
-            this.optionsToReturn = opts
+            this.driverListOpt = opts
           })
-          console.log(options, 'options t oreturn')
         }
       },
       getDrivers (memberID) {
@@ -653,12 +888,10 @@ export default {
           let query = firebaseDb.collection('MemberData').where('Designation', '==', 'Driver').where('Operator.MemberID', '==', memberID)
           query.get().then(snapshot => {
             snapshot.forEach(doc => {
-              console.log(doc.id, 'id in doc')
               var passthis = {
                 MemberID: doc.id,
                 ...doc.data()
               }
-              console.log(passthis, 'passthis')
               datas.push(passthis)
             })
             resolve(datas)
@@ -734,7 +967,6 @@ export default {
         //     console.log("Error getting document:", error);
         // });
         // },
-
       PayFeeOperator () {
         this.Payment1.timestamp = firefirestore.FieldValue.serverTimestamp()
         var payment = {
@@ -822,6 +1054,21 @@ export default {
     },
     mounted () {
       this.datetoday()
+      this.$binding('lastTransaction', firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1))
+        .then(data => {
+          console.log('hey')
+          if (data.length != 0) {
+            // has data
+            this.Payment.TransactionID = ++data[0].TransactionID
+            this.Payment.OrNo = ++data[0].OrNo
+          } else {
+            // empty Transactions
+            var transacIdFormat = 100000
+            var ORFormat = 1000000
+            this.Payment.TransactionID = transacIdFormat
+            this.Payment.OrNo = ORFormat
+          }
+        })
       // this.$binding('Transactions', firebaseDb.collection('Transactions').doc('2020-04-07').collection('Payment'))
       //   .then((doc) => {
       //     console.log(doc, 'doc')
@@ -852,19 +1099,46 @@ export default {
         return opt
         // Object.freeze(options)
       },
+      getIncludeOperatorPaymentTotal () {
+        if (this.isIncludeOthers) {
+          return (
+            this.currencyToNumber(this.includeFee.ManagementFee) +
+            this.currencyToNumber(this.includeFee.ShareCapital) +
+            this.currencyToNumber(this.includeFee.SavingsDeposit) +
+            this.currencyToNumber(this.includeFee.Advances)
+          )
+        } else {
+          return 0
+        }
+      },
       TotalAmount: {
         get () {
           return this.Payment.Total
         },
         set (val) {
-          this.Payment.Total = (
-            this.currencyToNumber(this.Payment.MembershipFee) +
-            this.currencyToNumber(this.Payment.ManagementFee) +
-            this.currencyToNumber(this.Payment.ShareCapital) +
-            this.currencyToNumber(this.Payment.Advances) +
-            this.currencyToNumber(this.Payment.SavingsDeposit) +
-            this.currencyToNumber(this.Payment.Others)
-          )
+          if (this.isIncludeOthers) {
+            this.Payment.Total = (
+              this.currencyToNumber(this.includeFee.ManagementFee) +
+              this.currencyToNumber(this.includeFee.ShareCapital) +
+              this.currencyToNumber(this.includeFee.SavingsDeposit) +
+              this.currencyToNumber(this.includeFee.Advances) +
+              this.currencyToNumber(this.Payment.MembershipFee) +
+              this.currencyToNumber(this.Payment.ManagementFee) +
+              this.currencyToNumber(this.Payment.ShareCapital) +
+              this.currencyToNumber(this.Payment.SavingsDeposit) +
+              this.currencyToNumber(this.Payment.Advances) +
+              this.currencyToNumber(this.Payment.Others)
+            )
+          } else {
+            this.Payment.Total = (
+              this.currencyToNumber(this.Payment.MembershipFee) +
+              this.currencyToNumber(this.Payment.ManagementFee) +
+              this.currencyToNumber(this.Payment.ShareCapital) +
+              this.currencyToNumber(this.Payment.Advances) +
+              this.currencyToNumber(this.Payment.SavingsDeposit) +
+              this.currencyToNumber(this.Payment.Others)
+            )
+          }
         }
       },
       Total1 () {
