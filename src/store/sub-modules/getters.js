@@ -13,3 +13,12 @@ export const currencyToNumber = (state) => (value) => {
   let val = value.toString()
   return parseInt(val.replace(/\,/g,''))
 }
+
+export const formatStringDate = (state) => (dateParam) => {
+  let dateVal = new Date(dateParam)
+  var month = ('0' + (dateVal.getMonth() + 1)).slice(-2);
+  var date = ('0' + dateVal.getDate()).slice(-2);
+  var year = dateVal.getFullYear();
+  var formattedDate = year + '/' + month + '/' + date;
+  return formattedDate
+}
