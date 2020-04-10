@@ -16,7 +16,7 @@
                             <q-btn fab color="secondary" @click="scanner=!scanner"
                             style="height: 70px; width: 70px;" >QR Scanner </q-btn>
                         </q-page-sticky>
-                        <!-- <q-btn label="test" @click="test" /> -->
+                        <q-btn label="test" @click="test" />
                      </div>
 
                     <!-- Start of Transaction ID -->
@@ -168,6 +168,7 @@
                          v-if="!isPayonlyMembership"
                           v-model="isIncludeOthers"
                           label="Include Operator"
+                          @input="onIncludeOperator"
                           />
 
                           <div v-if="isIncludeOthers">
@@ -226,7 +227,7 @@
                                <!-- End of include Savings Deposit -->
 
                                <!-- Start of Advances -->
-                              <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
+                              <div v-if="operatorHasCashAdvance" class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
                                 <div class="q-pa-xs">
                                   <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.Advances" label="Advances to Members" mask="######" /> -->
 
@@ -329,7 +330,7 @@
                        <!-- End of include Savings Deposit -->
 
                         <!-- Start of include Advances -->
-                       <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
+                       <div v-if="hasCashAdvance && operatorHasCashAdvance" class="col-lg-6 col-md-6 col-sm-12 col-xs-12 q-mt-sm">
                          <div class="q-pa-xs">
                            <!-- <q-input prefix="₱" dense color="teal-4" type="number" v-model="Payment.Advances" label="Advances to Members" mask="######" /> -->
 
@@ -681,12 +682,14 @@ export default {
         },
         driverListOpt: [],
         isIncludeOthers: false,
+        hasCashAdvance: false,
+        operatorHasCashAdvance: false,
       }
     },
     firestore () {
       return {
         // Doc
-        // Transactions: firebaseDb.collection('Transactions').doc('2020-04-07').collection('Payment'),
+        Transactions: firebaseDb.collection('Transactions'),
         // lastTransaction: {
         //   ref: firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1),
         //   objects: false,
@@ -710,19 +713,61 @@ export default {
         // },
         // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
         MemberData: firebaseDb.collection('MemberData'),
-        testData: firebaseDb.collection('MemberData').where('Designation', '==', 'Driver')
+        testData: firebaseDb.collection('MemberData').doc('NGTSC2020000')
       }
     },
     methods: {
       async test () {
-        firebaseDb.collection('MemberData').doc(this.Payment.MemberID).update({
-          isNewMember: false
-        }).then(() => {
-          console.log('true')
-        }).catch((err) => {
-          console.log(err)
-        })
-        // let drivers = await this.getDrivers('NGTSC2020012')
+        // this.Transactions.forEach(async (t) => {
+        //   console.log(t.MemberID, 't')
+        //   // add paid fees to his account
+        //
+        //   await firebaseDb.collection('MemberData').doc(t.MemberID).update({
+        //     ManagementFee: firefirestore.FieldValue.increment(t.ManagementFee),
+        //     ShareCapital: firefirestore.FieldValue.increment(t.ShareCapital),
+        //     SavingsDeposit: firefirestore.FieldValue.increment(t.SavingsDeposit),
+        //     // decrement if the member has cash advance
+        //   }).then(() => {
+        //     console.log('done')
+        //   }).catch((err) => {
+        //     console.log(err)
+        //     return
+        //   })
+        // })
+
+        // console.log(this.testData)
+
+        // this.$firestore.testData.update({
+        //   Advances: firefirestore.FieldValue.iEqual(0)
+        // }).then(() => {
+        //   console.log('done')
+        // })
+
+
+        var t = 100
+        console.log(~Math.abs(100), 'asdf')
+
+      },
+      onIncludeOperator (val) {
+        if (val) {
+          // check if operator has cash advance
+          var operatorID = this.MemberDetails.Operator.MemberID
+          let operator = this.MemberData.filter(m => {
+            return m['.key'] === operatorID
+
+          })
+          console.log(operatorID)
+
+          if (operator[0].Advances > 0) {
+            this.operatorHasCashAdvance = true
+          } else {
+            this.operatorHasCashAdvance = false
+          }
+
+        } else {
+          this.operatorHasCashAdvance = false
+        }
+
       },
       genTransactionID () {
         return new Promise((resolve) => {
@@ -801,6 +846,20 @@ export default {
         firebaseDb.collection('Transactions').add(payment)
           .then(async () => {
             this.$forceUpdate()
+
+            // after succesful payment increment fee paid to his account
+            await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
+              ManagementFee: firefirestore.FieldValue.increment(payment.ManagementFee),
+              ShareCapital: firefirestore.FieldValue.increment(payment.ShareCapital),
+              SavingsDeposit: firefirestore.FieldValue.increment(payment.SavingsDeposit)
+            })
+
+            // check if has cash advance then decrement it
+            if (this.hasCashAdvance) {
+              await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
+                Advances: firefirestore.FieldValue.increment(-Math.abs(payment.Advances))
+              })
+            }
             // if member is paid also for membership set isNewMember to false
             if (payment.MembershipFee > 0) {
               await firebaseDb.collection('MemberData').doc(this.Payment.MemberID).update({
@@ -808,10 +867,11 @@ export default {
               })
             }
 
-            // generate another payment for paying operator by the driver
-            let genTransactID = await this.genTransactionID()
-            let genORNo = await this.genORNo()
+
             if (this.isIncludeOthers) {
+              // generate another payment for paying operator by the driver
+              let genTransactID = await this.genTransactionID()
+              let genORNo = await this.genORNo()
               let includeOperatorPayment = {
                 OrNo: ++genORNo,
                 MemberID: this.MemberDetails.Operator.MemberID,
@@ -830,7 +890,18 @@ export default {
               }
               // console.log(includeOperatorPayment, 'includeo peratorearsa')
               firebaseDb.collection('Transactions').add(includeOperatorPayment)
-                .then(() => {
+                .then(async () => {
+                  await firebaseDb.collection('MemberData').doc(includeOperatorPayment.MemberID).update({
+                    ManagementFee: firefirestore.FieldValue.increment(includeOperatorPayment.ManagementFee),
+                    ShareCapital: firefirestore.FieldValue.increment(includeOperatorPayment.ShareCapital),
+                    SavingsDeposit: firefirestore.FieldValue.increment(includeOperatorPayment.SavingsDeposit)
+                  })
+
+                  if (this.operatorHasCashAdvance) {
+                    await firebaseDb.collection('MemberData').doc(includeOperatorPayment.MemberID).update({
+                      Advances: firefirestore.FieldValue.increment(-Math.abs(includeOperatorPayment.Advances))
+                    })
+                  }
                   vm.$q.notify({
                     icon: 'info',
                     color: 'positive',
@@ -923,6 +994,7 @@ export default {
         this.MemberDetails.Designation = member.Designation
         this.MemberDetails.isNewMember = member.isNewMember
 
+
         // if member is new member
         if (!member.isNewMember) {
           this.Payment.MembershipFee = 0
@@ -930,10 +1002,17 @@ export default {
           this.Payment.MembershipFee = 500
         }
 
+        // check if has cash advance
+        if (member.Advances > 0) {
+          this.hasCashAdvance = true
+        } else {
+          this.hasCashAdvance = false
+        }
+
         // if designation is operator or driver
         if (this.MemberDetails.Designation === 'Operator') {
           this.Payment.ManagementFee = 65
-          this.OperatorDriverListOpt()
+          // this.OperatorDriverListOpt()
         } else {
           this.Payment.ManagementFee = 15
           this.MemberDetails.Operator = member.Operator

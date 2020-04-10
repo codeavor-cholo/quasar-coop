@@ -201,6 +201,10 @@ export default {
           this.$firestore.MemberData.doc(id).set({
             ...this.PenReg,
             isNewMember: true,
+            ManagementFee: 0,
+            ShareCapital: 0,
+            SavingsDeposit: 0,
+            Advances: 0,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
           .then(() => {
@@ -229,6 +233,10 @@ export default {
           this.$firestore.MemberData.doc(id).set({
             ...this.PenReg,
             isNewMember: true,
+            ManagementFee: 0,
+            ShareCapital: 0,
+            SavingsDeposit: 0,
+            Advances: 0,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
           .then(() => {
