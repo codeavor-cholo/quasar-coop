@@ -132,8 +132,19 @@
                   <q-item-section avatar>
                     <q-icon name="mdi-jeepney" />
                   </q-item-section>
-                    <q-item-section class="text-uppercase">MEMBERS</q-item-section>
+                  <q-item-section class="text-uppercase">MEMBERS</q-item-section>
                 </q-item>
+                <q-item
+                     expand-separator
+                    :content-inset-level="0.5"
+                     to="/admin/monitoring"
+                     exact
+                     >
+                   <q-item-section avatar>
+                     <q-icon name="mdi-jeepney" />
+                   </q-item-section>
+                   <q-item-section class="text-uppercase">Daily Monitoring</q-item-section>
+                 </q-item>
             </q-expansion-item>
             <!-- End of Tracking -->
             <q-expansion-item

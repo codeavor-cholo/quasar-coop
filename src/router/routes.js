@@ -8,7 +8,7 @@ const routes = [
       { path: '/about', component: () => import('pages/PublicPages/About.vue') },
       { path: '/preregister', component: () => import('pages/PublicPages/Preregister.vue') },
       { path: '/services', component: () => import('pages/PublicPages/Services.vue') },
-      { path: '/query', component: () => import('pages/PublicPages/QueryTest.vue') }    
+      { path: '/query', component: () => import('pages/PublicPages/QueryTest.vue') }
     ]
   },
   {
@@ -17,18 +17,18 @@ const routes = [
     meta: {isMember: true},
     component: () => import('layouts/MemberLayout.vue'),
     children: [
-      { 
-        path: '/member/dashboard/:penRegId', 
+      {
+        path: '/member/dashboard/:penRegId',
         props: true,
-        component: () => import('pages/MemberPages/Dashboard.vue') 
+        component: () => import('pages/MemberPages/Dashboard.vue')
       },
-      { 
-        path: '/member/profile/:penRegId', 
+      {
+        path: '/member/profile/:penRegId',
         props: true,
-        component: () => import('pages/MemberPages/Profile.vue') 
+        component: () => import('pages/MemberPages/Profile.vue')
       },
-      { 
-        path: '/member/transactions/:penRegId', 
+      {
+        path: '/member/transactions/:penRegId',
         props: true,
         component: () => import('pages/MemberPages/Transactions.vue')
       }
@@ -40,20 +40,20 @@ const routes = [
     meta: {isCollector: true},
     component: () => import('layouts/CollectorLayout.vue'),
     children: [
-      { 
-        path: '/collector/dashboard', 
-        component: () => import('pages/CollectorPages/DashboardCollector.vue') 
+      {
+        path: '/collector/dashboard',
+        component: () => import('pages/CollectorPages/DashboardCollector.vue')
       },
-      { 
-        path: '/collector/addpayment', 
-        component: () => import('pages/CollectorPages/AddPaymentCollector.vue') 
+      {
+        path: '/collector/addpayment',
+        component: () => import('pages/CollectorPages/AddPaymentCollector.vue')
       }
     ]
   },
   {
-    path: '/login',    
+    path: '/login',
     meta: {requiresAuth: true},
-    component: () => import('pages/PublicPages/Login.vue') 
+    component: () => import('pages/PublicPages/Login.vue')
   },
   {
     path: "/admin",
@@ -106,6 +106,10 @@ const routes = [
       {
         path: "/admin/billings",
         component: () => import("pages/AdminPages/Billings.vue")
+      },
+      {
+        path: "/admin/monitoring",
+        component: () => import("pages/AdminPages/DailyMonitoring.vue")
       },
       {
         path: "/admin/addstaff",
