@@ -1,35 +1,83 @@
 <template>
   <div>
     <q-table
-      title="Unpaid Memberssss"
-      :data="nonoperatingdata"
+      title="Unpaid Members"
+      :data="UnpaidMembers"
       :columns="nonoperatings"
-      row-key="nonoperatingdesignation"
-    />
+      :loading="tableLoading"
+      :pagination.sync="pagination"
+      row-key="['.key]"
+    >
+      <template v-slot:body-cell-actions="props">
+        <q-tr :props="props">
+          <q-td key="name" :props="props">
+            <q-btn dense color="primary" no-caps>Pay Fee</q-btn>
+            {{ props.row.name }}
+          </q-td>
+        </q-tr>
+      </template>
+    </q-table>
+    <!-- <q-btn label="test" @click="test"></q-btn> -->
   </div>
 </template>
 
 <script>
+import { firebaseDb } from 'boot/firebase'
+import { differenceBy } from 'lodash'
+
 export default {
-  data(){
-    return{
+  async mounted () {
+    this.tableLoading = true
+    var datenow = new Date();
+    datenow.setHours(0, 0, 0, 0)
+    await this.$binding('TodayTransactions', firebaseDb.collection('Transactions').where('timestamp', '>', datenow).where('TransactionType', '==', 'Payment'))
+      .then((trans) => {
+        
+        this.$binding('UnpaidMembers', firebaseDb.collection('MemberData'))
+          .then((data) => {
+            
+            let transactions = trans
+            let members = data
+
+            for (var i = 0; i < transactions.length; i++) {
+              for  (var j = 0; j < members.length; j++) {
+                if (transactions[i].MemberID === members[j]['.key']) {
+                  members.splice(i, 1)
+                }
+              }
+            }
+            this.tableLoading = false
+            return members
+          })
+      })
+  },
+  data () { 
+    return {
+      pagination: {
+        sortBy: 'desc',
+        descending: false,
+        rowsPerPage: 10
+        // rowsNumber: xx if getting data from a server
+      },
+      tableLoading: false,
+      UnpaidMembers: [], // this tends to prevent undentified instance when loading
       // Start of Operating Units //
-          nonoperatings: [
-            {
-              name: 'memberid',
-              required: true,
-              label: 'MemberID',
-              align: 'left',
-              field: row => row.memberid,
-              format: val => `${val}`,
-              sortable: true
-            },
-            { name: 'designation', align: 'center', label: 'Designation', field: 'designation', sortable: true },
-            { name: 'lastname', align: 'center', label: 'Last name', field: 'lastname', sortable: true },
-            { name: 'firstname', align: 'center', label: 'First name', field: 'firstname', sortable: true },
-            { name: 'licenseplate', align: 'center', label: 'License Plate', field: 'licenseplate', sortable: true },
-            { name: 'date', align: 'center', label: 'Date', field: 'date', sortable: true}
-          ],
+      nonoperatings: [
+        {
+          name: 'memberid',
+          required: true,
+          label: 'MemberID',
+          align: 'left',
+          field: row => row['.key'],
+          format: val => `${val}`,
+          sortable: true
+        },
+        { name: 'designation', align: 'center', label: 'Designation', field: 'Designation', sortable: true },
+        { name: 'lastname', align: 'center', label: 'Last name', field: 'LastName', sortable: true },
+        { name: 'firstname', align: 'center', label: 'First name', field: 'FirstName', sortable: true },
+        { name: 'licenseplate', align: 'center', label: 'License Plate', field: 'licenseplate', sortable: true },
+        { name: 'actions', align: 'center'}
+      ],
       nonoperatingdata:[
         {
           memberid: 'NGTSC2020001',
@@ -40,7 +88,7 @@ export default {
           date: '12-13-1989',
         },
         {
-           memberid: 'NGTSC2020002',
+            memberid: 'NGTSC2020002',
           designation: 'Driver',
           lastname: 'Hathaway',
           firstname: 'Anne',
@@ -48,7 +96,7 @@ export default {
           date: '11-12-1982',
         },
         {
-           memberid: 'NGTSC2020003',
+            memberid: 'NGTSC2020003',
           designation: 'Driver',
           lastname: 'ABC',
           firstname: 'DEF',
@@ -56,7 +104,7 @@ export default {
           date: '11-12-1982',
         },
         {
-           memberid: 'NGTSC2020004',
+            memberid: 'NGTSC2020004',
           designation: 'Driver',
           lastname: 'QWE',
           firstname: 'ZXC',
@@ -64,7 +112,7 @@ export default {
           date: '11-12-1982',
         },
         {
-           memberid: 'NGTSC2020005',
+            memberid: 'NGTSC2020005',
           designation: 'Operator',
           lastname: 'James',
           firstname: 'Lebron',
@@ -72,85 +120,39 @@ export default {
           date: '11-12-1982',
         },
         {
-           memberid: 'NGTSC2020006',
+          memberid: 'NGTSC2020006',
           designation: 'Driver',
           lastname: 'De leon',
           firstname: 'Jane',
           licenseplate: 'ANN-1982',
           date: '11-12-1982',
         },
-      ],
-       // End of Operating Units //
-       // Start of Non-Operating Units //
-    //       nonoperatings: [
-    //         {
-    //           name: 'designation',
-    //           required: true,
-    //           label: 'Designation',
-    //           align: 'left',
-    //           field: row => row.designation,
-    //           format: val => `${val}`,
-    //           sortable: true
-    //         },
-    //         { name: 'lastname', align: 'center', label: 'Last name', field: 'lastname', sortable: true },
-    //         { name: 'firstname', align: 'center', label: 'First name', field: 'firstname', sortable: true },
-    //         { name: 'licenseplate', align: 'center', label: 'License Plate', field: 'licenseplate', sortable: true },
-    //         { name: 'date', align: 'center', label: 'Date', field: 'date' }
-    //       ],
-    //   nonoperatingdata:[
-    //     {
-    //       designation: 'Operator',
-    //       lastname: 'Taylor',
-    //       firstname: 'Swift',
-    //       licenseplate: 'TAS-1989',
-    //       date: '12-13-1989',
-    //     },
-    //     {
-    //       designation: 'Operator',
-    //       lastname: 'Hathaway',
-    //       firstname: 'Anne',
-    //       licenseplate: 'ANN-1982',
-    //       date: '11-12-1982',
-    //     }
-    //   ],
-    //    // End of Non-Operating Units //
-    //    // Start of Coding Units //
-    //       codingoperatings: [
-    //         {
-    //           name: 'designation',
-    //           required: true,
-    //           label: 'Designation',
-    //           align: 'left',
-    //           field: row => row.designation,
-    //           format: val => `${val}`,
-    //           sortable: true
-    //         },
-    //         { name: 'lastname', align: 'center', label: 'Last name', field: 'lastname', sortable: true },
-    //         { name: 'firstname', align: 'center', label: 'First name', field: 'firstname', sortable: true },
-    //         { name: 'licenseplate', align: 'center', label: 'License Plate', field: 'licenseplate', sortable: true },
-    //         { name: 'date', align: 'center', label: 'Date', field: 'date' }
-    //       ],
-    //   codingdata:[
-    //     {
-    //       designation: 'Operator',
-    //       lastname: 'Taylor',
-    //       firstname: 'Swift',
-    //       licenseplate: 'TAS-1989',
-    //       date: '12-13-1989',
-    //     },
-    //     {
-    //       designation: 'Operator',
-    //       lastname: 'Hathaway',
-    //       firstname: 'Anne',
-    //       licenseplate: 'ANN-1982',
-    //       date: '11-12-1982',
-    //     }
-    //   ]
-    //    // End of Coding Units //
-   }
+      ]
+    }
+  }, // end of data
+  methods: {
+    test () {
+      // get all the transactions this day
+      // compare the transaction today in membersdata
+      // console.log(this.TodayTransactions)
+      // console.log(this.MembersData)
+      // let transactions = this.TodayTransactions
+      // let members = this.MembersData
+
+      // let unpaidMembers = []
+
+      // for (var i = 0; i < transactions.length; i++) {
+      //   for  (var j = 0; j < members.length; j++) {
+      //     if (transactions[i].MemberID === members[j]['.key']) {
+      //       members.splice(i, 1)
+      //     }
+      //   }
+      // }
+      console.log(this.UnpaidMembers, 'um')
+
+      
+    }
   }
 }
 </script>
 
-<style lang="css" scoped>
-</style>

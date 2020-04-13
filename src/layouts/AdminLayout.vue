@@ -141,7 +141,7 @@
                      exact
                      >
                    <q-item-section avatar>
-                     <q-icon name="mdi-jeepney" />
+                     <q-icon name="mdi-account-search" />
                    </q-item-section>
                    <q-item-section class="text-uppercase">Daily Monitoring</q-item-section>
                  </q-item>

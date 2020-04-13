@@ -12,7 +12,7 @@
        narrow-indicator
      >
        <q-tab name="unpaidTab" label="Unpaid" />
-       <q-tab name="paid" label="Paid" />
+       <q-tab name="paidTab" label="Paid" />
      </q-tabs>
 
      <q-separator />
@@ -22,9 +22,8 @@
          <unpaid></unpaid>
        </q-tab-panel>
 
-       <q-tab-panel name="paid">
-         <div class="text-h6">Alarms</div>
-         Lorem ipsum dolor sit amet consectetur adipisicing elit.
+       <q-tab-panel name="paidTab">
+         <paid></paid>
        </q-tab-panel>
 
      </q-tab-panels>
@@ -36,10 +35,12 @@
 
 <script>
 import Unpaid from '../../components/Admin/Monitoring/UnpaidMembers.vue'
+import Paid from '../../components/Admin/Monitoring/PaidMembers.vue'
 
 export default {
   components: {
-    Unpaid
+    Unpaid,
+    Paid
   },
   data () {
     return {
