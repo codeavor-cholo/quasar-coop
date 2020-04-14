@@ -383,9 +383,11 @@ export default {
         if(this.isOperatorFound == true) {
           this.PreRegData.Operator = {
             MemberID: this.OperatorDetails['.key'],
-            Name: this.OperatorDetails.FirstName + this.OperatorDetails.LastName
+            FirstName: this.OperatorDetails.FirstName,
+            LastName: this.OperatorDetails.LastName,
+            FullName: this.OperatorDetails.LastName + ', ' + this.OperatorDetails.FirstName
           }
-        }else{
+        } else {
           this.$q.notify({
             color: 'red-4',
             textColor: 'white',
@@ -400,7 +402,7 @@ export default {
       let id = ''
       let childurl = ''
       this.PreRegData.timestamp = firefirestore.FieldValue.serverTimestamp()
-      console.log(this.PreRegData)
+      // console.log(this.PreRegData)
       this.$firestore.PreReg.add(this.PreRegData).then((doc) => {
         id = doc.id
         return id
