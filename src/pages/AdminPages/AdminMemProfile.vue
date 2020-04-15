@@ -558,7 +558,7 @@ export default {
             DriverData: firebaseDb.collection('MemberData').where('Designation', '==', 'Driver'),
             Units: firebaseDb.collection('Units'),
             Transactions: firebaseDb.collection('Transactions'),
-            Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
+            // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
         }
       },
     methods: {

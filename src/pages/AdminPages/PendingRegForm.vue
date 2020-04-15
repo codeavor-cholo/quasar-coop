@@ -1,6 +1,7 @@
 <template>
 <div class="q-pa-md">
    <div class="q-pa-md doc-container" id="printdiv">
+     <q-btn @click="test">test</q-btn>
       <div class="row  justify-center">
         <div
           class="col-xs-12 col-sm-12 col-md-10 q-pa-md"
@@ -154,7 +155,7 @@
 </template>
 
 <script>
-import { firebaseDb, firefirestore } from 'boot/firebase';
+import { firebaseDb, firefirestore, Auth2 } from 'boot/firebase';
 // import { mapActions } from 'vuex'
 
 export default {
@@ -207,13 +208,17 @@ export default {
             Advances: 0,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
-          .then(() => {
+          .then(async () => {
+            // create login account
+            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName)
+            // delete the registrationo in pending registration collection
             this.$firestore.PenReg.delete()
             this.$q.notify({
               icon: 'info',
               message: 'Approved',
               color: 'positive'
             })
+            // load the member form
             this.loadPreReg(id)
           })
           .catch(err => {
@@ -239,7 +244,10 @@ export default {
             Advances: 0,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
-          .then(() => {
+          .then(async () => {
+            // create login account
+            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName)
+            
             this.$firestore.PenReg.delete()
             this.$q.notify({
               icon: 'info',
@@ -274,7 +282,38 @@ export default {
     },
     loadPreReg(id) {
       this.$router.push('/admin/profile/' + id)
-    }
+    },
+    test () {
+      // NGTSC2020012
+    
+      this.createLoginUser('NGTSC2020012', 'operator', 'dark', 'siege')
+    },
+    createLoginUser (memberID, designation, firstName, lastName) {
+      return new Promise(async (resolve) => {
+        const email = memberID + '@coop.com'
+        const password = Math.random().toString(36).slice(-6)
+        Auth2.createUserWithEmailAndPassword(email, password)
+          .then(async (data) => {
+            console.log(data, 'data')
+            const userID = data.uid
+            await firebaseDb.collection('Users').doc(data.user.uid).set({
+              Email: email,
+              Designation: designation,
+              FirstName: firstName,
+              LastName: lastName,
+              MemberID: memberID
+            }).then((doc) => {
+              resolve(doc)
+            }).catch((err) => {
+              console.log(err)
+            })
+            
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      })
+    },
     // printDiv(divName){
 		// 	const prtHtml = document.getElementById(divName).innerHTML;
 
