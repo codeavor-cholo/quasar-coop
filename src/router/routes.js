@@ -47,7 +47,15 @@ const routes = [
       {
         path: '/collector/addpayment',
         component: () => import('pages/CollectorPages/AddPaymentCollector.vue')
-      }
+      },
+      {
+        path: '/collector/dailycollections',
+        component: () => import('pages/CollectorPages/CollectorDailyCollections.vue')
+      },
+      {
+        path: '/collector/membersmonitor',
+        component: () => import('pages/CollectorPages/MembersMonitoring.vue')
+      },
     ]
   },
   {
@@ -94,6 +102,10 @@ const routes = [
       {
         path: "/admin/allpayment",
         component: () => import("pages/AdminPages/AllPayment.vue")
+      },
+      {
+        path: "/admin/applications",
+        component: () => import("pages/AdminPages/Applications.vue")
       },
       {
         path: "/admin/savings",

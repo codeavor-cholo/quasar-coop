@@ -16,7 +16,7 @@
                             <q-btn fab color="secondary" @click="scanner=!scanner"
                             style="height: 70px; width: 70px;" >QR Scanner </q-btn>
                         </q-page-sticky>
-                        <q-btn label="test" @click="test" />
+                        <!-- <q-btn label="test" @click="test" /> -->
                      </div>
 
                     <!-- Start of Transaction ID -->
