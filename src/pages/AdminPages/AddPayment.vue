@@ -622,6 +622,7 @@ Vue.use(VueQrcodeReader);
 export default {
     data () {
       return {
+        step: 1,
         page: 1,
         scanner: false,
         Payment: {
