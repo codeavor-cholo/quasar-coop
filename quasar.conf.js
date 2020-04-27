@@ -9,7 +9,8 @@ module.exports = function (ctx) {
     boot: [
       'axios',
       'firebase',
-      'vue-currency'
+      'vue-currency',
+      'momentjs'
     ],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
