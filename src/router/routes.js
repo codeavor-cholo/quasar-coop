@@ -95,12 +95,12 @@ const routes = [
         path: "/admin/allmember",
         component: () => import("pages/AdminPages/AllMember.vue")
       },
+      // {
+      //   path: "/admin/addpayment",
+      //   component: () => import("pages/AdminPages/AddPayment.vue")
+      // },
       {
         path: "/admin/addpayment",
-        component: () => import("pages/AdminPages/AddPayment.vue")
-      },
-      {
-        path: "/admin/addpaymentnew",
         component: () => import("pages/AdminPages/AddPaymentNew.vue")
       },
       {
