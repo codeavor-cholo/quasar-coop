@@ -160,7 +160,7 @@ export default {
             WithdrawalApplications: [],
             drawer: false,
             selected: {},
-            tab: 'Withdraw Requests',
+            tab: 'Member Savings',
             splitterModel: 20,
             filter: '',
             pagination: {
