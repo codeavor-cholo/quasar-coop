@@ -15,7 +15,7 @@ const routes = [
     path: '/dashboard',
     redirect: '/member/dashboard',
     meta: {isMember: true},
-    component: () => import('layouts/MemberLayout.vue'),
+    component: () => import('layouts/NewMemberLayout.vue'),
     children: [
       {
         path: '/member/dashboard/:penRegId',
@@ -90,6 +90,10 @@ const routes = [
       {
         path: "/admin/addpayment",
         component: () => import("pages/AdminPages/AddPayment.vue")
+      },
+      {
+        path: "/admin/addpaymentnew",
+        component: () => import("pages/AdminPages/AddPaymentNew.vue")
       },
       {
         path: "/admin/allpayment",
