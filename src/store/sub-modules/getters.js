@@ -1,3 +1,6 @@
+import { firebaseDb } from 'boot/firebase'
+
+
 export const getPlainValue = (state) => (dataObject) => {
   var obj = JSON.parse(JSON.stringify(dataObject));
   Object.keys(obj).reduce(function (obj, key) {
@@ -21,4 +24,35 @@ export const formatStringDate = (state) => (dateParam) => {
   var year = dateVal.getFullYear();
   var formattedDate = year + '/' + month + '/' + date;
   return formattedDate
+}
+
+
+export function genTransactionID () {
+  return new Promise((resolve) => {
+    let query = firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1)
+    query.get().then(snapshot => {
+      if (!snapshot.empty) {
+        snapshot.forEach(doc => {
+          resolve(doc.data().TransactionID)
+        })
+      } else {
+        resolve(null)
+      }
+    })
+  })
+}
+
+export function genORNo () {
+  return new Promise((resolve) => {
+    let query = firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1)
+    query.get().then(snapshot => {
+      if (!snapshot.empty) {
+        snapshot.forEach(doc => {
+          resolve(doc.data().OrNo)
+        })
+      } else {
+        resolve(null)
+      }
+    })
+  })
 }

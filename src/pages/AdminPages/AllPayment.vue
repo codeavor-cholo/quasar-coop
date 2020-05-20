@@ -50,11 +50,11 @@
       </div>
         <tbody v-else>
           <tr v-for="(data, id) in Transactions" :key="id">
-            <td class="text-left">{{data.MemberID}}</td>
-            <td class="text-left">{{data.TransactionID}}</td>
-            <td class="text-left">{{data.OrNo}}</td>
-            <td class="text-left">{{data.Total}}</td>
-            <td class="text-left">{{data.timestamp.toDate()}}</td>
+            <td class="text-left">{{ data.MemberID }}</td>
+            <td class="text-left">{{ data.TransactionID }}</td>
+            <td class="text-left">{{ data.OrNo }}</td>
+            <td class="text-left">{{ data.Total }}</td>
+            <td class="text-left">{{ data.timestamp.toDate() }}</td>
 
             <td class="text-left">
               <q-btn flat
@@ -86,12 +86,12 @@ export default {
     }
   },
   firestore () {
-        return {
-            // Doc
-            lastTransaction: firebaseDb.collection('Transactions').orderBy('timestamp', 'asc').limit(1),
-            firstTransaction: firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1)
-        }
-      },
+    return {
+        // Doc
+        lastTransaction: firebaseDb.collection('Transactions').orderBy('timestamp', 'asc').limit(1),
+        firstTransaction: firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1)
+      }
+    },
   methods: {
 
     test () {

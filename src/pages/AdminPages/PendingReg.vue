@@ -26,11 +26,11 @@
 
         <tbody>
           <tr v-for="(PendingReg, id) in PendingRegs" :key="id">
-            <td class="text-left">{{PendingReg.LastName}}</td>
-            <td class="text-left">{{PendingReg.FirstName}}</td>
-            <td class="text-left">{{PendingReg.Designation}}</td>
-            <td class="text-left">{{PendingReg.Phone}}</td>
-            <td class="text-left">{{PendingReg.Email}}</td>
+            <td class="text-left">{{ PendingReg.LastName }}</td>
+            <td class="text-left">{{ PendingReg.FirstName }}</td>
+            <td class="text-left">{{ PendingReg.Designation }}</td>
+            <td class="text-left">{{ PendingReg.Phone }}</td>
+            <td class="text-left">{{ PendingReg.Email }}</td>
             <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td>
           </tr>
         </tbody>
@@ -44,7 +44,7 @@
 import { firebaseDb } from 'boot/firebase';
 
 export default {
-    data(){
+    data () {
         return{
           loading: true
         }

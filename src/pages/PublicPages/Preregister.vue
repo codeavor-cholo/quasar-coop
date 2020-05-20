@@ -340,12 +340,18 @@ export default {
         return e['.key'] === optID
       })
 
-      console.log(optDetails)
+      
 
       if (optDetails.length != 0) {
-        this.OperatorDetails = optDetails[0]
-        this.loadingState = false
-        this.isOperatorFound = true
+        if (optDetails[0].Designation == 'Operator') {
+          this.OperatorDetails = optDetails[0]
+          this.loadingState = false
+          this.isOperatorFound = true
+        } else {
+          this.isOperatorFound = false
+          this.foundOperatorErrorMessage = 'Operator not found'
+          this.loadingState = false
+        }
       } else {
         this.isOperatorFound = false
         this.foundOperatorErrorMessage = 'Operator not found'

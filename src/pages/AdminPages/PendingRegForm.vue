@@ -1,6 +1,7 @@
 <template>
 <div class="q-pa-md">
    <div class="q-pa-md doc-container" id="printdiv">
+     <!-- <q-btn @click="test">test</q-btn> -->
       <div class="row  justify-center">
         <div
           class="col-xs-12 col-sm-12 col-md-10 q-pa-md"
@@ -154,7 +155,7 @@
 </template>
 
 <script>
-import { firebaseDb, firefirestore } from 'boot/firebase';
+import { firebaseDb, firefirestore, Auth2 } from 'boot/firebase';
 // import { mapActions } from 'vuex'
 
 export default {
@@ -162,7 +163,8 @@ export default {
     return {
        newMessage: '',
        PenReg: [],
-       mid: ''
+       mid: '',
+       loadingState: false
     }
   },
   props: ['penRegId'],
@@ -190,6 +192,7 @@ export default {
           while (s.length < size) s = '0' + s;
           return s
         }
+        this.loadingState = true
         if (this.MemberData.length != 0) {
           let lastMember = this.lastMember[0]
           var lastId = lastMember['.key']
@@ -207,13 +210,18 @@ export default {
             Advances: 0,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
-          .then(() => {
+          .then(async () => {
+            // create login account
+            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName)
+            // delete the registrationo in pending registration collection
             this.$firestore.PenReg.delete()
             this.$q.notify({
               icon: 'info',
               message: 'Approved',
               color: 'positive'
             })
+            this.loadingState = false
+            // load the member form
             this.loadPreReg(id)
           })
           .catch(err => {
@@ -239,13 +247,17 @@ export default {
             Advances: 0,
             timestamp: firefirestore.FieldValue.serverTimestamp()
           })
-          .then(() => {
+          .then(async () => {
+            // create login account
+            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName)
+            
             this.$firestore.PenReg.delete()
             this.$q.notify({
               icon: 'info',
               message: 'Approved',
               color: 'positive'
             })
+            this.loadingState = false
             this.loadPreReg(id)
           })
           .catch(err => {
@@ -274,7 +286,43 @@ export default {
     },
     loadPreReg(id) {
       this.$router.push('/admin/profile/' + id)
-    }
+    },
+    test () {
+      // NGTSC2020012
+      const query = firebaseDb.collection('MemberData').where('Operator.MemberID', '==', 'NGTSC2020012')
+      query.get().then((snapshot) => {
+        console.log(snapshot, 'snap')
+        snapshot.forEach(doc => {
+          console.log(doc.data(), 'data')
+        })
+      })
+    },
+    createLoginUser (memberID, designation, firstName, lastName) {
+      return new Promise(async (resolve) => {
+        const email = memberID + '@coop.com'
+        const password = Math.random().toString(36).slice(-6)
+        Auth2.createUserWithEmailAndPassword(email, password)
+          .then(async (data) => {
+            console.log(data, 'data')
+            const userID = data.uid
+            await firebaseDb.collection('Users').doc(data.user.uid).set({
+              Email: email,
+              Designation: designation,
+              FirstName: firstName,
+              LastName: lastName,
+              MemberID: memberID
+            }).then((doc) => {
+              resolve(doc)
+            }).catch((err) => {
+              console.log(err)
+            })
+            
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      })
+    },
     // printDiv(divName){
 		// 	const prtHtml = document.getElementById(divName).innerHTML;
 

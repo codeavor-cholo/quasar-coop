@@ -2,6 +2,7 @@
     <div class="q-pa-md">
         <q-card class="my-card" flat bordered>
         <!-- start toolbar -->
+        <!-- <q-btn @click="test">test</q-btn> -->
         <q-card-actions align="right">
           <q-btn @click="inception = true; OrTid();" flat v-if="MemberData.MembershipFee">
             Membership Fee: {{ MemberData.MembershipFee }}
@@ -398,111 +399,23 @@
   </q-card>
 </q-dialog> -->
 
-
+  <!-- Print ID Dialog -->
   <q-dialog v-model="qrdialog">
-    <q-card class="my-card" flat bordered>
-      <q-card-section horizontal id="idpage">
-      <div class="id-card-tag"></div>
-        <div class="id-card-tag-strip"></div>
-        <div class="id-card-hook"></div>
-        <div class="id-card-holder">
-          <div class="id-card">
-            <div class="header">
-                  <strong>New GSIS Transport Service Cooperative</strong>
-            </div>
-            <div class="photo">
-                  <img
-                  style="height:80px; width:80px; border-radius: 50%;"
-                  class="rounded-borders"
-                  :src="MemberData.imageUrlPro"
-                  />
-            </div>
-            <strong>{{MemberData.FirstName +' '+ MemberData.LastName }}</strong>
-            <br>
-            {{ penRegId }}
-            <div class="qr-code">
-                <qrcode :value="qrvalue" tag="img"></qrcode>
-            </div>
-            <h3>www.newgsistsc.com</h3>
-            <hr>
-            <p><strong>"PENGG"</strong>HOUSE,4th Floor, TC 11/729(4), Division Office Road <p>
-            <p>Near PMG Junction, Thiruvananthapuram Kerala, India <strong>695033</strong></p>
-            <p>Ph: 9446062493 | E-ail: info@onetikk.info</p>
-        </div>
-	    </div>
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-actions>
-        <q-btn color="secondary" class="full-width" @click="printDiv('idpage')">
-          Print
-        </q-btn>
-      </q-card-actions>
-
-    </q-card>
+    <print-id 
+    :MemberData="MemberData" 
+    :penRegId="penRegId" 
+    :qrvalue="qrvalue"
+    ref="printIdRef"></print-id>
   </q-dialog>
 
-    <q-dialog v-model="contract">
-      <q-card>
-        <q-card-section>
-        <div class="bg-white">
-            <q-form
-              class="q-gutter-md"
-            >
-              <p>&nbsp;</p>
-              <h6 class="h6">APPLICATION FOR MEMBERSHIP</h6>
+  <!-- Print Contract Dialog -->
+  <q-dialog v-model="contract">
+      
+    <print-contract :MemberData="MemberData"></print-contract>
+    
+  </q-dialog>
 
-              <span style="padding-left: 150px;">I hereby apply for membership to the <strong>New GSIS Transport Service Cooperative.</strong></span>
-                <br><span style="text-align: left;">&nbsp;I agree to obey faithfully its rules and regulations as set down in its Articles of Cooperation and Bylaws, the decisions of the general membership meetings and those of the Board of Directors.</span>
-                <br><span style="text-align: left; padding-left: 30px;">I hereby pledge to:</span>
-                <ol>
-                <li style="text-align: left; padding-left: 30px;">Attend and finish the prescribed membership education courses.</li>
-                <li style="text-align: left; padding-left: 30px;">Pay the membership fee of P 500.</li>
-                <li style="text-align: left; padding-left: 30px;">Participate in the following savings program:
-                <ol style="list-style-type: lower-alpha;">
-                <li style="text-align: left; padding-left: 30px;">Subscribed fo at least 18 shares and pay for them either in lumpsum or installment, under the terms and conditions prescribed in the Membership Agreement.</li>
-                <li style="text-align: left; padding-left: 30px;">Contribute daily/weekly/bi-monthly/monthly atleast 2% of my salary into the share capital; and</li>
-                <li style="text-align: left; padding-left: 30px;">Contribute into the share capital at least 50% of the annual interest on capital and patronage refund due me.</li>
-                </ol>
-                </li>
-                <li style="text-align: left; padding-left: 30px;">Comply with the membership and subscription agreement. For your consideration, I hereby attach my information sheet.</li>
-                </ol>
-                <br><span style="float:right"> .................................................</span>
-                <p style="float:right">Signature</p>
-
-                <!-- <p style="padding-left: 90px;">&nbsp;Date</p> -->
-                <p style="padding-left: 75px;"><span style="text-decoration: underline;"><span class="w8qArf">&nbsp; {{ datetodaydata }} </span><span class="LrzXr"> </span></span></p>
-                <p style="padding-left: 100px;">Date</p>
-                <p><span style="text-decoration: underline;"><span class="w8qArf">&nbsp;</span><span class="LrzXr">65-C Shorthorn St, Project 8, Quezon City</span></span></p>
-                <p style="padding-left: 100px;">Place</p>
-
-                <div id="personaldata">
-                <strong>PERSONAL DATA</strong>
-                  <br> <span style="float:left"> Name: {{ MemberData.FirstName }}  {{ MemberData.LastName }} </span>
-                      <span style="float:right">Civil Status:  {{ MemberData.CivilStatus }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-                      <br><span style="float:left"> BirthPlace: {{ MemberData.BirthPlace }} </span>
-                    <span style="float:right"> Date of birth:  {{ MemberData.BirthDate }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-                    <br><span style="float:left"> Present Address: {{ MemberData.Address }} </span>
-                  <br><span style="float:left"> Occupation: {{ MemberData.Occupation }} </span>
-                <br><span style="float:left"> Employer or office: {{ MemberData.EmployerCompany }} </span>
-                <span style="float:right"> Salary:  {{ MemberData.Salary }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-                <br><span style="float:left"> Other sources of income: {{ MemberData.OtherIncome }} </span>
-                <br><span style="float:left"> Nearest relative: {{ MemberData.RelativeName }} </span>
-                <span style="float:right"> Relationship: {{ MemberData.Relationship }} &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
-                <br><span style="float:left"> Number of Dependents: {{ MemberData.NoDependents }} </span>
-
-                <p>&nbsp;</p>
-                <h6 style="text-align: center;">EARN AND SAVE THE COOPERATIVE WAY</h6>
-              </div>
-            </q-form>
-        </div>
-        </q-card-section>
-                  </q-card>
-
-    </q-dialog>
-
-    </div>
+  </div>
 </template>
 
 <script>
@@ -512,10 +425,17 @@ import { firebaseDb, firebaseSto, firefirestore } from 'boot/firebase';
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 import Swal from 'sweetalert2'
 
+import PrintContract from '../../components/Admin/Members/PrintContact.vue'
+import PrintId from '../../components/Admin/Members/PrintID.vue'
+
 
 Vue.component(VueQrcode.name, VueQrcode);
 
 export default {
+  components: {
+    PrintContract,
+    PrintId
+  },
     data(){
         return{
           addDriverDialog: false,
@@ -546,23 +466,28 @@ export default {
           UnitsDriver: {},
           drvOperator: '',
           verifyPlateNo: true,
-          tempMemData: {}
+          tempMemData: {},
+      
         }
     },
     props: ['penRegId'],
-      firestore () {
-        return {
-            // Doc
-            MemberData: firebaseDb.collection('MemberData').doc(this.penRegId),
-            Members: firebaseDb.collection('MemberData'),
-            DriverData: firebaseDb.collection('MemberData').where('Designation', '==', 'Driver'),
-            Units: firebaseDb.collection('Units'),
-            Transactions: firebaseDb.collection('Transactions'),
-            Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
-        }
-      },
+    firestore () {
+      return {
+          // Doc
+          MemberData: firebaseDb.collection('MemberData').doc(this.penRegId),
+          Members: firebaseDb.collection('MemberData'),
+          DriverData: firebaseDb.collection('MemberData').where('Designation', '==', 'Driver'),
+          Units: firebaseDb.collection('Units'),
+          Transactions: firebaseDb.collection('Transactions'),
+          // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
+      }
+    },
     methods: {
-      driverVerify(){
+      test () {
+        // this.bus.$emit('genQR')
+        console.log(this)
+      },
+      driverVerify () {
         this.loadingState = true
         var drvname
         this.DriverData.forEach((e) => {

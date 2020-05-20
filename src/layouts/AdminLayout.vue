@@ -141,7 +141,7 @@
                      exact
                      >
                    <q-item-section avatar>
-                     <q-icon name="mdi-jeepney" />
+                     <q-icon name="mdi-account-search" />
                    </q-item-section>
                    <q-item-section class="text-uppercase">Daily Monitoring</q-item-section>
                  </q-item>
@@ -154,27 +154,38 @@
               :content-inset-level="0.5"
             >
               <q-item
-                    expand-separator
-                   :content-inset-level="0.5"
-                    to="/admin/savings"
-                    exact
-                    >
-                  <q-item-section avatar>
-                    <q-icon name="mdi-bank" />
-                  </q-item-section>
-                    <q-item-section class="text-uppercase">Savings</q-item-section>
-                </q-item>
-                 <q-item
-                    expand-separator
-                   :content-inset-level="0.5"
-                    to="/admin/loans"
-                    exact
-                    >
-                  <q-item-section avatar>
-                    <q-icon name="mdi-receipt" />
-                  </q-item-section>
-                    <q-item-section class="text-uppercase">Loan</q-item-section>
-                </q-item>
+                  expand-separator
+                  :content-inset-level="0.5"
+                  to="/admin/applications"
+                  exact
+                  >
+                <q-item-section avatar>
+                  <q-icon name="mdi-form-dropdown" />
+                </q-item-section>
+                  <q-item-section class="text-uppercase">Applications</q-item-section>
+              </q-item>
+              <q-item
+                  expand-separator
+                  :content-inset-level="0.5"
+                  to="/admin/savings"
+                  exact
+                  >
+                <q-item-section avatar>
+                  <q-icon name="mdi-bank" />
+                </q-item-section>
+                  <q-item-section class="text-uppercase">Savings</q-item-section>
+              </q-item>
+              <q-item
+                expand-separator
+                :content-inset-level="0.5"
+                to="/admin/loans"
+                exact
+                >
+                <q-item-section avatar>
+                  <q-icon name="mdi-receipt" />
+                </q-item-section>
+                  <q-item-section class="text-uppercase">Loan</q-item-section>
+              </q-item>
             </q-expansion-item>
              <q-expansion-item
               expanded-separator

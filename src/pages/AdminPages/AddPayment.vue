@@ -622,6 +622,7 @@ Vue.use(VueQrcodeReader);
 export default {
     data () {
       return {
+        step: 1,
         page: 1,
         scanner: false,
         Payment: {
@@ -718,35 +719,7 @@ export default {
     },
     methods: {
       async test () {
-        // this.Transactions.forEach(async (t) => {
-        //   console.log(t.MemberID, 't')
-        //   // add paid fees to his account
-        //
-        //   await firebaseDb.collection('MemberData').doc(t.MemberID).update({
-        //     ManagementFee: firefirestore.FieldValue.increment(t.ManagementFee),
-        //     ShareCapital: firefirestore.FieldValue.increment(t.ShareCapital),
-        //     SavingsDeposit: firefirestore.FieldValue.increment(t.SavingsDeposit),
-        //     // decrement if the member has cash advance
-        //   }).then(() => {
-        //     console.log('done')
-        //   }).catch((err) => {
-        //     console.log(err)
-        //     return
-        //   })
-        // })
-
-        // console.log(this.testData)
-
-        // this.$firestore.testData.update({
-        //   Advances: firefirestore.FieldValue.iEqual(0)
-        // }).then(() => {
-        //   console.log('done')
-        // })
-
-
-        var t = 100
-        console.log(~Math.abs(100), 'asdf')
-
+        console.log(this.Payment.MemberID)
       },
       onIncludeOperator (val) {
         if (val) {
@@ -1099,26 +1072,32 @@ export default {
         })
       },
       onDecode (decodedString) {
+        
         if(decodedString.substring(0,1) == 'D'){
-            this.alone = false
-            this.Payment.OrNo = (this.Counter.OrNo + 1),
-            this.Payment.TransactionID = (this.Counter.TransactionID + 1)
-            this.Payment.MemberID = decodedString.substring(8,21)
+            // this.alone = false
+            // this.Payment.OrNo = (this.Counter.OrNo + 1),
+            // this.Payment.TransactionID = (this.Counter.TransactionID + 1)
+            
+            // this.Payment1.OrNo = (this.Counter.OrNo + 2),
+            // this.Payment1.TransactionID = (this.Counter.TransactionID + 2)
+            // this.Payment1.MemberID= decodedString.substring(31, 44)
+            this.Payment.MemberID = decodedString.slice(-12)
+            this.Payment1.MemberID = decodedString.slice(-12)
+            this.onSelectMemberId(decodedString.slice(-12))
 
-            this.Payment1.OrNo = (this.Counter.OrNo + 2),
-            this.Payment1.TransactionID = (this.Counter.TransactionID + 2)
-            this.Payment1.MemberID= decodedString.substring(31, 44)
-
-            console.log(decodedString)
+            
             this.scanner = false
         } else {
-            this.alone = true
-            this.page = 2
-            this.Payment1.OrNo = (this.Counter.OrNo + 1),
-            this.Payment1.TransactionID = (this.Counter.TransactionID + 1)
-            this.Payment1.MemberID = decodedString.substring(10,23)
+            // this.alone = true
+            // this.page = 2
+            // this.Payment1.OrNo = (this.Counter.OrNo + 1),
+            // this.Payment1.TransactionID = (this.Counter.TransactionID + 1)
+            // this.Payment1.MemberID = decodedString.substring(10,23)
+            this.Payment.MemberID = decodedString.slice(-12)
+            this.Payment1.MemberID = decodedString.slice(-12)
+            this.onSelectMemberId(decodedString.slice(-12))
 
-            console.log(decodedString)
+            // console.log(decodedString)
             this.scanner = false
         }
       },

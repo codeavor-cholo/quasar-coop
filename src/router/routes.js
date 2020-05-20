@@ -15,7 +15,7 @@ const routes = [
     path: '/dashboard',
     redirect: '/member/dashboard',
     meta: {isMember: true},
-    component: () => import('layouts/MemberLayout.vue'),
+    component: () => import('layouts/NewMemberLayout.vue'),
     children: [
       {
         path: '/member/dashboard/:penRegId',
@@ -47,7 +47,15 @@ const routes = [
       {
         path: '/collector/addpayment',
         component: () => import('pages/CollectorPages/AddPaymentCollector.vue')
-      }
+      },
+      {
+        path: '/collector/dailycollections',
+        component: () => import('pages/CollectorPages/CollectorDailyCollections.vue')
+      },
+      {
+        path: '/collector/membersmonitor',
+        component: () => import('pages/CollectorPages/MembersMonitoring.vue')
+      },
     ]
   },
   {
@@ -87,13 +95,21 @@ const routes = [
         path: "/admin/allmember",
         component: () => import("pages/AdminPages/AllMember.vue")
       },
+      // {
+      //   path: "/admin/addpayment",
+      //   component: () => import("pages/AdminPages/AddPayment.vue")
+      // },
       {
         path: "/admin/addpayment",
-        component: () => import("pages/AdminPages/AddPayment.vue")
+        component: () => import("pages/AdminPages/AddPaymentNew.vue")
       },
       {
         path: "/admin/allpayment",
         component: () => import("pages/AdminPages/AllPayment.vue")
+      },
+      {
+        path: "/admin/applications",
+        component: () => import("pages/AdminPages/Applications.vue")
       },
       {
         path: "/admin/savings",

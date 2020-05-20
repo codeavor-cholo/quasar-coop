@@ -1,7 +1,7 @@
 <template>
-    <q-layout>
-        <div class="q-pa-md row items-start q-gutter-md">
-            <q-card class="my-card">
+    <q-page padding>
+        <!-- <div class="q-pa-md row items-start q-gutter-md"> -->
+        <q-card class="my-card">
             <q-card-section class="bg-primary text-white">
                 <div class="text-h6">Total Share of Stocks</div>
                 <div class="text-h5"> 14000 </div>
@@ -53,8 +53,8 @@
                 <q-btn flat>View Records</q-btn>
             </q-card-actions>
             </q-card>
-        </div>
-    </q-layout>
+        <!-- </div> -->
+    </q-page>
 </template>
 
 <script>
