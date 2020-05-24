@@ -20,42 +20,80 @@
 
         <div class="row">
             <div class="col q-pa-md q-gutter-md text-center">
-                <div class="text-h6 q-pb-md">Search Member</div>
-                <q-select 
-                    v-model="model" 
-                    :options="membersIdOpt" 
-                    label="Search Member" 
-                    filled 
-                    input-debounce="0"
-                    use-input
-                    color="grey-10"
-                    use-chips
-                    clearable=""
-                    @new-value="createValue"
-                    @filter="filterFn"
-                    @input="changeMemberDetails"
-                    @clear="removeMemberDetails"
-                >
-                    <template v-slot:selected-item="scope">
-                        <q-chip
-                            dense
-                            :tabindex="scope.tabindex"
-                            color="white"
-                            text-color="secondary"
-                            class="q-ma-none"
-                        >
-                            {{ scope.opt.label }}
-                        </q-chip>
-                    </template>
-                </q-select>
-                <div class="text-center text-h6">OR</div>
-                <div class="flex row wrap items-start content-start justify-center items-center q-pa-xs" v-if="scanner">
-                    <div>
-                        <qrcode-stream style="width: 200px; height: 200px;" @decode="onDecode"></qrcode-stream>
+                <div class="text-h6 q-pt-md">Search Member</div>
+                <div class="row q-gutter-sm q-mb-lg">
+                    <q-select 
+                        class="col"
+                        v-model="model" 
+                        :options="membersIdOpt" 
+                        :disable="model2 != null"
+                        label="Search Member" 
+                        filled 
+                        input-debounce="0"
+                        use-input
+                        color="grey-10"
+                        use-chips
+                        clearable=""
+                        @new-value="createValue"
+                        @filter="filterFn"
+                        @input="changeMemberDetails"
+                        @clear="removeMemberDetails"
+                    >
+                        <template v-slot:selected-item="scope">
+                            <q-chip
+                                dense
+                                :tabindex="scope.tabindex"
+                                color="white"
+                                text-color="secondary"
+                                class="q-ma-none"
+                            >
+                                {{ scope.opt.label }}
+                            </q-chip>
+                        </template>
+                    </q-select>
+                    <div class="text-h6 col-1 q-pt-md">OR</div>
+                    <div class="flex row wrap items-start content-start justify-center items-center q-pa-xs" v-if="scanner">
+                        <div>
+                            <qrcode-stream style="width: 200px; height: 200px;" @decode="onDecode"></qrcode-stream>
+                        </div>
                     </div>
+                    <q-btn color="grey-10" icon="center_focus_weak" label="scan qr" size="lg" @click="scanner=!scanner" :disable="model2 != null"/>
                 </div>
 
-                <q-btn color="grey-10" icon="center_focus_weak" label="scan qr" size="lg" @click="scanner=!scanner" />
+                <q-separator spaced inset/>
+                <div class="text-h6 q-pt-md">Search Tracking Number</div>
+                <div class="q-px-sm">
+                    <q-select 
+                        :disable="model != null"
+                        v-model="model2" 
+                        :options="membersIdOptTracking" 
+                        label="Search Tracking Number" 
+                        filled 
+                        input-debounce="0"
+                        use-input
+                        color="grey-10"
+                        use-chips
+                        clearable=""
+                        @new-value="createValue2"
+                        @filter="filterFn2"
+                        @input="changeMemberDetails"
+                        @clear="removeMemberDetails"
+                    >
+                        <template v-slot:selected-item="scope">
+                            <q-chip
+                                dense
+                                :tabindex="scope.tabindex"
+                                color="white"
+                                text-color="secondary"
+                                class="q-ma-none"
+                            >
+                                {{ scope.opt.label }}
+                            </q-chip>
+                        </template>
+                    </q-select>
+                </div>
+
+
             </div>
             <q-separator vertical/>
             <div class="col-4 q-pa-md q-gutter-md">
@@ -129,8 +167,25 @@
                     <q-input v-model="ss1" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss1 = 0" />
                     <q-input v-model="sd1" type="number" prefix="₱" label="Savings Deposit" outlined="" color="teal" clearable @clear="sd1 = 0"/>
                     <div class="text-overline"><q-checkbox v-model="showOther1" dense="" class="q-mr-sm"/> OTHERS</div>
-                    <q-input v-model="otherDescription1" type="text" label="Description" outlined="" color="teal" clearable @clear="otherDescription1 = ''" v-show="showOther1"/>
-                    <q-input v-model="other1" type="number" prefix="₱" label="Amount" outlined="" color="teal" clearable @clear="other1 = 0" v-show="showOther1"/>
+                    
+                    <div v-show="showOther1">
+                        <div class="text-caption q-pl-md">Select from the items below.</div>
+                        <q-option-group
+                            v-model="otherSelect"
+                            :options="returnMapOthers"
+                            color="teal"
+                            type="checkbox"
+                            class="q-my-none"
+                        />
+                        <div class="text-caption q-mt-md q-pl-md" v-show="otherSelect.length > 0">Add quantity to the selected items.</div>
+                        <div v-for="other in otherSelect" :key="other['.key']" class="row justify-between">
+                            <div class="q-pa-md">{{other}}</div>
+                            <q-input v-model="toPayOthersQty[other]" min="1" class="col-4" dense type="number" label="QTY" outlined="" color="teal" clearable @clear="toPayOthersQty[other.value] = 0"/>     
+                        </div>
+                    </div>
+
+
+
                     <div class="text-overline" v-show="hasCA"><q-checkbox v-model="showCA" dense="" class="q-mr-sm" /> CASH ADVANCE</div> 
                     <q-banner class="bg-info text-white" v-show="hasCA">
                         <!-- <q-icon name="info" /> You have ₱ {{ returnSelectedMember != {} ? returnSelectedMember.Advances : 0 }}.00 cash advance to pay. -->
@@ -150,14 +205,27 @@
                     <q-input v-model="ss2" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss2 = 0"/>
                     <q-input v-model="sd2" type="number" prefix="₱" label="Savings Deposit" outlined="" color="teal" clearable @clear="sd2 = 0"/>
                     <div class="text-overline"><q-checkbox v-model="showOther2" dense="" class="q-mr-sm"/> OTHERS</div>
-                    <q-input v-model="otherDescription2" type="text" label="Description" outlined="" color="teal" clearable @clear="otherDescription2 = ''" v-show="showOther2"/>
-                    <q-input v-model="other2" type="number" prefix="₱" label="Amount" outlined="" color="teal" clearable @clear="other2 = 0" v-show="showOther2"/>
+                    <div v-show="showOther2">
+                        <div class="text-caption q-pl-md">Select from the items below.</div>
+                        <q-option-group
+                            v-model="otherSelect2"
+                            :options="returnMapOthers"
+                            color="teal"
+                            type="checkbox"
+                            class="q-my-none"
+                        />
+                        <div class="text-caption q-mt-md q-pl-md" v-show="otherSelect2.length > 0">Add quantity to the selected items.</div>
+                        <div v-for="other in otherSelect2" :key="other['.key']" class="row justify-between">
+                            <div class="q-pa-md">{{other}}</div>
+                            <q-input v-model="toPayOthersQty2[other]" min="1" class="col-4" dense type="number" label="QTY" outlined="" color="teal" clearable @clear="toPayOthersQty2[other.value] = 0"/>     
+                        </div>
+                    </div>
                                                 
                 </div>
             </div>
             <div class="col q-px-md q-gutter-md">
                 <div class="text-h6">Transaction Details</div>  
-                <q-input v-model="amountPaid" input-class="text-h6 text-right" clearable :rules="[val => val >= returnTotalAmount || 'Please enter amount greater than or equal to the total amount to pay.']" bottom-slots="" type="number" prefix="₱" label="Amount Paid" outlined="" color="teal"/>      
+                <q-input v-model="amountPaid" input-class="text-h6 text-right" clearable :rules="[val => val >= returnTotalAmount || 'Please enter amount greater than or equal to the total amount to pay.']" bottom-slots="" type="number" prefix="₱" label="Amount Paid" outlined="" color="teal" ref="amountPaid" autofocus="" @focus="$event.target.select()"/>      
                 <q-list>
                     <q-item>
                         <q-item-section>
@@ -184,7 +252,7 @@
 
         <q-stepper-navigation class="text-right">
             <q-btn @click="PayFee" color="grey-10" label="Continue" :disable="returnChange == 'INSUFFICIENT AMOUNT !'"/>
-            <q-btn flat @click="step = 1" color="grey-10" label="Back" class="q-ml-sm" />
+            <q-btn flat @click="step = 1,clearForm()" color="grey-10" label="Back" class="q-ml-sm" />
         </q-stepper-navigation>
         </q-step>
 
@@ -212,6 +280,8 @@ import Vue from "vue";
 import money from 'v-money'
 import { mapGetters } from 'vuex'
 import VueQrcodeReader from "vue-qrcode-reader";
+import { date } from 'quasar'
+import axios from 'axios'
 
 Vue.use(money, {precision: 4})
 
@@ -220,13 +290,17 @@ Vue.use(VueQrcodeReader);
 export default {
     data(){
         return {
+            trackingNumber: '',
             text: '',
             step: 1,
             operator: false,
             ifDriver: false,
             model: null,
+            model2: null,
             membersIdOpt: Object.freeze(this.membersIdOptions),
+            membersIdOptTracking: Object.freeze(this.membersIdOptionsTracking),
             MemberData: [],
+            PayTrackers: [],
             MDetails:{
                 memberID: '',
                 memberName: '',
@@ -255,14 +329,31 @@ export default {
             lastTransaction: {},
             TransactionID: '',
             OrNo: '',
-            scanner: false
-
+            scanner: false,
+            OtherPayments: [],
+            FixedPayments: [],
+            otherSelect: [],
+            toPayOthersQty: [],
+            otherSelect2: [],
+            toPayOthersQty2: [],
+            ManagementFeeDriver: 0,
+            ManagementFeeOperator: 0,
+            MembershipFee: 0,
+            ShareOfStocks: 0
         }
     },
     firestore(){
         return {
             Transactions: firebaseDb.collection('Transactions'),
             MemberData: firebaseDb.collection('MemberData'),
+            PayTrackers: firebaseDb.collection('PayTrackers'),
+            OtherPayments: firebaseDb.collection('OtherPayments'),
+            FixedPayments: firebaseDb.collection('FixedPayments'),
+            
+            ManagementFeeDriver: firebaseDb.collection('FixedPayments').doc('ManagementFeeDriver'),
+            ManagementFeeOperator: firebaseDb.collection('FixedPayments').doc('ManagementFeeOperator'),
+            MembershipFee: firebaseDb.collection('FixedPayments').doc('MembershipFee'),
+            ShareOfStocks: firebaseDb.collection('FixedPayments').doc('ShareOfStocks')
         }
     },
     async mounted() {
@@ -285,17 +376,8 @@ export default {
     computed: {
         ...mapGetters('subModules', ['genTransactionID', 'genORNo', 'currencyToNumber']),
         getIncludeOperatorPaymentTotal () {
-            if (this.isIncludeOthers) {
-            return (
-                this.currencyToNumber(this.mf2) +
-                this.currencyToNumber(this.ss2) +
-                this.currencyToNumber(this.sd2) +
-                this.currencyToNumber(this.other2)
+            return this.currencyToNumber(this.mf2) +this.currencyToNumber(this.ss2) +this.currencyToNumber(this.sd2) +this.currencyToNumber(this.other2) + this.currencyToNumber(this.returnOtherSum2)
                 // this.currencyToNumber(this.includeFee.Advances)
-            )
-            } else {
-            return 0
-            }
         },
       membersIdOptions () {
         let opt = this.MemberData.map(d => {
@@ -313,18 +395,105 @@ export default {
         return opt
         // Object.freeze(options)
       },
+      membersIdOptionsTracking () {
+        let opt = this.PayTrackers.map(d => {
+            let object = this.returnTrackingNumbersInfo(d.MemberID)
+            let text = object.label
+            object.label = d['.key'].slice(0,10).toUpperCase() +' - '+text
+            object.value = d['.key'].slice(0,10).toUpperCase() +' - '+text
+            object.trackingNumber = d['.key'].slice(0,10).toUpperCase()
+            return object
+        })
+
+        //check if paid already
+        let unpaid = []
+
+        opt.forEach(a=>{
+            let index = this.$lodash.findIndex(this.Transactions, obj=>{return obj.TrackingNumber == a.trackingNumber})
+            if(index == -1){
+                unpaid.push(a)
+            }
+        })
+
+        return unpaid
+        // Object.freeze(options)
+      },
+      mergeQtyOther(){
+          try {
+            let map = []
+            this.otherSelect.forEach(a=>{
+                let obj = {
+                    description: a,
+                }
+                obj.qty = parseInt(this.toPayOthersQty[a])
+                obj.amount = parseInt(this.getAmountOthers(a))
+                obj.totalPrice = obj.qty * obj.amount
+
+
+                if(this.toPayOthersQty[a] !== undefined){
+                    map.push(obj)
+                }
+            }) 
+            return map              
+          } catch (error) {
+              return []
+          }
+      },
+      returnOtherSum(){
+          try {
+
+            let sum = this.$lodash.sumBy(this.mergeQtyOther,'totalPrice')
+            console.log(sum,'sumtotal')
+            return isNaN(sum) ? 0 : sum
+          } catch (error) {
+              return 0
+          }
+      },
+      mergeQtyOther2(){
+          try {
+            let map = []
+            this.otherSelect2.forEach(a=>{
+                let obj = {
+                    description: a,
+                }
+                obj.qty = parseInt(this.toPayOthersQty2[a])
+                obj.amount = parseInt(this.getAmountOthers(a))
+                obj.totalPrice = obj.qty * obj.amount
+
+
+                if(this.toPayOthersQty2[a] !== undefined){
+                    map.push(obj)
+                }
+            }) 
+
+            console.log(map,'map2')
+            return map              
+          } catch (error) {
+              return []
+          }
+      },
+      returnOtherSum2(){
+          try {
+
+            let sum = this.$lodash.sumBy(this.mergeQtyOther2,'totalPrice')
+            console.log(sum,'sumtotal2')
+            return isNaN(sum) ? 0 : sum
+          } catch (error) {
+              return 0
+          }
+      },
       returnTotalAmount(){
           if(this.MDetails.isNewMember == false){
               let x = this
-              let pay1 = parseInt(x.mf1) + parseInt(x.ss1) + parseInt(x.sd1) + parseInt(x.other1) + parseInt(x.ca)
-              let pay2 = parseInt(x.mf2) + parseInt(x.ss2) + parseInt(x.sd2) + parseInt(x.other2)
+              let pay1 = parseInt(x.mf1) + parseInt(x.ss1) + parseInt(x.sd1) + parseInt(x.other1) + parseInt(x.ca) + this.returnOtherSum
+              let pay2 = parseInt(x.mf2) + parseInt(x.ss2) + parseInt(x.sd2) + parseInt(x.other2) + this.returnOtherSum2
               if(this.operator == true){
                   return pay1 + pay2
               } else {
                   return pay1
               }
           } else {
-              return 500
+              return this.MembershipFee.amount
           }
       },
       returnChange(){
@@ -336,15 +505,57 @@ export default {
       },
       returnSelectedMember(){
           try {
-            return this.MemberData.filter(d => {
-                return d['.key'] === this.model.id
-            })[0]
+            if(this.model == null){
+                return this.MemberData.filter(d => {
+                    return d['.key'] === this.model2.id
+                })[0]
+            } else {
+                return this.MemberData.filter(d => {
+                    return d['.key'] === this.model.id
+                })[0]
+            }
           } catch (error) {
             return {}
+          }
+      },
+      returnMapOthers(){
+          try {
+            return this.OtherPayments.map(a=>{
+                return {
+                    label: a.description + ' (₱ ' + a.amount + '.00) ',
+                    value: a.description,
+                    amount: a.amount
+                }
+            })
+          } catch (error) {
+              return []
           }
       }
     },
     methods: {
+        addToPayOthersValue(){
+
+        },
+        returnTrackingNumbersInfo(id){
+            let filter = this.MemberData.filter(a=>{
+                return a['.key'] == id
+            })
+
+            let opt = filter.map(d => {
+                let full = d.FirstName + ' ' + d.LastName
+
+            return {
+                label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                fullName: full,
+                id: d['.key'],
+                designation: d.Designation
+            }
+
+            })
+
+            return opt[0]
+        },
         onDecode (decodedString) {
 
             const id = {
@@ -385,6 +596,11 @@ export default {
             this.other2= 0
             this.driverOperator= {}
             this.amountPaid= 0
+            this.otherSelect = []
+            this.otherSelect2 = []
+            this.toPayOthersQty = []
+            this.toPayOthersQty2 = []
+            this.trackingNumber = ''
         },
         createValue (val, done) {
         // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
@@ -421,15 +637,69 @@ export default {
                 }
             })
         },
-        onClick(){
+        createValue2 (val, done) {
+        // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
+        // and it resets the input textbox to empty string
+        // ----
+        // Calling done(var) when new-value-mode is "add-unique", or done(var, "add-unique") adds "var" content to the model
+        // only if is not already set
+        // and it resets the input textbox to empty string
+        // ----
+        // Calling done(var) when new-value-mode is "toggle", or done(var, "toggle") toggles the model with "var" content
+        // (adds to model if not already in the model, removes from model if already has it)
+        // and it resets the input textbox to empty string
+        // ----
+        // If "var" content is undefined/null, then it doesn't tampers with the model
+        // and only resets the input textbox to empty string
 
+        if (val.length > 2) {
+            if (!this.membersIdOptTracking.includes(val)) {
+            done(val, 'add-unique')
+            }
+        }
+        },
+
+        filterFn2 (val, update) {
+            update(() => {
+                if (val === '') {
+                    this.membersIdOptTracking = this.membersIdOptionsTracking
+                }
+                else {
+                    const needle = val.toLowerCase()
+                    this.membersIdOptTracking = this.membersIdOptionsTracking.filter(
+                        v => v.value.toLowerCase().indexOf(needle) > -1
+                    )
+                }
+            })
+        },
+        onClick(){
+            let map = []
+            this.otherSelect.forEach(a=>{
+                let obj = {
+                    description: a,
+                }
+                obj.qty = parseInt(this.toPayOthersQty[a])
+                obj.amount = parseInt(this.getAmountOthers(a))
+                obj.totalPrice = obj.qty * obj.amount
+
+
+                if(this.toPayOthersQty[a] !== undefined){
+                    map.push(obj)
+                }
+            })
+            console.log(map,'map')
+        },
+        getAmountOthers(desc){
+            return this.returnMapOthers.filter(a=>{
+                return a.value == desc
+            })[0].amount
         },
         removeMemberDetails(){
             this.MDetails.memberID = ''
             this.MDetails.memberName = ''
             this.MDetails.memberDesignation = ''
             this.MDetails.isNewMember = false
-            
+            this.trackingNumber = ''
         },
         changeMemberDetails(val){
             
@@ -437,7 +707,11 @@ export default {
             return d['.key'] === val.id
             })[0]
 
-            
+            console.log(val.trackingNumber,'val.trackingNumber')
+
+            if(val.trackingNumber !== undefined){
+                this.trackingNumber = val.trackingNumber
+            }
 
             if(member.Advances != 0){
                 this.hasCA = true
@@ -455,17 +729,21 @@ export default {
                 this.MDetails.operator = member.Operator
                 this.MDetails.advances = member.Advances
                 this.hasCA = member.Advances > 0
+
+                if(member.isNewMember){
+                    this.membershipFee = this.MembershipFee.amount
+                }
                 
                 if(member.Designation === 'Driver'){
-                    this.mf1 = 15
-                    this.ss1 = 30
-                    this.mf2 = 65
-                    this.ss2 = 30   
+                    this.mf1 = this.ManagementFeeDriver.amount
+                    this.ss1 = this.ShareOfStocks.amount
+                    this.mf2 = this.ManagementFeeOperator.amount
+                    this.ss2 = this.ShareOfStocks.amount   
                     this.ifDriver = true
                     this.driverOperator = member.Operator
                 } else {
-                    this.mf1 = 65
-                    this.ss1 = 30    
+                    this.mf1 = this.ManagementFeeOperator.amount
+                    this.ss1 = this.ShareOfStocks.amount     
                     this.ifDriver = false   
                     this.driverOperator = {}             
                 }
@@ -490,6 +768,9 @@ export default {
             
             this.$refs.stepper.next()
         },
+        async PayFeeTest () {
+            
+        },
         async PayFee () {
         // format the payment
         // save the payment to database
@@ -511,8 +792,8 @@ export default {
             ShareCapital: this.MDetails.isNewMember ? 0 : Number(this.ss1),
             SavingsDeposit: this.MDetails.isNewMember ? 0 : Number(this.sd1),
             Advances: this.MDetails.isNewMember ? 0: Number(this.ca),
-            OthersDes: this.otherDescription1,
-            OthersAmount: Number(this.other1),
+            Others: this.mergeQtyOther,
+            OthersAmount: Number(this.returnOtherSum),
             Operator: this.MDetails.memberDesignation === 'Operator' ? null : this.MDetails.operator,
             isIncludeOperator: this.operator,
             paidForOperator: this.operator ? {
@@ -520,22 +801,27 @@ export default {
                 ShareCapital: Number(this.ss2),
                 SavingsDeposit: Number(this.sd2),
                 // Advances: Number(this.includeFee.Advances),
-                OthersDes: this.showOther2 ? this.otherDescription2 : 0,
-                OtherAmount: this.showOther2 ? this.other2 : 0
+                Others: this.showOther2 ? this.mergeQtyOther2 : 0,
+                OtherAmount: this.showOther2 ? Number(this.returnOtherSum2) : 0,
+                Total: this.getIncludeOperatorPaymentTotal
             } : null,
             // paidForOperator: null,
-            Total: this.returnTotalAmount,
+            SharedTotal: this.operator ? this.returnTotalAmount : null,
+            Total: this.returnTotalAmount - this.getIncludeOperatorPaymentTotal,
             AmountPaid: Number(this.amountPaid),
             timestamp: firefirestore.FieldValue.serverTimestamp()
         }
 
-        // console.log(payment, 'payment')
-
+        if(this.trackingNumber !== ''){
+            payment.TrackingNumber = this.trackingNumber
+        }
 
         firebaseDb.collection('Transactions').add(payment)
-          .then(async () => {
+          .then(async (doc) => {
             this.$forceUpdate()
-
+            console.log(doc.id,'doc id')
+            console.log(payment, 'payment details')
+            vm.sendSMS(doc.id,payment.MemberID,payment.Total)  
             // after succesful payment increment fee paid to his account
             await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
               ManagementFee: firefirestore.FieldValue.increment(payment.ManagementFee),
@@ -558,6 +844,7 @@ export default {
 
 
             if (payment.isIncludeOperator) {
+                console.log('operator payment triggered')
               // generate another payment for paying operator by the driver
               let genTransactID = await this.genTransactionID
               let genORNo = await this.genORNo
@@ -572,20 +859,24 @@ export default {
                 ShareCapital: Number(this.ss2),
                 SavingsDeposit: Number(this.sd2),
                 // Advances: Number(this.includeFee.Advances),
-                OthersDes: this.otherDescription2,
-                OthersAmount: this.other2,
+                Others: this.mergeQtyOther2,
+                OthersAmount: Number(this.returnOtherSum2),
                 Total: this.getIncludeOperatorPaymentTotal,
+                SharedTotal: this.operator ? this.returnTotalAmount : null,
+                isPaidByDriver: true,
                 timestamp: firefirestore.FieldValue.serverTimestamp()
               }
-            //   console.log(includeOperatorPayment, 'includeo peratorearsa')
               firebaseDb.collection('Transactions').add(includeOperatorPayment)
-                .then(async () => {
+                .then(async (doc) => {
                   await firebaseDb.collection('MemberData').doc(includeOperatorPayment.MemberID).update({
                     ManagementFee: firefirestore.FieldValue.increment(includeOperatorPayment.ManagementFee),
                     ShareCapital: firefirestore.FieldValue.increment(includeOperatorPayment.ShareCapital),
                     SavingsDeposit: firefirestore.FieldValue.increment(includeOperatorPayment.SavingsDeposit)
                   })
 
+                console.log(doc.id,'doc id')
+                console.log(includeOperatorPayment, 'operator payment details')
+                vm.sendSMS(doc.id,includeOperatorPayment.MemberID,includeOperatorPayment.Total)
                 //   if (this.operatorHasCashAdvance) {
                 //     await firebaseDb.collection('MemberData').doc(includeOperatorPayment.MemberID).update({
                 //       Advances: firefirestore.FieldValue.increment(-Math.abs(includeOperatorPayment.Advances))
@@ -597,7 +888,11 @@ export default {
                     message: 'Payment Success'
                   })
                   // proceed to print out receipt
+                  // SEND SMS
+                
+
                   vm.$refs.stepper.next()
+                  vm.clearForm()
                 }).catch(err => {
                   vm.$q.notify({
                     icon: 'info',
@@ -607,12 +902,17 @@ export default {
                   console.log(err)
                 })
             } else {
+              
               vm.$q.notify({
                 icon: 'info',
                 color: 'positive',
                 message: 'Payment Success'
               })
+                // proceed to print out receipt
+                // SEND SMS
+                
               vm.$refs.stepper.next()
+              vm.clearForm()
             }
           }).catch(err => {
             this.$q.notify({
@@ -621,6 +921,44 @@ export default {
               message: err.message
             })
           })
+      },
+      sendSMS(paymentid,memberID,amount){
+            let trackID = paymentid.toString().slice(0,10)
+            let number = this.getMobileNumber(memberID)
+            let TodayDate = date.formatDate(new Date(), 'YYYY-MM-DD hh:mm A')
+            let header= {
+                    'Access-Control-Allow-Origin': '*',
+            }
+            let message = 'SMS Reciept for the payment of P'+ amount + '.00 on '+ TodayDate +'. PaymentID# '+ trackID.toUpperCase()
+            let apinumber = 1
+
+            let data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+            console.log(data,'data sent')
+
+            const options = {
+                method: 'POST',
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                data: data,
+                url: 'https://smsapisender.000webhostapp.com/index.php',
+            }      
+
+            axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+            .then(response => {
+            console.log(response)
+            })
+            .catch((error) => {
+            console.log(error.response)
+            })            
+      },
+      getMobileNumber(id){
+          try {
+            return this.MemberData.filter(a=>{
+                return a['.key'] == id
+            })[0].Phone
+          } catch (error) {
+              console.log(error,'error getting number')
+              return 0
+          }
       }
     }
 }

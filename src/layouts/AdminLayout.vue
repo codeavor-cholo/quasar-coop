@@ -205,6 +205,16 @@
                     <q-item-section class="text-uppercase">Add Staff</q-item-section>
                 </q-item>
             </q-expansion-item>
+            <q-item
+            to="/admin/paymentmaintenance"
+            exact
+            >
+              <q-item-section avatar>
+                  <q-icon name="vertical_split" />
+              </q-item-section>
+              <q-item-section>Payment Fee Maintenance</q-item-section>
+          </q-item>
+
        </q-list>
       <!-- End of Sidebar Menu inside the Drawer -->
       </q-scroll-area>

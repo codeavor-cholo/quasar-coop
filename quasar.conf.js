@@ -62,7 +62,8 @@ module.exports = function (ctx) {
       components: [
         'QImg',
         'QFab',
-        'QFabAction'
+        'QFabAction',
+        'QBtn'
       ],
       directives: [],
 

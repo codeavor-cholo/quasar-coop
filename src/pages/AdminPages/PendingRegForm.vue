@@ -157,6 +157,7 @@
 <script>
 import { firebaseDb, firefirestore, Auth2 } from 'boot/firebase';
 // import { mapActions } from 'vuex'
+import axios from 'axios'
 
 export default {
   data () {
@@ -181,6 +182,7 @@ export default {
         // },
         lastMember: firebaseDb.collection('MemberData').orderBy('timestamp', 'desc').limit(5),
         MemberData: firebaseDb.collection('MemberData'),
+        PayTrackers: firebaseDb.collection('PayTrackers'),
         // MemberID: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
     }
   },
@@ -212,17 +214,57 @@ export default {
           })
           .then(async () => {
             // create login account
-            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName)
+            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName, this.PenReg.Phone)
             // delete the registrationo in pending registration collection
             this.$firestore.PenReg.delete()
-            this.$q.notify({
-              icon: 'info',
-              message: 'Approved',
-              color: 'positive'
+            .then(()=>{
+                let payment = {
+                  MemberID: id,
+                  toPayAmount: 500
+                }
+                this.$firestore.PayTrackers.add(payment).then((doc) => {
+                  let paymentid = doc.id
+                  return paymentid
+                })
+                .then(paymentid => {
+                  let trackID = paymentid.toString().slice(0,10)
+                  let number = this.PenReg.Phone
+                  let message = 'You passed the evaluation. Please pay P500.00 for your membership fee. Tracking# '+ trackID.toUpperCase()
+                  let apinumber = 2
+
+                  var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+                  console.log(data)
+                  // https://maleficent-sms.000webhostapp.com/index.php
+
+                  const options = {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/x-www-form-urlencoded',  'Access-Control-Allow-Origin': '*' },
+                    data: data,
+                    url: 'https://smsapisender.000webhostapp.com/index.php',
+                  }              
+
+
+                  // axios(options)
+                  axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+                  .then(response => {
+                    console.log(response)
+                    this.$q.notify({
+                      icon: 'info',
+                      message: 'Approved',
+                      color: 'positive'
+                    })
+                    this.loadingState = false
+                    // load the member form
+                    this.loadPreReg(id)
+                  })
+                  .catch((error) => {
+                  console.log(error.response)
+                  })   
+
+
+                })
             })
-            this.loadingState = false
-            // load the member form
-            this.loadPreReg(id)
+
           })
           .catch(err => {
             console.log(err)
@@ -249,16 +291,46 @@ export default {
           })
           .then(async () => {
             // create login account
-            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName)
+            await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName,this.PenReg.Phone)
             
             this.$firestore.PenReg.delete()
-            this.$q.notify({
-              icon: 'info',
-              message: 'Approved',
-              color: 'positive'
+            .then(()=>{
+                let payment = {
+                  MemberID: id,
+                  toPayAmount: 500
+                }
+                this.$firestore.PayTrackers.add(payment).then((doc) => {
+                  let paymentid = doc.id
+                  return paymentid
+                })
+                .then(paymentid => {
+                  let trackID = paymentid.toString().slice(0,10)
+                  let number = this.PenReg.Phone
+
+                  let message = 'You passed the evaluation. Please pay P500.00 for your membership fee. Tracking# '+ trackID.toUpperCase()
+
+                  var data = 'number=' + number + '&' + 'message=' + message
+                  console.log(data)
+                  // https://maleficent-sms.000webhostapp.com/index.php
+                  axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+                  .then(response => {
+                    console.log(response)
+                    this.$q.notify({
+                      icon: 'info',
+                      message: 'Approved',
+                      color: 'positive'
+                    })
+                    this.loadingState = false
+                    // load the member form
+                    this.loadPreReg(id)
+                  })
+                  .catch((error) => {
+                  console.log(error.response)
+                  })   
+
+
+                })
             })
-            this.loadingState = false
-            this.loadPreReg(id)
           })
           .catch(err => {
             console.log(err)
@@ -297,7 +369,7 @@ export default {
         })
       })
     },
-    createLoginUser (memberID, designation, firstName, lastName) {
+    createLoginUser (memberID, designation, firstName, lastName, mobile) {
       return new Promise(async (resolve) => {
         const email = memberID + '@coop.com'
         const password = Math.random().toString(36).slice(-6)
@@ -307,6 +379,7 @@ export default {
             const userID = data.uid
             await firebaseDb.collection('Users').doc(data.user.uid).set({
               Email: email,
+              Phone: mobile,
               Designation: designation,
               FirstName: firstName,
               LastName: lastName,
