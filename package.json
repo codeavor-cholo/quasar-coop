@@ -24,6 +24,7 @@
     "lodash": "^4.17.15",
     "nodemailer": "^6.4.2",
     "quasar": "^1.0.0",
+    "simple-random-id": "^1.0.1",
     "sweetalert2": "^9.8.2",
     "v-money": "^0.8.1",
     "vue": "^2.6.11",

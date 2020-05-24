@@ -100,6 +100,10 @@ const routes = [
       //   component: () => import("pages/AdminPages/AddPayment.vue")
       // },
       {
+        path: "/admin/paymentmaintenance",
+        component: () => import("pages/AdminPages/PaymentMaintenance.vue")
+      },
+      {
         path: "/admin/addpayment",
         component: () => import("pages/AdminPages/AddPaymentNew.vue")
       },

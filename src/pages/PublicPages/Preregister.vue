@@ -4,7 +4,7 @@
     <div class = "col-xs-12 col-sm-6 col-md-6 q-pa-md">
       <q-card class="q-pa-md doc-container" style="opacity: 0.7;">
         <q-card-section>
-            <div class="text-h5">Be a Part of New GSIS Transport Cooperative</div>
+            <div class="text-h5">Be a Part of New GSIS Transport Cooperative </div>
             <div class="text-h6">Earn and Save the Cooperative Way</div>
         </q-card-section>
 
@@ -24,6 +24,7 @@
       color="teal"
       animated
       vertical
+      ref="stepper"
     >
       <q-step
         color="teal"
@@ -35,12 +36,12 @@
 
 
         <div class="row justify-center">
-          <q-btn class="col q-ma-md" :color="dbtn1" @click="PreRegData.Designation = 'Driver'; dbtncolor();" label="Driver"/>
-          <q-btn class="col q-ma-md" :color="dbtn2" @click="PreRegData.Designation = 'Operator'; dbtncolor();" label="Operator" />
+          <q-btn class="col q-ma-md" :color="dbtn1" @click="PreRegData.Designation = 'Driver'; dbtncolor();" label="Driver" :size="PreRegData.Designation == 'Driver' ? 'lg' : 'md'" :icon="PreRegData.Designation == 'Driver' ? 'send' : ''"/>
+          <q-btn class="col q-ma-md" :color="dbtn2" @click="PreRegData.Designation = 'Operator'; dbtncolor();" label="Operator" :size="PreRegData.Designation == 'Operator' ? 'lg' : 'md'" :icon="PreRegData.Designation == 'Operator' ? 'send' : ''"/>
         </div>
 
         <q-stepper-navigation>
-          <q-btn @click="step = 2" color="teal" label="Continue"></q-btn>
+          <q-btn @click="step = 2,this.$refs.firstName.focus();" color="teal" label="Continue"></q-btn>
         </q-stepper-navigation>
       </q-step>
 
@@ -79,7 +80,7 @@
 
                   <q-separator class= "q-mb-md q-pt-xs" color="secondary" inset hidden = 'true'/>
 
-                  <q-input standard color="teal-4" v-model="PreRegData.FirstName" label="First Name"
+                  <q-input standard color="teal-4" v-model="PreRegData.FirstName" label="First Name" ref="firstName"
                   lazy-rules
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
                   />
@@ -119,10 +120,9 @@
                   <q-input color="teal-4" standard v-model="PreRegData.Phone" label="Phone No."
                   lazy-rules
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
+                  mask="(####) ### - ####"
                   />
-                  <q-input color="teal-4" standard v-model="PreRegData.Email" label="Email Address"
-                  lazy-rules
-                  :rules="[ val => val && val.length > 0 || 'Please type something']"
+                  <q-input color="teal-4" standard v-model="PreRegData.Email" label="Email Address (optional)"
                   />
                   <strong class="row justify-center items-center" style="color: #26A69A;">
                       Employment
@@ -259,15 +259,28 @@
         </q-stepper-navigation>
       </q-step>
 
-
       <q-step
         :name="3"
         color="teal"
-        title="Wait for a Confirmation Email"
+        title="Verify your mobile number"
+        icon="mobile_friendly"
+      >
+        A SMS with your verification code is sent to this number. {{returnNumberNoMask}}
+        <q-input v-model="verificationCode" type="text" label="Verification Code" filled="" mask="XXXXX" size="lg" class="q-mt-md" style="width:200px;"/>
+
+        <q-stepper-navigation>
+          <q-btn flat @click="step = 2" color="teal" label="Back" class="q-ml-sm"></q-btn>
+          <q-btn color="teal" label="Verify" @click="verifyCode" :disable="verificationCode == ''"></q-btn>
+        </q-stepper-navigation>
+      </q-step>
+      <q-step
+        :name="4"
+        color="teal"
+        title="Wait for a Confirmation SMS"
         icon="add_comment"
       >
-        Your Application will be subjected to  evaluation.
-        Upon approval an email will be sent to you.
+        Your Application will be subjected to evaluation.
+        Upon approval a SMS will be sent to you.
         In it, we will provide further instructions to complete your application.
         <q-stepper-navigation>
 
@@ -280,10 +293,12 @@
 
 <script>
 import { firebaseDb, firebaseSto, firefirestore } from 'boot/firebase';
-
+import axios from 'axios'
+const sri = require('simple-random-id');
 export default {
   data () {
     return {
+      verificationCode: '',
       loadingState: false,
       step: 1,
       PreRegData: {
@@ -306,7 +321,8 @@ export default {
         LicenseExp:'',
         Designation: 'Driver',
         MembershipFee: '',
-        timestamp: ''
+        timestamp: '',
+        verificationCode: sri(5)
       },
       accept: false,
       dbtn1: 'teal-4',
@@ -408,6 +424,7 @@ export default {
       let id = ''
       let childurl = ''
       this.PreRegData.timestamp = firefirestore.FieldValue.serverTimestamp()
+      this.PreRegData.Phone = this.returnNumberNoMask
       // console.log(this.PreRegData)
       this.$firestore.PreReg.add(this.PreRegData).then((doc) => {
         id = doc.id
@@ -425,7 +442,6 @@ export default {
         }).
         then(downloadURL => {
             console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
-            this.step = 3
             return firebaseDb.collection("PreRegPersonalData").doc(id).update({
               imageUrlLic: downloadURL,
               imageUrlPro: 'https://cdn2.iconfinder.com/data/icons/4web-3/139/header-account-image-line-512.png'
@@ -435,7 +451,9 @@ export default {
             // Use to signal error if something goes wrong.
             console.log(`Failed to upload file and get link - ${error.message}`);
          })
+         
       })
+      
     },
     dbtncolor(){
       if(this.PreRegData.Designation == 'Driver'){
@@ -460,7 +478,7 @@ export default {
       this.LicenseImage = files[0]
     },
     onSubmit () {
-     this.regPre()
+     this.sendSMS()
     //  this.$q.notify({
     //       position: 'top',
     //       color: 'white',
@@ -503,6 +521,40 @@ export default {
           return optdetails
         }
       })
+    },
+    verifyCode(){
+      if(this.verificationCode == this.PreRegData.verificationCode){
+        this.regPre()
+        this.$refs.stepper.next()
+      } else {
+        this.$q.notify({
+              position: 'top',
+              color: 'white',
+              textColor: 'red-4',
+              icon: 'error',
+              message: 'Wrong Verification Code',
+            })        
+      }
+    },
+    sendSMS(){
+      // this.$refs.stepper.next()
+      let header= {
+            'Access-Control-Allow-Origin': '*',
+      }
+      let message = 'Use this code: ' + this.PreRegData.verificationCode.toString() + ' to verify you phone number.'
+      let number = this.returnNumberNoMask.toString()
+      let apinumber = 3
+
+      var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+      console.log(data)
+      axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+      .then(response => {
+        console.log(response)
+        this.$refs.stepper.next()
+      })
+      .catch((error) => {
+      console.log(error.response)
+      })   
     }
   },
   mounted(){
@@ -515,6 +567,11 @@ export default {
       if(this.PreRegData.Designation == 'Driver'){
         return 'Driver'
       }
+    },
+    returnNumberNoMask(){
+      let number = this.PreRegData.Phone.toString()
+      console.log(number.replace(/[^a-zA-Z0-9]/g, ""),'number')
+      return number.replace(/[^a-zA-Z0-9]/g, "")
     }
   }
 }
