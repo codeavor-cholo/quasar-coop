@@ -163,8 +163,8 @@
                 <div class="text-overline text-capitalize">PAYMENT ({{MDetails.memberName}}) - <span class="text-uppercase text-teal">{{MDetails.memberDesignation}}</span>  </div>
                 <q-input v-model="membershipFee" readonly="" type="number" prefix="₱" label="Membership Fee" outlined="" color="teal" v-if="MDetails.isNewMember == true"/>
                 <div class="q-gutter-md" v-else>
-                    <q-input v-model="mf1" type="number" prefix="₱" label="Management Fee" outlined="" color="teal" clearable @clear="mf1 = 0" />
-                    <q-input v-model="ss1" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss1 = 0" />
+                    <q-input v-model="mf1" type="number" prefix="₱" label="Management Fee" outlined="" color="teal" clearable @clear="mf1 = 0" readonly=""/>
+                    <q-input v-model="ss1" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss1 = 0" readonly=""/>
                     <q-input v-model="sd1" type="number" prefix="₱" label="Savings Deposit" outlined="" color="teal" clearable @clear="sd1 = 0"/>
                     <div class="text-overline"><q-checkbox v-model="showOther1" dense="" class="q-mr-sm"/> OTHERS</div>
                     
@@ -185,13 +185,46 @@
                     </div>
 
 
-
-                    <div class="text-overline" v-show="hasCA"><q-checkbox v-model="showCA" dense="" class="q-mr-sm" /> CASH ADVANCE</div> 
-                    <q-banner class="bg-info text-white" v-show="hasCA">
+                    <div v-show="hasCA">
+                    <div class="text-overline">CASH ADVANCES</div> 
+                    <q-banner class="bg-info text-white q-mt-none" v-show="hasCA">
                         <!-- <q-icon name="info" /> You have ₱ {{ returnSelectedMember != {} ? returnSelectedMember.Advances : 0 }}.00 cash advance to pay. -->
                         <q-icon name="info" /> You have {{ MDetails.advances | currency }} cash advance to pay.
-                    </q-banner>                     
-                    <q-input v-model="ca" type="number" prefix="₱" label="Amount" outlined="" color="teal" :max="returnSelectedMember != {} ? returnSelectedMember.Advances : 0" clearable @clear="ca = 0" v-if="showCA"/>
+                    </q-banner>   
+
+                    <div class="text-caption q-pl-md q-pb-sm">Select advances payment option:</div>
+                    <q-option-group
+                        v-model="AdvanceOption"
+                        :options="[{label:'All Daily Charges',value:'daily'},{label:'Specific Loan Payment',value:'specific'}]"
+                        color="teal"
+                        type="radio"
+                        inline=""
+                        class="q-my-none"
+                    /> 
+
+                    <q-input readonly="" v-model="ca" type="number" prefix="₱" label="Daily Charges Total Amount" outlined="" color="teal" :max="returnSelectedMember != {} ? returnSelectedMember.Advances : 0" clearable @clear="ca = 0" v-if="AdvanceOption == 'daily'"/>
+
+                    <div v-show="AdvanceOption == 'specific'">
+
+                        <div class="text-caption q-pl-md q-pb-sm">Select from the advances to pay below.</div>
+                        <q-option-group
+                            v-model="AdvanceSelect"
+                            :options="returnMapActiveLoans"
+                            color="teal"
+                            type="checkbox"
+                            class="q-my-none"
+                            @input="getMinValue"
+                        />    
+                        <div class="text-caption q-pl-md q-py-md">Enter amount to pay in each item.</div> 
+                        <div v-for="adv in AdvanceSelect" :key="adv['.key']" class="row justify-between">
+                            <div class="q-px-md">#{{adv.CashReleaseTrackingID.toUpperCase()}}
+                                <br> <span class="text-caption">Balance: ₱ {{adv.Amount - adv.paidAmount}}</span> 
+                            </div>
+                            <q-input v-model="toPayAdvancesAmount[adv.CashReleaseTrackingID]" :min="adv.DailyCharge" :max="(adv.Amount - adv.paidAmount)" class="col-6" dense type="number" label="Amount To Pay" prefix="₱" outlined="" color="teal" clearable="" @clear="toPayAdvancesAmount[adv.CashReleaseTrackingID] = 0"/>     
+                        </div> 
+                    </div>
+                    </div>            
+
                 </div>
             </div>
             <div class="col-4 q-px-md q-gutter-md" v-show="ifDriver == true && MDetails.isNewMember == false">
@@ -201,8 +234,8 @@
                 
                 </div>
                 <div v-show="operator" class="q-gutter-md">
-                    <q-input v-model="mf2" type="number" prefix="₱" label="Management Fee" outlined="" color="teal" clearable @clear="mf2 = 0"/>
-                    <q-input v-model="ss2" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss2 = 0"/>
+                    <q-input v-model="mf2" type="number" prefix="₱" label="Management Fee" outlined="" color="teal" clearable @clear="mf2 = 0" readonly=""/>
+                    <q-input v-model="ss2" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss2 = 0" readonly=""/>
                     <q-input v-model="sd2" type="number" prefix="₱" label="Savings Deposit" outlined="" color="teal" clearable @clear="sd2 = 0"/>
                     <div class="text-overline"><q-checkbox v-model="showOther2" dense="" class="q-mr-sm"/> OTHERS</div>
                     <div v-show="showOther2">
@@ -245,7 +278,8 @@
                             <q-item-label class="text-h6 text-left text-red" v-else>{{returnChange}}</q-item-label>
                         </q-item-section>
                     </q-item>
-                </q-list>         
+                </q-list>  
+     
             </div>
         </div>
         
@@ -339,7 +373,10 @@ export default {
             ManagementFeeDriver: 0,
             ManagementFeeOperator: 0,
             MembershipFee: 0,
-            ShareOfStocks: 0
+            ShareOfStocks: 0,
+            AdvanceSelect: [],
+            toPayAdvancesAmount: [],
+            AdvanceOption: 'daily'
         }
     },
     firestore(){
@@ -439,11 +476,13 @@ export default {
               return []
           }
       },
+
+
       returnOtherSum(){
           try {
 
             let sum = this.$lodash.sumBy(this.mergeQtyOther,'totalPrice')
-            console.log(sum,'sumtotal')
+            // console.log(sum,'sumtotal')
             return isNaN(sum) ? 0 : sum
           } catch (error) {
               return 0
@@ -476,7 +515,57 @@ export default {
           try {
 
             let sum = this.$lodash.sumBy(this.mergeQtyOther2,'totalPrice')
-            console.log(sum,'sumtotal2')
+            // console.log(sum,'sumtotal2')
+            return isNaN(sum) ? 0 : sum
+          } catch (error) {
+              return 0
+          }
+      },
+
+      mergeAdvances(){
+          try {
+            let map = []
+            this.AdvanceSelect.forEach(a=>{
+                a.toPayAmount = parseInt(this.toPayAdvancesAmount[a.CashReleaseTrackingID])
+                if(this.toPayAdvancesAmount[a.CashReleaseTrackingID] !== undefined){
+                    map.push(a)
+                }
+            }) 
+            console.log(map,'mergeAdvances')
+            return map              
+          } catch (error) {
+              return []
+          }
+      },
+
+      saveAdvancesData(){
+          try {
+              if(this.AdvanceOption == 'daily') return this.$lodash.map(this.returnSelectedMember.activeLoans,a=>{
+                  return {
+                      paidAmount: a.DailyCharge,
+                      trackID: a.CashReleaseTrackingID,
+                      requestID: a.requestID
+                  }
+                })
+
+              if(this.AdvanceOption == 'specific') return this.$lodash.map(this.mergeAdvances,a=>{
+                  return {
+                      paidAmount: a.toPayAmount,
+                      trackID: a.CashReleaseTrackingID,
+                      requestID: a.requestID                      
+                  }
+              })
+
+          } catch (error) {
+              return []
+          }
+      },
+
+      returnAdvanceSum(){
+          try {
+
+            let sum = this.$lodash.sumBy(this.mergeAdvances,'toPayAmount')
+            // console.log(sum,'sumtotal')
             return isNaN(sum) ? 0 : sum
           } catch (error) {
               return 0
@@ -485,7 +574,18 @@ export default {
       returnTotalAmount(){
           if(this.MDetails.isNewMember == false){
               let x = this
-              let pay1 = parseInt(x.mf1) + parseInt(x.ss1) + parseInt(x.sd1) + parseInt(x.other1) + parseInt(x.ca) + this.returnOtherSum
+
+                let loans = 0
+              if(x.hasCA == true){
+                  if(x.AdvanceOption == 'daily'){
+                      loans = x.ca
+                  } else {
+                      loans = x.returnAdvanceSum
+                  }
+              }
+
+
+              let pay1 = parseInt(x.mf1) + parseInt(x.ss1) + parseInt(x.sd1) + parseInt(x.other1) + loans + this.returnOtherSum
               let pay2 = parseInt(x.mf2) + parseInt(x.ss2) + parseInt(x.sd2) + parseInt(x.other2) + this.returnOtherSum2
               if(this.operator == true){
                   return pay1 + pay2
@@ -518,6 +618,22 @@ export default {
             return {}
           }
       },
+      returnMapActiveLoans(){
+        try {
+            let loans = this.returnSelectedMember.activeLoans
+            let map = loans.map(a=>{
+                a.label = `#${a.CashReleaseTrackingID.toUpperCase()} - ₱${a.DailyCharge}.00 / Day`
+                return {
+                    label: a.label,
+                    value: a
+                }
+            })
+
+            return map
+        } catch (error) {
+            return []
+        }
+      },
       returnMapOthers(){
           try {
             return this.OtherPayments.map(a=>{
@@ -530,12 +646,9 @@ export default {
           } catch (error) {
               return []
           }
-      }
+      },
     },
     methods: {
-        addToPayOthersValue(){
-
-        },
         returnTrackingNumbersInfo(id){
             let filter = this.MemberData.filter(a=>{
                 return a['.key'] == id
@@ -601,6 +714,10 @@ export default {
             this.toPayOthersQty = []
             this.toPayOthersQty2 = []
             this.trackingNumber = ''
+            this.model2=null
+            this.AdvanceSelect= []
+            this.AdvanceOption='daily'
+            this.toPayAdvancesAmount= []
         },
         createValue (val, done) {
         // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
@@ -715,6 +832,9 @@ export default {
 
             if(member.Advances != 0){
                 this.hasCA = true
+                this.AdvanceSelect = this.returnMapActiveLoans.map(a=>{return a.value})
+                let sum = this.$lodash.sumBy(member.activeLoans,a=>{return parseInt(a.DailyCharge)})
+                this.ca = sum
                 
             } else {
                 this.hasCA = false
@@ -727,7 +847,15 @@ export default {
                 this.MDetails.memberDesignation = member.Designation
                 this.MDetails.isNewMember = member.isNewMember
                 this.MDetails.operator = member.Operator
-                this.MDetails.advances = member.Advances
+
+
+                let sumAdvances = this.$lodash.sumBy(member.activeLoans,a=>{
+                    return parseInt(a.Amount) - parseInt(a.paidAmount)
+                })
+
+
+                this.MDetails.advances = sumAdvances
+                this.MDetails.activeLoans = member.activeLoans
                 this.hasCA = member.Advances > 0
 
                 if(member.isNewMember){
@@ -791,7 +919,10 @@ export default {
             ManagementFee: this.MDetails.isNewMember ? 0 : Number(this.mf1) ,
             ShareCapital: this.MDetails.isNewMember ? 0 : Number(this.ss1),
             SavingsDeposit: this.MDetails.isNewMember ? 0 : Number(this.sd1),
-            Advances: this.MDetails.isNewMember ? 0: Number(this.ca),
+            Advances: this.MDetails.isNewMember ? 0: this.saveAdvancesData,
+            //Number(this.ca)
+            AdvancesAmount: this.AdvanceOption == 'daily' ? Number(this.ca) : Number(this.returnAdvanceSum),
+            AdvancesPaymentOption: this.AdvanceOption,
             Others: this.mergeQtyOther,
             OthersAmount: Number(this.returnOtherSum),
             Operator: this.MDetails.memberDesignation === 'Operator' ? null : this.MDetails.operator,
@@ -831,9 +962,39 @@ export default {
 
             // check if has cash advance then decrement it
             if (this.hasCA) {
-              await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
-                Advances: firefirestore.FieldValue.increment(-Math.abs(payment.Advances))
-              })
+                let activeLoansData = this.returnSelectedMember.activeLoans
+                let outMoved = []
+                let upMoved = []
+                activeLoansData.forEach(a=>{
+                    let paidAlready = a.paidAmount
+                    a.paidAmount = parseInt(a.paidAmount) + parseInt(this.getPaidAmount(a.CashReleaseTrackingID))
+
+                    if((parseInt(a.Amount) - parseInt(a.paidAmount)) == 0){
+                        outMoved.push(a)
+                    } else {
+                        upMoved.push(a)
+                    }
+                })
+                console.log(activeLoansData,'activeLoansData') 
+                console.log(upMoved,'upMoved')  
+                
+                if(upMoved.length < activeLoansData.length){
+                    let sum = this.$lodash.sumBy(outMoved,a=>{
+                        return parseInt(a.Amount)
+                    })
+                    await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
+                        activeLoans: upMoved,
+                        Advances: firefirestore.FieldValue.increment(-Math.abs(sum))
+                        })
+                } else {
+                    await firebaseDb.collection('MemberData').doc(payment.MemberID).update({activeLoans: upMoved})
+                }
+                // try muna
+                // await firebaseDb.collection('MemberData').doc(payment.MemberID).update({activeLoans: activeLoansData})
+
+            //   await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
+            //     Advances: firefirestore.FieldValue.increment(-Math.abs(payment.Advances))
+            //   })
             }
             // if member is paid also for membership set isNewMember to false
             if (payment.MembershipFee > 0) {
@@ -959,6 +1120,17 @@ export default {
               console.log(error,'error getting number')
               return 0
           }
+      },
+      getMinValue(value){
+          console.log(value,'value')
+          if(value.length == 0){
+              this.toPayAdvancesAmount = []
+          }
+      },
+      getPaidAmount(id){
+          return this.saveAdvancesData.filter(a=>{
+              return a.trackID == id
+          })[0].paidAmount
       }
     }
 }

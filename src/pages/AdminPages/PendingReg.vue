@@ -69,6 +69,7 @@ export default {
       // Binding Collections
       this.$bindCollectionAsObject("PendingRegs", firebaseDb.collection("PreRegPersonalData"))
       .then((PendingRegs) => {
+        console.log(PendingRegs,'PendingRegs')
         this.loading = false
       })
     },

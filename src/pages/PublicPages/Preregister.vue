@@ -543,11 +543,11 @@ export default {
       }
       let message = 'Use this code: ' + this.PreRegData.verificationCode.toString() + ' to verify you phone number.'
       let number = this.returnNumberNoMask.toString()
-      let apinumber = 3
+      let apinumber = 1
 
       var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
       console.log(data)
-      axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+      axios.post('https://smsapisender.000webhostapp.com/index.php', data )
       .then(response => {
         console.log(response)
         this.$refs.stepper.next()
