@@ -183,6 +183,7 @@ export default {
         lastMember: firebaseDb.collection('MemberData').orderBy('timestamp', 'desc').limit(5),
         MemberData: firebaseDb.collection('MemberData'),
         PayTrackers: firebaseDb.collection('PayTrackers'),
+        MembershipFee: firebaseDb.collection('FixedPayments').doc('MembershipFee'),
         // MemberID: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
     }
   },
@@ -297,7 +298,7 @@ export default {
             .then(()=>{
                 let payment = {
                   MemberID: id,
-                  toPayAmount: 500
+                  toPayAmount: this.MembershipFee.amount
                 }
                 this.$firestore.PayTrackers.add(payment).then((doc) => {
                   let paymentid = doc.id
@@ -307,14 +308,15 @@ export default {
                   let trackID = paymentid.toString().slice(0,10)
                   let number = this.PenReg.Phone
 
-                  let message = 'You passed the evaluation. Please pay P500.00 for your membership fee. Tracking# '+ trackID.toUpperCase()
+                  let message = 'Please pay P500.00 Membership Fee to activate your account. Tracking# '+ trackID.toUpperCase()
 
-                  var data = 'number=' + number + '&' + 'message=' + message
+                  var data = 'number=' + number + '&' + 'message=' + message + 'apinumber=' + 2
                   console.log(data)
                   // https://maleficent-sms.000webhostapp.com/index.php
                   axios.post('https://smsapisender.000webhostapp.com/index.php', data)
                   .then(response => {
                     console.log(response)
+
                     this.$q.notify({
                       icon: 'info',
                       message: 'Approved',
@@ -372,30 +374,51 @@ export default {
     createLoginUser (memberID, designation, firstName, lastName, mobile) {
       return new Promise(async (resolve) => {
         const email = memberID + '@coop.com'
-        const password = Math.random().toString(36).slice(-6)
-        Auth2.createUserWithEmailAndPassword(email, password)
-          .then(async (data) => {
-            console.log(data, 'data')
-            const userID = data.uid
-            await firebaseDb.collection('Users').doc(data.user.uid).set({
-              Email: email,
-              Phone: mobile,
-              Designation: designation,
-              FirstName: firstName,
-              LastName: lastName,
-              MemberID: memberID
-            }).then((doc) => {
-              resolve(doc)
-            }).catch((err) => {
-              console.log(err)
+        const password = Math.random().toString(36).slice(-6).toUpperCase()
+
+          await this.sendAccountMessage(memberID,password,mobile)
+          console.log('sent message')
+          Auth2.createUserWithEmailAndPassword(email, password)
+            .then(async (data) => {
+              console.log(data, 'data')
+              const userID = data.uid
+              await firebaseDb.collection('Users').doc(data.user.uid).set({
+                Email: email,
+                Phone: mobile,
+                Designation: designation,
+                FirstName: firstName,
+                LastName: lastName,
+                MemberID: memberID
+              }).then((doc) => {
+                resolve(doc)
+              }).catch((err) => {
+                console.log(err)
+              })
+              
             })
-            
-          })
-          .catch(err => {
-            console.log(err)
-          })
+            .catch(err => {
+              console.log(err)
+            })          
+
       })
     },
+    sendAccountMessage(id,password,mobile){
+      return new Promise(async (resolve) => {   
+
+        let message = `You passed the evaluation! Your AccountNo. is ${id} and your Temporary Password is ${password}.`
+        var senddata = 'number=' + mobile + '&' + 'message=' + message + '&' + 'apinumber=' + 3
+        console.log(senddata,'data')
+
+        axios.post('https://smsapisender.000webhostapp.com/index.php', senddata)
+        .then(response => {
+          console.log(response,'response')
+          resolve(response)
+        })
+        .catch(err =>{
+          console.log('err',err)
+        })
+      })  
+    }
     // printDiv(divName){
 		// 	const prtHtml = document.getElementById(divName).innerHTML;
 
