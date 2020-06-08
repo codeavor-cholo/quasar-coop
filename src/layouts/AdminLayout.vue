@@ -83,6 +83,16 @@
                     </q-item-section>
                       <q-item-section class="text-uppercase">Pending Registration</q-item-section>
                   </q-item>
+                   <q-item
+                    expand-separator
+                    to="/admin/pendingjeeps"
+                    exact
+                    >
+                    <q-item-section avatar>
+                      <q-icon name="commute" />
+                    </q-item-section>
+                      <q-item-section class="text-uppercase">Pending Unit/Jeep Applications</q-item-section>
+                  </q-item>
            </q-expansion-item>
           <!-- End of Sidemenu Member -->
          <!-- Start of Payment Member -->
@@ -213,8 +223,16 @@
                   <q-icon name="vertical_split" />
               </q-item-section>
               <q-item-section>Payment Fee Maintenance</q-item-section>
-          </q-item>
-
+            </q-item>
+            <q-item
+            to="/admin/generatebilling"
+            exact
+            >
+              <q-item-section avatar>
+                  <q-icon name="description" />
+              </q-item-section>
+              <q-item-section>Billing Statement Generator</q-item-section>
+            </q-item>
        </q-list>
       <!-- End of Sidebar Menu inside the Drawer -->
       </q-scroll-area>

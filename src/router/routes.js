@@ -104,6 +104,18 @@ const routes = [
         component: () => import("pages/AdminPages/PaymentMaintenance.vue")
       },
       {
+        path: "/admin/generatebilling",
+        component: () => import("pages/AdminPages/GenerateBilling.vue")
+      },
+      {
+        path: "/admin/pendingjeeps",
+        component: () => import("pages/AdminPages/PendingJeeps.vue")
+      },
+      {
+        path: "/admin/generatebilling",
+        component: () => import("pages/AdminPages/GenerateBilling.vue")
+      },
+      {
         path: "/admin/addpayment",
         component: () => import("pages/AdminPages/AddPaymentNew.vue")
       },

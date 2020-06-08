@@ -1,7 +1,7 @@
 <template>
 <div class="q-pa-md">
    <div class="q-pa-md doc-container" id="printdiv">
-     <!-- <q-btn @click="test">test</q-btn> -->
+     <!-- <q-btn @click="updateJeepData">test</q-btn> -->
       <div class="row  justify-center">
         <div
           class="col-xs-12 col-sm-12 col-md-10 q-pa-md"
@@ -147,7 +147,6 @@
                 label="Reject"/>
               </div>
           </q-card>
-
         </div>
       </div>
     </div>
@@ -164,6 +163,7 @@ export default {
     return {
        newMessage: '',
        PenReg: [],
+       Jeeps: [],
        mid: '',
        loadingState: false
     }
@@ -173,6 +173,7 @@ export default {
     return {
         // Doc
         PenReg: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),
+        Jeeps: firebaseDb.collection('JeepneyData').where('operatorPreRegID', '==', this.penRegId),
         // PenReg: {
         //   ref: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),
         //   objects: true,
@@ -180,14 +181,16 @@ export default {
         //     console.log(data)
         //   }
         // },
-        lastMember: firebaseDb.collection('MemberData').orderBy('timestamp', 'desc').limit(5),
+        lastMember: firebaseDb.collection('Users').orderBy('MemberID', 'desc').limit(5),
         MemberData: firebaseDb.collection('MemberData'),
         PayTrackers: firebaseDb.collection('PayTrackers'),
         MembershipFee: firebaseDb.collection('FixedPayments').doc('MembershipFee'),
         // MemberID: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
     }
   },
-
+  created(){
+    console.log(this.lastMember)
+  },
   methods: {
     regMember () {
         function pad(num, size) {
@@ -198,7 +201,7 @@ export default {
         this.loadingState = true
         if (this.MemberData.length != 0) {
           let lastMember = this.lastMember[0]
-          var lastId = lastMember['.key']
+          var lastId = lastMember.MemberID
           var lastNumber = lastId.slice(-3)
           var date = new Date()
           var id = 'NGTSC' + date.getFullYear() + pad(++lastNumber, 3)
@@ -216,6 +219,9 @@ export default {
           .then(async () => {
             // create login account
             await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName, this.PenReg.Phone)
+
+            // update jeep data
+
             // delete the registrationo in pending registration collection
             this.$firestore.PenReg.delete()
             .then(()=>{
@@ -255,8 +261,9 @@ export default {
                       color: 'positive'
                     })
                     this.loadingState = false
-                    // load the member form
+                    this.updateJeepData(id)
                     this.loadPreReg(id)
+                    // load the member form
                   })
                   .catch((error) => {
                   console.log(error.response)
@@ -293,7 +300,6 @@ export default {
           .then(async () => {
             // create login account
             await this.createLoginUser(id, this.PenReg.Designation, this.PenReg.FirstName, this.PenReg.LastName,this.PenReg.Phone)
-            
             this.$firestore.PenReg.delete()
             .then(()=>{
                 let payment = {
@@ -317,14 +323,14 @@ export default {
                   .then(response => {
                     console.log(response)
 
-                    this.$q.notify({
-                      icon: 'info',
-                      message: 'Approved',
-                      color: 'positive'
-                    })
-                    this.loadingState = false
+                        this.$q.notify({
+                          icon: 'info',
+                          message: 'Approved',
+                          color: 'positive'
+                        })
+                        this.loadingState = false
+                        this.loadPreReg(id)
                     // load the member form
-                    this.loadPreReg(id)
                   })
                   .catch((error) => {
                   console.log(error.response)
@@ -360,6 +366,18 @@ export default {
     },
     loadPreReg(id) {
       this.$router.push('/admin/profile/' + id)
+    },
+    updateJeepData(id){
+      if(this.PenReg.Designation == 'Operator'){
+        this.Jeeps.forEach(a=>{
+          firebaseDb.collection('JeepneyData').doc(a['.key']).update({MemberID: id})
+          .then(()=>{
+            console.log('updated',a['.key'])
+          })
+        })
+      } else {
+        console.log('not operator')
+      }
     },
     test () {
       // NGTSC2020012

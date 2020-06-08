@@ -202,7 +202,7 @@
                         class="q-my-none"
                     /> 
 
-                    <q-input readonly="" v-model="ca" type="number" prefix="₱" label="Daily Charges Total Amount" outlined="" color="teal" :max="returnSelectedMember != {} ? returnSelectedMember.Advances : 0" clearable @clear="ca = 0" v-if="AdvanceOption == 'daily'"/>
+                    <q-input readonly="" v-model="ca" type="number" prefix="₱" label="Daily Charges Total Amount" outlined="" color="teal" :max="returnSelectedMember !== {} ? MDetails.advances : 0" clearable @clear="ca = 0" v-if="AdvanceOption == 'daily'"/>
 
                     <div v-show="AdvanceOption == 'specific'">
 
@@ -218,9 +218,9 @@
                         <div class="text-caption q-pl-md q-py-md">Enter amount to pay in each item.</div> 
                         <div v-for="adv in AdvanceSelect" :key="adv['.key']" class="row justify-between">
                             <div class="q-px-md">#{{adv.CashReleaseTrackingID.toUpperCase()}}
-                                <br> <span class="text-caption">Balance: ₱ {{adv.Amount - adv.paidAmount}}</span> 
+                                <br> <span class="text-caption">Balance: ₱ {{adv.toPayAmount - adv.paidAmount}}</span> 
                             </div>
-                            <q-input v-model="toPayAdvancesAmount[adv.CashReleaseTrackingID]" :min="adv.DailyCharge" :max="(adv.Amount - adv.paidAmount)" class="col-6" dense type="number" label="Amount To Pay" prefix="₱" outlined="" color="teal" clearable="" @clear="toPayAdvancesAmount[adv.CashReleaseTrackingID] = 0"/>     
+                            <q-input v-model="toPayAdvancesAmount[adv.CashReleaseTrackingID]" :min="adv.DailyCharge" :max="(adv.toPayAmount - adv.paidAmount)" class="col-6" dense type="number" label="Amount To Pay" prefix="₱" outlined="" color="teal" clearable="" @clear="toPayAdvancesAmount[adv.CashReleaseTrackingID] = 0"/>     
                         </div> 
                     </div>
                     </div>            
@@ -257,6 +257,46 @@
                 </div>
             </div>
             <div class="col q-px-md q-gutter-md">
+                <div v-show="MDetails.isNewMember == false">
+                    <div class="text-h6" v-if="jeepneyDetails == null">Select Unit/Jeep below:</div>
+                    <div class="text-h6" v-else>Selected Unit/Jeep: <q-chip color="teal" class="q-pa-md" text-color="white" icon="directions_bus" :label="jeepneyDetails" removable @remove="jeepneyDetails = null"/></div>
+                <div v-if="mapUnitsOfMember.length > 0">
+                    <q-select 
+                        v-model="jeepneyDetails" 
+                        :options="membersUnitsOpt" 
+                        label="Search Unit/Jeepney Plate Number" 
+                        filled 
+                        input-debounce="0"
+                        use-input
+                        color="grey-10"
+                        use-chips
+                        clearable=""
+                        emit-value=""
+                        map-options=""
+                        @new-value="createValue3"
+                        @filter="filterFn3"
+                        @clear="jeepneyDetails = null"
+                    >
+                        <template v-slot:selected-item="scope">
+                            <q-chip
+                                dense
+                                :tabindex="scope.tabindex"
+                                color="white"
+                                text-color="secondary"
+                                class="q-ma-none"
+                            >
+                                {{ scope.opt.label }}
+                            </q-chip>
+                        </template>
+                    </q-select>    
+                    <div v-show="MDetails.memberDesignation !== 'Operator'"><q-checkbox v-model="defaultUnit"/> Do you want <b>{{jeepneyDetails}}</b> to be your default Unit/Jeep recorded in your payments?</div>   
+                </div>
+                <div v-else>
+                    <q-banner class="bg-warning text-white">
+                        <q-icon name="warning" /> You have no jeep/units registered yet. Go to Jeep/Unit Registration first.
+                    </q-banner>      
+                </div>   
+                </div>      
                 <div class="text-h6">Transaction Details</div>  
                 <q-input v-model="amountPaid" input-class="text-h6 text-right" clearable :rules="[val => val >= returnTotalAmount || 'Please enter amount greater than or equal to the total amount to pay.']" bottom-slots="" type="number" prefix="₱" label="Amount Paid" outlined="" color="teal" ref="amountPaid" autofocus="" @focus="$event.target.select()"/>      
                 <q-list>
@@ -285,7 +325,7 @@
         
 
         <q-stepper-navigation class="text-right">
-            <q-btn @click="PayFee" color="grey-10" label="Continue" :disable="returnChange == 'INSUFFICIENT AMOUNT !'"/>
+            <q-btn @click="PayFee" color="grey-10" label="Continue" :disable="returnDisabledPayment"/>
             <q-btn flat @click="step = 1,clearForm()" color="grey-10" label="Back" class="q-ml-sm" />
         </q-stepper-navigation>
         </q-step>
@@ -327,13 +367,16 @@ export default {
             trackingNumber: '',
             text: '',
             step: 1,
+            defaultUnit: false,
             operator: false,
             ifDriver: false,
             model: null,
             model2: null,
             membersIdOpt: Object.freeze(this.membersIdOptions),
             membersIdOptTracking: Object.freeze(this.membersIdOptionsTracking),
+            membersUnitsOpt: Object.freeze(this.mapUnitsOfMember),
             MemberData: [],
+            jeepneyDetails: null,
             PayTrackers: [],
             MDetails:{
                 memberID: '',
@@ -386,6 +429,7 @@ export default {
             PayTrackers: firebaseDb.collection('PayTrackers'),
             OtherPayments: firebaseDb.collection('OtherPayments'),
             FixedPayments: firebaseDb.collection('FixedPayments'),
+            JeepneyData: firebaseDb.collection('JeepneyData'),
             
             ManagementFeeDriver: firebaseDb.collection('FixedPayments').doc('ManagementFeeDriver'),
             ManagementFeeOperator: firebaseDb.collection('FixedPayments').doc('ManagementFeeOperator'),
@@ -419,16 +463,22 @@ export default {
       membersIdOptions () {
         let opt = this.MemberData.map(d => {
             let full = d.FirstName + ' ' + d.LastName
-
+            let opID = ''
+            if(d.Designation == 'Operator'){ opID = d['.key'] }
+            else { 
+                let op = {...d.Operator}
+                opID = op.MemberID 
+            }
           return {
             label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
             value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
             fullName: full,
             id: d['.key'],
-            designation: d.Designation
+            designation: d.Designation,
+            OperatorID: opID
           }
         })
-        
+        console.log(opt,'opt')
         return opt
         // Object.freeze(options)
       },
@@ -436,12 +486,16 @@ export default {
         let opt = this.PayTrackers.map(d => {
             let object = this.returnTrackingNumbersInfo(d.MemberID)
             let text = object.label
+
+            console.log(text,'text')
+
             object.label = d['.key'].slice(0,10).toUpperCase() +' - '+text
             object.value = d['.key'].slice(0,10).toUpperCase() +' - '+text
             object.trackingNumber = d['.key'].slice(0,10).toUpperCase()
+            // console.log(object.label,'label check')
             return object
         })
-
+        // console.log('membersIdOptionsTracking',opt)
         //check if paid already
         let unpaid = []
 
@@ -451,9 +505,30 @@ export default {
                 unpaid.push(a)
             }
         })
-
+        console.log(unpaid,'unpaid')
         return unpaid
         // Object.freeze(options)
+      },
+      mapUnitsOfMember(){
+          try {
+            console.log(this.model)
+            let filter = this.JeepneyData.filter(a=>{
+                return a.MemberID == this.model.OperatorID && a.Status == 'approved'
+            })
+
+            console.log('filter',filter)
+            let map = filter.map(a=>{
+                return {
+                    value: a.PlateNumber,
+                    label: a.PlateNumber,
+                    unitData: a
+                }
+            })
+            console.log('jeep data',map)
+            return map
+          } catch (error) {
+            return []
+          }
       },
       mergeQtyOther(){
           try {
@@ -526,7 +601,7 @@ export default {
           try {
             let map = []
             this.AdvanceSelect.forEach(a=>{
-                a.toPayAmount = parseInt(this.toPayAdvancesAmount[a.CashReleaseTrackingID])
+                a.MemberPayAmount = parseInt(this.toPayAdvancesAmount[a.CashReleaseTrackingID])
                 if(this.toPayAdvancesAmount[a.CashReleaseTrackingID] !== undefined){
                     map.push(a)
                 }
@@ -550,7 +625,7 @@ export default {
 
               if(this.AdvanceOption == 'specific') return this.$lodash.map(this.mergeAdvances,a=>{
                   return {
-                      paidAmount: a.toPayAmount,
+                      paidAmount: a.MemberPayAmount,
                       trackID: a.CashReleaseTrackingID,
                       requestID: a.requestID                      
                   }
@@ -564,7 +639,7 @@ export default {
       returnAdvanceSum(){
           try {
 
-            let sum = this.$lodash.sumBy(this.mergeAdvances,'toPayAmount')
+            let sum = this.$lodash.sumBy(this.mergeAdvances,'MemberPayAmount')
             // console.log(sum,'sumtotal')
             return isNaN(sum) ? 0 : sum
           } catch (error) {
@@ -615,7 +690,9 @@ export default {
                 })[0]
             }
           } catch (error) {
-            return {}
+            return {
+                Advances: 0
+            }
           }
       },
       returnMapActiveLoans(){
@@ -628,7 +705,7 @@ export default {
                     value: a
                 }
             })
-
+            console.log('returnMapActiveLoans',map)
             return map
         } catch (error) {
             return []
@@ -647,8 +724,18 @@ export default {
               return []
           }
       },
+      returnDisabledPayment(){
+          if(this.returnChange == 'INSUFFICIENT AMOUNT !') return true
+          if(this.MDetails.isNewMember == false && this.jeepneyDetails == null) return true
+          return false
+      }
     },
     methods: {
+        getUnitDetails(PlateNumber){
+            return this.JeepneyData.filter(a=>{
+                return a.PlateNumber == PlateNumber
+            })[0]
+        },
         returnTrackingNumbersInfo(id){
             let filter = this.MemberData.filter(a=>{
                 return a['.key'] == id
@@ -718,6 +805,7 @@ export default {
             this.AdvanceSelect= []
             this.AdvanceOption='daily'
             this.toPayAdvancesAmount= []
+            this.jeepneyDetails= null
         },
         createValue (val, done) {
         // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
@@ -789,6 +877,41 @@ export default {
                 }
             })
         },
+        createValue3 (val, done) {
+        // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
+        // and it resets the input textbox to empty string
+        // ----
+        // Calling done(var) when new-value-mode is "add-unique", or done(var, "add-unique") adds "var" content to the model
+        // only if is not already set
+        // and it resets the input textbox to empty string
+        // ----
+        // Calling done(var) when new-value-mode is "toggle", or done(var, "toggle") toggles the model with "var" content
+        // (adds to model if not already in the model, removes from model if already has it)
+        // and it resets the input textbox to empty string
+        // ----
+        // If "var" content is undefined/null, then it doesn't tampers with the model
+        // and only resets the input textbox to empty string
+
+        if (val.length > 2) {
+            if (!this.membersUnitsOpt.includes(val)) {
+            done(val, 'add-unique')
+            }
+        }
+        },
+
+        filterFn3 (val, update) {
+            update(() => {
+                if (val === '') {
+                    this.membersUnitsOpt = this.mapUnitsOfMember
+                }
+                else {
+                    const needle = val.toLowerCase()
+                    this.membersUnitsOpt = this.mapUnitsOfMember.filter(
+                        v => v.label.toLowerCase().indexOf(needle) > -1
+                    )
+                }
+            })
+        },
         onClick(){
             let map = []
             this.otherSelect.forEach(a=>{
@@ -830,7 +953,7 @@ export default {
                 this.trackingNumber = val.trackingNumber
             }
 
-            if(member.Advances != 0){
+            if(member.Advances !== 0 || member.Advances !== undefined){
                 this.hasCA = true
                 this.AdvanceSelect = this.returnMapActiveLoans.map(a=>{return a.value})
                 let sum = this.$lodash.sumBy(member.activeLoans,a=>{return parseInt(a.DailyCharge)})
@@ -850,7 +973,7 @@ export default {
 
 
                 let sumAdvances = this.$lodash.sumBy(member.activeLoans,a=>{
-                    return parseInt(a.Amount) - parseInt(a.paidAmount)
+                    return parseInt(a.toPayAmount) - parseInt(a.paidAmount)
                 })
 
 
@@ -940,6 +1063,7 @@ export default {
             SharedTotal: this.operator ? this.returnTotalAmount : null,
             Total: this.returnTotalAmount - this.getIncludeOperatorPaymentTotal,
             AmountPaid: Number(this.amountPaid),
+            jeepneyDetails: this.jeepneyDetails !== null ? this.getUnitDetails(this.jeepneyDetails) : null,
             timestamp: firefirestore.FieldValue.serverTimestamp()
         }
 
@@ -969,7 +1093,7 @@ export default {
                     let paidAlready = a.paidAmount
                     a.paidAmount = parseInt(a.paidAmount) + parseInt(this.getPaidAmount(a.CashReleaseTrackingID))
 
-                    if((parseInt(a.Amount) - parseInt(a.paidAmount)) == 0){
+                    if((parseInt(a.toPayAmount) - parseInt(a.paidAmount)) == 0){
                         outMoved.push(a)
                     } else {
                         upMoved.push(a)
@@ -980,7 +1104,7 @@ export default {
                 
                 if(upMoved.length < activeLoansData.length){
                     let sum = this.$lodash.sumBy(outMoved,a=>{
-                        return parseInt(a.Amount)
+                        return parseInt(a.toPayAmount)
                     })
                     await firebaseDb.collection('MemberData').doc(payment.MemberID).update({
                         activeLoans: upMoved,
@@ -1131,7 +1255,8 @@ export default {
           return this.saveAdvancesData.filter(a=>{
               return a.trackID == id
           })[0].paidAmount
-      }
+      },
+
     }
 }
 </script>

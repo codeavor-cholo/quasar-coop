@@ -41,7 +41,7 @@
                         <div class="text-caption">Click a row to perform transactions.</div>
                         </div>
                         
-                        <q-input v-model="filter" filled type="search" dense class="absolute-right" label="Search" clearable="">
+                        <q-input v-model="filter" filled type="search" dense class="absolute-right q-mr-md" label="Search" clearable="">
                           <template v-slot:append>
                             <q-icon name="search" />
                           </template>

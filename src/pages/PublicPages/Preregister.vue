@@ -82,6 +82,7 @@
 
                   <q-input standard color="teal-4" v-model="PreRegData.FirstName" label="First Name" ref="firstName"
                   lazy-rules
+                  autofocus=""
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
                   />
                   <q-input standard color="teal-4" v-model="PreRegData.LastName" label="Last Name"
@@ -234,7 +235,68 @@
                     :rules="[ val => val && val.length > 0 || 'Please type something']"
                     />
                   </div>
+
+                  <div v-show="PreRegData.Designation == 'Operator'">
+                    <strong class="row justify-center items-center" style="color: #26A69A;">
+                      Jeepney/Unit Details
+                    </strong>
+                    <q-separator class= "q-mb-md q-pt-xs" color="secondary" inset hidden = 'true'/>
+                  </div>
+                  <div class="row text-grey-8 q-mb-xl" v-show="PreRegData.Designation == 'Operator'">
+                    <div class="col q-px-lg">
+                      <span class="q-my-md text-overline">ADD JEEPNEY / UNITS</span>
+                      <q-input v-model="JeepneyDetails.PlateNumber" input-class="text-uppercase" type="text" outlined="" label="Enter Plate Number" color="teal"/>
+                      <q-input
+                        class="q-my-md"
+                        color="teal-4"
+                        type="file"
+                        outlined=""
+                        dense
+                        hint="Upload Jeepney ORCR"
+                        accept="image/*"
+                        @change="onFilePicked2"
+                        @onfocus="resetimginput2"
+                        v-if="uploadReady"
+                        ref="imginput2"
+                        >
+                        <template v-slot:prepend>
+                          <q-icon name="attach_file"/>
+                        </template>
+                      </q-input>
+
+                      <img :src="imageUrl2" width='300' height='150' v-if="imageUrl2 !== null">
+
+                      <div class="row q-gutter-md q-mt-sm">
+                        <q-btn color="grey-8" label="reset form" flat @click="resetJeepForm" />
+                        <q-btn color="primary" icon="add" label="ADD to list" @click="addJeep2List" />
+                      </div>
+
+                    </div>
+                    <div class="col q-px-lg">
+                      <span class="q-my-md text-overline">
+                        YOU HAVE <span class="text-teal">{{JeepneyList.length}}</span> JEEPNEY / UNITS ADDED: 
+                      </span>
+                      <q-list separator="">
+                        <q-item v-for="(jeep,i) in JeepneyList" :key="i">
+                          <q-item-section top thumbnail class="q-ml-none">
+                            <img :src="jeep.ORCRurl">
+                          </q-item-section>
+
+                          <q-item-section>
+                            <q-item-label caption>Plate No.#</q-item-label>
+                            <q-item-label class="text-weight-bold">{{jeep.PlateNumber}}</q-item-label>
+                          </q-item-section>
+
+                          <q-item-section side top>
+                            <q-btn color="grey" icon="delete" flat dense @click="onDelete(jeep,i)" />
+                          </q-item-section>
+                        </q-item> 
+                      </q-list>
+                    </div>
+                  </div>
+
                 </div>
+
 
                 <div>
                     <q-btn
@@ -324,6 +386,12 @@ export default {
         timestamp: '',
         verificationCode: sri(5)
       },
+      JeepneyList:[],
+      JeepneyDetails:{
+        PlateNumber: '',
+        ORCR: null
+      },
+      imageUrl2: null,
       accept: false,
       dbtn1: 'teal-4',
       dbtn2: 'teal-4',
@@ -335,7 +403,8 @@ export default {
       OperatorDetails: {},
       Operator:'',
       isOperatorFound: false,
-      foundOperatorErrorMessage: 'Required field *'
+      foundOperatorErrorMessage: 'Required field *',
+      uploadReady: true,
     }
   },
   firestore () {
@@ -435,7 +504,7 @@ export default {
         const filename = this.LicenseImage.name
         const ext = filename.slice(filename.lastIndexOf('.'))
         console.log(id, 'id')
-        childurl = id + '.'+ ext
+        childurl = id + ext
         return firebaseSto.ref('PreReg/' + childurl).put(this.LicenseImage)
         .then(snapshot => {
             return snapshot.ref.getDownloadURL();
@@ -447,13 +516,44 @@ export default {
               imageUrlPro: 'https://cdn2.iconfinder.com/data/icons/4web-3/139/header-account-image-line-512.png'
               });
         })
+        .then(()=>{
+          if(this.PreRegData.Designation == 'Operator'){
+            this.jeepAddUpload(id)
+          }
+        })
         .catch(error => {
             // Use to signal error if something goes wrong.
             console.log(`Failed to upload file and get link - ${error.message}`);
          })
-         
       })
-      
+
+    },
+    jeepAddUpload(id){
+        this.JeepneyList.forEach(a=>{
+          const filename = a.ORCR.name
+          const ext = filename.slice(filename.lastIndexOf('.'))
+          console.log(id, 'id')
+          let childurl = a.PlateNumber+'_'+id + ext
+          return firebaseSto.ref('JeepUploads/' + childurl).put(a.ORCR)
+          .then(snapshot => {
+              return snapshot.ref.getDownloadURL();
+          }).
+          then(downloadURL => {
+              console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
+
+              let toSave = {
+                PlateNumber: a.PlateNumber,
+                ORCR: downloadURL,
+                operatorPreRegID: id,
+                dateAdded: firefirestore.FieldValue.serverTimestamp()
+              }
+              return firebaseDb.collection("JeepneyData").add(toSave);
+          })
+          .catch(error => {
+              // Use to signal error if something goes wrong.
+              console.log(`Failed to upload file and get link - ${error.message}`);
+          })
+        })
     },
     dbtncolor(){
       if(this.PreRegData.Designation == 'Driver'){
@@ -476,6 +576,23 @@ export default {
       })
       fileReader.readAsDataURL(files[0])
       this.LicenseImage = files[0]
+      console.log(this.LicenseImage,'image')
+    },
+    onFilePicked2(event){
+      const files = event.target.files
+      console.log(files,'files input')
+      let filename = files[0].name
+      if (filename.lastIndexOf('.') <= 0){
+        return alter('Please add a valid file!')
+      }
+        const fileReader = new FileReader()
+        fileReader.addEventListener('load', () => {
+        this.imageUrl2 = fileReader.result
+        this.JeepneyDetails.ORCRurl = fileReader.result
+      })
+      fileReader.readAsDataURL(files[0])
+      this.JeepneyDetails.ORCR = files[0]
+      console.log(this.JeepneyDetails.ORCR,'ORCR')
     },
     onSubmit () {
      this.sendSMS()
@@ -503,6 +620,10 @@ export default {
     },
     resetimginput(){
       this.$refs.imginput.resetValidation()
+    },
+    resetimginput2(){
+      // this.imageUrl2 = null
+      this.$refs.imginput2.resetValidation()
     },
     test () {
       console.log(this.Operators)
@@ -555,6 +676,35 @@ export default {
       .catch((error) => {
       console.log(error.response)
       })   
+    },
+    addJeep2List(){
+      if(this.JeepneyDetails.PlateNumber == '' || this.JeepneyDetails.ORCR == null){
+        this.$q.dialog({
+          title: 'Incomplete UNIT Details!',
+          message: 'Please fill up all details for your unit/jeep details',
+          persistent: true
+        })
+      } else {
+        this.JeepneyDetails.PlateNumber = this.JeepneyDetails.PlateNumber.toUpperCase()
+        this.JeepneyList.push(this.JeepneyDetails)
+        this.resetJeepForm()
+        console.log(this.JeepneyList,'jeep list')
+      }      
+    },
+    resetJeepForm(){
+      this.JeepneyDetails = {
+        ORCR: null,
+        PlateNumber: ''
+      }
+      this.imageUrl2 = null
+      this.uploadReady = false
+      this.$nextTick(() => {
+        this.uploadReady = true
+      })
+    },
+    onDelete(jeep,i){
+      console.log(jeep,i)
+      this.JeepneyList.splice(i,1)
     }
   },
   mounted(){
