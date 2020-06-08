@@ -41,7 +41,7 @@
                         <div class="text-caption">Click a row to perform transactions.</div>
                         </div>
                         
-                        <q-input v-model="filter" filled type="search" dense class="absolute-right" label="Search" clearable="">
+                        <q-input v-model="filter" filled type="search" dense class="absolute-right q-mr-md" label="Search" clearable="">
                           <template v-slot:append>
                             <q-icon name="search" />
                           </template>
@@ -156,6 +156,15 @@
                   </q-item-section>
                   <q-item-section side>
                     <q-item-label>{{returnSelectRow.estimatedDays}} <span class="text-caption">days</span> </q-item-label>
+                  </q-item-section>
+                </q-item>
+
+                <q-item dense="" v-show="tab != 'Cash Loans'" class="q-mb-sm">
+                  <q-item-section>
+                    <q-item-label caption lines="2">Amount to Pay<br>Request Amount + {{InterestRates.amount * 2}}% Interest Rates</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-item-label>₱ {{returnSelectRow.toPayAmount}}</q-item-label>
                   </q-item-section>
                 </q-item>
 
@@ -275,6 +284,15 @@
                   </q-item-section>
                   <q-item-section side>
                     <q-item-label>{{returnSelectRow.estimatedDays}} <span class="text-caption">days</span> </q-item-label>
+                  </q-item-section>
+                </q-item>
+
+                <q-item dense="" v-show="tab != 'Cash Loans'" class="q-mb-sm">
+                  <q-item-section>
+                    <q-item-label caption lines="2">Amount to Pay<br>Request Amount + {{InterestRates.amount * 2}}% Interest Rates</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-item-label>₱ {{returnSelectRow.toPayAmount}}</q-item-label>
                   </q-item-section>
                 </q-item>
 
@@ -423,6 +441,7 @@ export default {
         WithdrawalApplications: firebaseDb.collection('WithdrawalApplications'),
         LoanApplications: firebaseDb.collection('LoanApplications'),
         CashReleaseTrackers: firebaseDb.collection('CashReleaseTrackers'),
+        InterestRates: firebaseDb.collection('FixedPayments').doc('InterestRates')
       }
     },
     computed:{
@@ -526,6 +545,7 @@ export default {
                   date: date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY'),
                   requestDate: date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY'),
                   cashAdvanceBalance: balance, // minus un active loan request amount 
+                  toPayAmount: a.toPayAmount,
                   status: a.Status,
                   balance: balance - parseInt(a.Amount),
                   reason: a.Reason,
@@ -548,6 +568,7 @@ export default {
             return this.approvedSample[0]
           } else {
             this.selected.avatar = this.selected.firstname.charAt(0)
+            console.log(this.selected,'selectedrow')
             return this.selected
           }
         } catch (error) {
@@ -593,6 +614,7 @@ export default {
                   requestDate: date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY'),
                   cashAdvanceBalance: balance, // minus un active loan request amount 
                   status: a.Status,
+                  toPayAmount: a.toPayAmount,
                   balance: balance - parseInt(a.Amount),
                   reason: a.Reason,
                   dailyCharge: parseInt(a.DailyCharge),
@@ -691,8 +713,8 @@ export default {
         })[0]
 
         console.log(releaseID['.key'],'getId')
-
-        const today = firefirestore.FieldValue.serverTimestamp()
+        const newday = new Date()
+        let today = newday.getTime()
         console.log(today,'today')
 
         this.$q.dialog({
@@ -718,21 +740,21 @@ export default {
               let apply = this.LoanApplications.filter(q=>{return q['.key'] == data.requestID})[0]
               let obj = {...apply}
               obj.paidAmount = 0
-              obj.dateActivated = obj.dateReleased
+              obj.dateActivated = today
               delete obj['.key']
               console.log(obj,'obj')
 
               let array = data.activeLoans
               array.push(obj)
 
-              let sum = this.$lodash.sumBy(array,a=>{return parseInt(a.Amount)})
+              let sum = this.$lodash.sumBy(array,a=>{return parseInt(a.toPayAmount)}) //updated since need interest agad
 
               firebaseDb.collection("MemberData").doc(data.memberid).update({activeLoans: array,Advances: sum})
               .then(()=>{
                 console.log('memberdata update success')
                 let day = date.formatDate(new Date,'Do')
                 console.log(day,'day')
-                this.sendSMS(data.Phone,`P${data.requestAmount}.00 cash loan is ACTIVE. 2% Interest Rate will add up to the balance every ${day} of the month.`)
+                this.sendSMS(data.Phone,`P${data.requestAmount}.00 cash loan is ACTIVE. 2% Interest will add to the balance every ${day} of the month after 2 months.`)
                 this.selected = {}
                 this.drawer = false    
                 this.$q.notify({
@@ -790,7 +812,7 @@ export default {
         let header= {
               'Access-Control-Allow-Origin': '*',
         }
-        let apinumber = 3
+        let apinumber = 2
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         console.log(data)

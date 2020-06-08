@@ -12,8 +12,8 @@
                         </q-item-section>
                         <q-item-section side>
                             <div class="row q-gutter-md">
-                                <q-input v-model="returnFixedPayments[1].amount" type="number" prefix="₱" filled dense readonly=""/>
-                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Management Fee (Operator)',returnFixedPayments[1].amount)" />
+                                <q-input v-model="returnFixedPayments[2].amount" type="number" prefix="₱" filled dense readonly=""/>
+                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Management Fee (Operator)',returnFixedPayments[2].amount)" />
                             </div>
                         </q-item-section>
                     </q-item>
@@ -23,8 +23,8 @@
                         </q-item-section>
                         <q-item-section side>
                             <div class="row q-gutter-md">
-                                <q-input v-model="returnFixedPayments[0].amount" type="number" prefix="₱" filled dense readonly=""/>
-                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Management Fee (Driver)',returnFixedPayments[0].amount)" />
+                                <q-input v-model="returnFixedPayments[1].amount" type="number" prefix="₱" filled dense readonly=""/>
+                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Management Fee (Driver)',returnFixedPayments[1].amount)" />
                             </div>
                         </q-item-section>
                     </q-item>
@@ -34,8 +34,8 @@
                         </q-item-section>
                         <q-item-section side>
                             <div class="row q-gutter-md">
-                                <q-input v-model="returnFixedPayments[3].amount" type="number" prefix="₱" filled dense readonly=""/>
-                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Share of Stocks',returnFixedPayments[3].amount)" />
+                                <q-input v-model="returnFixedPayments[4].amount" type="number" prefix="₱" filled dense readonly=""/>
+                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Share of Stocks',returnFixedPayments[4].amount)" />
                             </div>
                         </q-item-section>
                     </q-item> 
@@ -47,11 +47,24 @@
                         </q-item-section>
                         <q-item-section side>
                             <div class="row q-gutter-md">
-                                <q-input v-model="returnFixedPayments[2].amount" type="number" prefix="₱" filled dense readonly=""/>
-                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Membership Fee',returnFixedPayments[2].amount)" />
+                                <q-input v-model="returnFixedPayments[3].amount" type="number" prefix="₱" filled dense readonly=""/>
+                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Membership Fee',returnFixedPayments[3].amount)" />
                             </div>
                         </q-item-section>
-                    </q-item>                    
+                    </q-item> 
+                    <br>
+                    <q-item-label header>Cash Advance Related</q-item-label>
+                    <q-item>
+                        <q-item-section>
+                            <span class="text-weight-bold">Interest Rates (per Month)</span>
+                        </q-item-section>
+                        <q-item-section side>
+                            <div class="row q-gutter-md">
+                                <q-input v-model="returnFixedPayments[0].amount" type="number" suffix="%" filled dense readonly=""/>
+                                <q-btn color="teal-6" icon="edit" flat @click="onClick('Interest Rates',returnFixedPayments[0].amount)" />
+                            </div>
+                        </q-item-section>
+                    </q-item>                                        
                 </q-list>
             </div>
             <div class="col">
@@ -84,7 +97,8 @@
                     <div class="text-h6" v-if="othersNew == false">Edit {{description}}</div>
                     <div class="text-h6" v-else>New Payment (Others)</div>
                     <q-input v-model="description" type="text" label="Description" outlined="" :readonly="others == false"/>
-                    <q-input v-model="amount" type="number" prefix="₱" label="Amount" outlined=""/>
+                    <q-input v-model="amount" type="number" :prefix="description == 'Interest Rates' ? '' : '₱'"
+                    :suffix="description == 'Interest Rates' ? '%' : ''" label="Amount" outlined=""/>
                 </q-card-section>
                 <q-card-actions align="right">
                     <q-btn flat label="Cancel" color="grey-6" v-close-popup @click="onCancel"/>
@@ -169,6 +183,8 @@ export default {
                 id = 'ManagementFeeDriver'
             } else if (this.description == 'Share of Stocks') {
                 id = 'ShareOfStocks'
+            } else if (this.description == 'Interest Rates') {
+                id = 'InterestRates'    
             } else {
                 id = 'MembershipFee'
             }
