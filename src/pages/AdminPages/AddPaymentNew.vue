@@ -97,7 +97,11 @@
             </div>
             <q-separator vertical/>
             <div class="col-4 q-pa-md q-gutter-md">
-                <div class="text-h6">Member Details</div>
+                <div class="text-h6 row justify-between">
+                   <div>Member Details</div> 
+                   <div><q-chip label="Remove Selected" size="md" color="red" text-color="white" removable="" @remove="removeMemberDetails" v-show="MDetails.memberID !== ''"/></div>
+
+                </div>
                 <q-list>
                     <q-item v-if="MDetails.memberID == ''">
                         <q-item-section>
@@ -106,7 +110,7 @@
                             </q-banner>                  
                         </q-item-section>
                     </q-item>
-                    <div v-else>
+                    <div v-else class="text-weight-bold text-teal bg-grey-2 q-py-md">
                         <q-item>
                             <q-item-section>
                                 <q-item-label caption lines="2">Member ID</q-item-label>
@@ -116,7 +120,7 @@
                         <q-separator spaced inset />
                         <q-item>
                             <q-item-section avatar>
-                            <q-avatar color="teal" text-color="white">{{MDetails.memberName.charAt(0).toUpperCase()}}</q-avatar>
+                            <q-avatar color="teal" text-color="white" class="text-weight-regular">{{MDetails.memberName.charAt(0).toUpperCase()}}</q-avatar>
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-capitalize">{{MDetails.memberName}}</q-item-label>
@@ -427,6 +431,7 @@ export default {
             Transactions: firebaseDb.collection('Transactions'),
             MemberData: firebaseDb.collection('MemberData'),
             PayTrackers: firebaseDb.collection('PayTrackers'),
+            BillingTrackers: firebaseDb.collection('BillingTrackers'),
             OtherPayments: firebaseDb.collection('OtherPayments'),
             FixedPayments: firebaseDb.collection('FixedPayments'),
             JeepneyData: firebaseDb.collection('JeepneyData'),
@@ -497,6 +502,26 @@ export default {
         })
         // console.log('membersIdOptionsTracking',opt)
         //check if paid already
+        let opt2 = this.BillingTrackers.map(a=>{
+            let id_member = a.MemberData['.key']
+
+            let object2 = this.returnTrackingNumbersInfo(id_member)
+
+            let text2 = object2.label
+
+            object2.label = a['.key'].slice(0,10).toUpperCase() +' - '+text2
+            object2.value = a['.key'].slice(0,10).toUpperCase() +' - '+text2
+            object2.trackingNumber = a['.key'].slice(0,10).toUpperCase()
+            // console.log(object.label,'label check')
+            return object2           
+
+        })
+
+        console.log(opt2,'billing trackers')
+
+        // remove paid membership fee
+        // check if still new member
+
         let unpaid = []
 
         opt.forEach(a=>{
@@ -757,21 +782,9 @@ export default {
             return opt[0]
         },
         onDecode (decodedString) {
-
-            const id = {
-                id: decodedString.slice(-12)
-            }
-            if(decodedString.substring(0,1) == 'D'){
-                this.MDetails.memberID = decodedString.slice(-12)
-                this.changeMemberDetails(id)
-
-                this.scanner = false
-            } else {
-                this.MDetails.memberID = decodedString.slice(-12)
-                this.changeMemberDetails(id)
-
-                this.scanner = false
-            }
+            console.log(decodedString,'on decode')
+            this.changeMemberDetails({id: decodedString})
+            this.scanner = false
         },
         clearForm(){
             this.operator= false
@@ -940,6 +953,8 @@ export default {
             this.MDetails.memberDesignation = ''
             this.MDetails.isNewMember = false
             this.trackingNumber = ''
+            this.model = null
+            this.model2 = null
         },
         changeMemberDetails(val){
             
@@ -1057,7 +1072,9 @@ export default {
                 // Advances: Number(this.includeFee.Advances),
                 Others: this.showOther2 ? this.mergeQtyOther2 : 0,
                 OtherAmount: this.showOther2 ? Number(this.returnOtherSum2) : 0,
-                Total: this.getIncludeOperatorPaymentTotal
+                Total: this.getIncludeOperatorPaymentTotal,
+                AmountPaid: this.getIncludeOperatorPaymentTotal,
+                jeepneyDetails: this.jeepneyDetails !== null ? this.getUnitDetails(this.jeepneyDetails) : null,
             } : null,
             // paidForOperator: null,
             SharedTotal: this.operator ? this.returnTotalAmount : null,
@@ -1149,7 +1166,9 @@ export default {
                 Total: this.getIncludeOperatorPaymentTotal,
                 SharedTotal: this.operator ? this.returnTotalAmount : null,
                 isPaidByDriver: true,
-                timestamp: firefirestore.FieldValue.serverTimestamp()
+                timestamp: firefirestore.FieldValue.serverTimestamp(),
+                AmountPaid: this.getIncludeOperatorPaymentTotal,
+                jeepneyDetails: this.jeepneyDetails !== null ? this.getUnitDetails(this.jeepneyDetails) : null,
               }
               firebaseDb.collection('Transactions').add(includeOperatorPayment)
                 .then(async (doc) => {

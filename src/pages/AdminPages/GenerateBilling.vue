@@ -18,10 +18,10 @@
                 active-color="teal"
                 @click="selected = {}"
               >
-                <q-tab name="New" icon="fiber_new" label="New Statements" />
-                <q-tab name="Sent" icon="present_to_all" label="Sent Statements"/>
-                <!-- <q-tab name="New Loan" icon="fiber_new" label="New Loan Billing" />
-                <q-tab name="Sent Loan" icon="present_to_all" label="Sent Loan Billing"/> -->
+                <q-tab name="New" icon="fiber_new" label="New Statements (Quota)" />
+                <q-tab name="Sent" icon="present_to_all" label="Sent Statements (Quota)"/>
+                <q-tab name="New Loan" icon="fiber_new" label="New Statement (Loans)" />
+                <q-tab name="Sent Loan" icon="present_to_all" label="Sent Statement (Loans)"/>
 
 
               </q-tabs>
@@ -107,7 +107,7 @@ const sri = require('simple-random-id');
 export default {
     data(){
         return {
-            tab: 'New',
+            tab: 'New Loan',
             today: date.formatDate(new Date(2020,6,1),'YYYY/MM/DD'),
             splitterModel: 20,
             drawer: false,
@@ -151,13 +151,32 @@ export default {
               }
             })
 
-            console.log(this.returnAdvances,'withInterest')
+            let loans = this.returnWithAdvancesInterest
+            let unsentloans = []
+            let sentloans = []
+
+            loans.forEach(b=>{
+              if(this.$lodash.findIndex(this.BillingTrackers, a=>{ return a.SentID == b.SentID}) == -1){
+                unsentloans.push(b)
+              } else {
+
+                sentloans.push(b)
+              }
+            })
+
+            let sentAdvances = this.BillingTrackers.filter(a=>{
+                a.DateSent = date.formatDate(this.getDateSent(a.SentID).timestamp.toDate(),'MM/DD/YYYY')
+                a.trackID = this.getDateSent(a.SentID)['.key'].toString().slice(0,10)
+              return a.Advances !== undefined
+            })
 
             if(this.tab == 'New') return unsent
             else if(this.tab == 'Sent'){ return sent }
+            else if(this.tab == 'New Loan'){ return unsentloans }
+            else { return sentAdvances }
         },
         returnColumnofTable(){
-          let columns = [
+          let quotacolumns = [
             { name: 'PlateNumber', align: 'left', label: 'Plate Number', field: 'PlateNumber', sortable: true },
             { name: 'BillingName', align: 'left', label: 'Billing Name', field: 'BillingName', sortable: true },
             { name: 'BillingMonth', align: 'left', label: 'Billing Month', field: 'BillingMonth', sortable: true },            
@@ -165,11 +184,25 @@ export default {
             { name: 'AmountPerDay', align: 'left', label: 'MF', field: 'AmountPerDay', sortable: true, typeOf: 'money' },
             { name: 'QuotaBalance', align: 'left', label: 'Quota Balance', field: 'QuotaBalance', sortable: true, typeOf: 'money' },
           ]
+
+          let loancolumns = [
+            { name: 'MemberID', align: 'left', label: 'Member ID', field: 'MemberID', sortable: true },
+            { name: 'BillingName', align: 'left', label: 'Billing Name', field: 'BillingName', sortable: true },
+            { name: 'BillingDate', align: 'left', label: 'Billing Date', field: 'BillingDate', sortable: true },            
+            { name: 'BillingBalance', align: 'left', label: 'Unpaid Advances', field: 'BillingBalance', sortable: true, typeOf: 'money'  },
+            { name: 'InterestRate', align: 'left', label: 'Rate', field: 'InterestRate', sortable: true, },
+            { name: 'InterestAmount', align: 'left', label: 'Added Amount', field: 'InterestAmount', sortable: true, typeOf: 'money' }, 
+            { name: 'Status', align: 'left', label: 'Status', field: 'Status', sortable: true, },             
+          ]
             
-            if(this.tab == 'New') return columns
+            if(this.tab == 'New') return quotacolumns
             else if(this.tab == 'Sent'){ 
-              columns.push({ name: 'DateSent', align: 'left', label: 'Date Sent', field: 'DateSent', sortable: true })
-              return columns 
+              quotacolumns.push({ name: 'DateSent', align: 'left', label: 'Date Sent', field: 'DateSent', sortable: true })
+              return quotacolumns 
+            } else if(this.tab == 'New Loan'){ return loancolumns }
+            else { 
+              loancolumns.push({ name: 'DateSent', align: 'left', label: 'Date Sent', field: 'DateSent', sortable: true })
+              return loancolumns 
             }
         },
         returnJeepneyTransactions(){
@@ -267,22 +300,28 @@ export default {
             return []
           }
         },
-        returnAdvances(){
+        returnWithAdvances(){
+          try {
+            let withCashAdvance = this.MemberData.filter(a=>{
+              return a.Advances !== 0 && a.activeLoans !== undefined
+            })
+            return withCashAdvance            
+          } catch (error) {
+            console.log(error,'returnWithAdvances')
+            return []
+          }
+        },
+        returnWithAdvancesInterest(){
           try {
             let today = this.today
             // console.log(today,'today base')
             let todayDate = date.formatDate(today,'DD')
             let todayMonth = date.formatDate(today,'M')
             let todayYear = date.formatDate(today,'YYYY')
-            let lastMonthStart = new Date(todayYear,parseInt(todayMonth)-2,1) 
-            let lastMonthEnd = date.endOfDate(lastMonthStart, 'month')
             let billingMonth = date.formatDate(today,'MMM')
             let billingMonthYear = date.formatDate(today,'YYYY')
 
-
-            let withCashAdvance = this.MemberData.filter(a=>{
-              return a.Advances !== 0 && a.activeLoans !== undefined
-            })
+            let withCashAdvance = this.returnWithAdvances
 
             let withInterest = []
             withCashAdvance.forEach(w=>{
@@ -293,58 +332,108 @@ export default {
                 let dueInterestDateStart = date.startOfDate(dueInterestDate,'day')
                 console.log(dueInterestDateStart, 'due interest')
 
-                let dueInterestDate1week = date.addToDate(new Date(dueInterestDateStart),{days: 7})
-
-                console.log(dueInterestDate1week,'1 week')
                 
                 let balance  = q.TotalBalance - q.paidAmount
                 let str = w.FirstName+ ' '+w.LastName+date.formatDate(today,'MMMDDYYYY')+q.CashReleaseTrackingID
                 let SentID = str.replace(/\s/g, "");  
 
-                if (date.isBetweenDates(new Date(today), new Date(dueInterestDateStart), new Date(dueInterestDate1week), { inclusiveFrom: true, inclusiveTo: true })) {
-                  // Do something with dateTarget
-                  console.log('due na advances mo')
-                  //compute Interest to be added
+                if(new Date(today) >= new Date(dueInterestDateStart)){
+                  console.log('due na advances mo with interest na')
+                  // every month add interest to the remaining balance
+
+                  let diff = date.getDateDiff(new Date(today),new Date(activated),  'months')
+                  console.log(diff,'diff')
+
+                  let dueDate = date.addToDate(activated,{month: diff})
                   
-                  let interestRate = parseInt(this.InterestRates.amount) / 100
-                  let interestAmount = balance * interestRate
-                  console.log(balance,'advances to pay')
-                  console.log(interestRate,'interestRate')
-                  console.log(interestAmount,'interestAmount')
-                  let total2Pay = balance + interestAmount
-                  console.log(total2Pay,'total2Pay')
-                
-                  let object = {
-                    BillingName: w.FirstName+ ' '+w.LastName,
-                    BillingPhone: w.Phone,
-                    BillingDate: date.formatDate(today,'MMM DD,YYYY'),
-                    BillingBalance: total2Pay,
-                    Advances: balance,
-                    InterestAmount: interestAmount,
-                    InterestRate: this.InterestRates.amount +'%', 
-                    dateActivated: date.formatDate(new Date(q.dateActivated),'MMM DD,YYYY'),
-                    MemberID: w['.key'],
-                    MemberData: w,
-                    SentID: SentID
-                  }
-                  console.log(object,'object')
-                  withInterest.push(object)
-                } 
+                  let dueDateStart = date.startOfDate(dueDate,'day')
+                  console.log(dueDateStart,'dueDateStart')
+
+                  let dueDate1week = date.addToDate(new Date(dueDateStart),{days: 7})
+                  console.log(dueDate1week,'dueDate1week')
+
+                  if (date.isBetweenDates(new Date(today), new Date(dueDateStart), new Date(dueDate1week), { inclusiveFrom: true, inclusiveTo: true })) {
+                    // Do something with dateTarget
+                    console.log('due na advances mo')
+                    //compute Interest to be added
+                    
+                    let interestRate = parseInt(this.InterestRates.amount) / 100
+                    let interestAmount = balance * interestRate
+                    console.log(balance,'advances to pay')
+                    console.log(interestRate,'interestRate')
+                    console.log(interestAmount,'interestAmount')
+                    let total2Pay = balance + interestAmount
+                    console.log(total2Pay,'total2Pay')
+                  
+                    let arrayUpdate = {...q}
+                    arrayUpdate.TotalBalance = q.TotalBalance + interestAmount
+
+                    let object = {
+                      BillingName: w.FirstName+ ' '+w.LastName,
+                      BillingPhone: w.Phone,
+                      BillingDate: date.formatDate(today,'MMM DD,YYYY'),
+                      BillingBalance: total2Pay,
+                      Advances: balance,
+                      InterestAmount: interestAmount,
+                      InterestRate: this.InterestRates.amount +'%', 
+                      dateActivated: date.formatDate(new Date(q.dateActivated),'MMM DD,YYYY'),
+                      MemberID: w['.key'],
+                      MemberData: w,
+                      SentID: SentID,
+                      Status: 'Interest Rate Added',
+                      CashReleaseTrackingID: q.CashReleaseTrackingID,
+                      arrayUpdate: arrayUpdate,
+                      arrayRemove: {...q}
+                    }
+                    console.log(object,'object')
+                    withInterest.push(object)
+                  } 
+
+                } else {
+                    let AMonthAfter = date.addToDate(activated,{month: 1})
+                    let AMonthAfterStart = date.startOfDate(AMonthAfter,'day')
+                    console.log(AMonthAfterStart,'AMonthAfterStart')
+
+                    let AMonthAfter1week = date.addToDate(new Date(AMonthAfterStart),{days: 7})
+                    console.log(AMonthAfter1week,'AMonthAfter1week')
+                    if (date.isBetweenDates(new Date(today), new Date(AMonthAfterStart), new Date(AMonthAfter1week), { inclusiveFrom: true, inclusiveTo: true })) {
+                      let object = {
+                        BillingName: w.FirstName+ ' '+w.LastName,
+                        BillingPhone: w.Phone,
+                        BillingDate: date.formatDate(today,'MMM DD,YYYY'),
+                        BillingBalance: balance,
+                        Advances: balance,
+                        InterestAmount: 0,
+                        InterestRate: 0 +'%', 
+                        dateActivated: date.formatDate(new Date(q.dateActivated),'MMM DD,YYYY'),
+                        MemberID: w['.key'],
+                        MemberData: w,
+                        SentID: SentID,
+                        Status: 'Notice To Pay',
+                        CashReleaseTrackingID: q.CashReleaseTrackingID,
+                      }      
+                      console.log(object,'object')
+                      withInterest.push(object)    
+                    }        
+                }
                               
               })
             })
             
-
-
-
             return withInterest
           } catch (error) {
-            console.log(error,'returnAdvances')
+            console.log(error,'returnWithAdvancesInterest')
             return []
           }
         }
     },
     methods:{
+      getIndexActiveLoans(array,cashID){
+        let index = this.$lodash.findIndex(array,a=>{
+          return a.CashReleaseTrackingID == cashID
+        })
+        return index
+      },
       getMemberData(PlateNumber){
         let id = this.JeepneyData.filter(a=>{
           return PlateNumber == a.PlateNumber
@@ -382,33 +471,82 @@ export default {
       },
       generateQuotaBilling(){
         try {
-          let withBalance = this.returnWithBalance
+          let withBalance = this.returnDataofTable
+          let withAdvances = this.returnDataofTable
+
           this.$q.dialog({
-            title: this.tab == 'New' ? 'Confirm Billing': 'Confirm Resend',
-            message: this.tab == 'New' ? 'Would you like to generate and send billing to members now?' : 'Would you like to resend billing to members now?',
+            title: this.tab.includes('New') ? 'Confirm Billing': 'Confirm Resend',
+            message: this.tab.includes('New') ? 'Would you like to generate and send billing to members now?' : 'Would you like to resend billing to members now?',
             cancel: true,
             persistent: true
           }).onOk(() => {
-            withBalance.forEach(a=>{
-              let data = a
-              data.timestamp = firefirestore.FieldValue.serverTimestamp()
+            if(this.tab == 'New' || this.tab == 'Sent'){
               if(this.tab == 'New'){
+                withBalance.forEach(a=>{
+                  let data = a
+                  data.timestamp = firefirestore.FieldValue.serverTimestamp()
 
-                firebaseDb.collection("BillingTrackers").add(data)
-                  .then((doc)=>{
-                    console.log('created billing tracker')
-                    let trackID = doc.id.toString().slice(0,10)
-                    this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
-                    console.log('sent sucess!')
-                  })
-                  .catch(error=>{
-                    console.log('bill generation error',error)
-                  })                  
-              } else if(this.tab == 'Sent'){
-                this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
-                console.log('sent sucess!')
+                    firebaseDb.collection("BillingTrackers").add(data)
+                      .then((doc)=>{
+                        console.log('created billing tracker')
+                        let trackID = doc.id.toString().slice(0,10)
+                        this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                        console.log('sent sucess!')
+                      })
+                      .catch(error=>{
+                        console.log('bill generation error',error)
+                      })                  
+                  
+                })
+              } else {
+                withBalance.forEach(a=>{
+                  let data = a
+                  this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
+                  console.log('sent sucess!')
+
+                })
               }
-            })
+
+            } else {
+               if(this.tab == 'New Loan'){
+                 withAdvances.forEach(a=>{
+                   let data = a
+                   data.timestamp = firefirestore.FieldValue.serverTimestamp()
+                    firebaseDb.collection("BillingTrackers").add(data)
+                      .then((doc)=>{
+                        console.log('created billing tracker')
+                        let trackID = doc.id.toString().slice(0,10)
+                        this.sendSMS(data.BillingPhone,`${data.Status}, P${data.BillingBalance}.00 worth of balances in your loans. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                        console.log('sent sucess!')
+                        if(data.Status == 'Interest Rate Added'){
+                          firebaseDb.collection('MemberData').doc(data.MemberID).update({
+                              Advances: firefirestore.FieldValue.increment(data.InterestAmount),
+                              activeLoans: firefirestore.FieldValue.arrayRemove(data.arrayRemove),
+                              // activeLoans: firefirestore.FieldValue.arrayUnion(data.arrayUpdate),
+                          }).then(()=>{
+                            console.log('active Loans remove success')
+                            firebaseDb.collection('MemberData').doc(data.MemberID).update({
+                                // Advances: firefirestore.FieldValue.increment(data.InterestAmount),
+                                // activeLoans: firefirestore.FieldValue.arrayRemove(data.arrayRemove),
+                                activeLoans: firefirestore.FieldValue.arrayUnion(data.arrayUpdate),
+                            }).then(()=>{
+                              console.log('active Loans union success')
+                            }).catch(error=>{
+                            console.log(error,'active Loans union  error')
+                            })   
+                          }).catch(error=>{
+                            console.log(error,'active Loans remove error')
+                          })                          
+                        }
+                      }).catch(error=>{
+                        console.log('bill generation error',error)
+                      })   
+                 })
+
+               } else {
+
+               }          
+            }
           })
         } catch (error) {
           console.log(error,'error')

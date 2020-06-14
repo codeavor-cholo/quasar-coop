@@ -403,6 +403,7 @@ export default {
                 { name: 'lastname', align: 'center', label: 'Last name', field: 'lastname', sortable: true },
                 { name: 'firstname', align: 'center', label: 'First name', field: 'firstname', sortable: true },
                 { name: 'request', align: 'center', label: 'Released Amount', field: 'requestAmount', sortable: true, typeData: 'money' },
+                { name: 'currentBalance', align: 'center', label: 'Current Balance', field: 'currentBalance', sortable: true, typeData: 'money' },
                 { name: 'date', align: 'center', label: 'Date Released', field: 'date', sortable: true},
             ],
             //sampleDATA
@@ -457,7 +458,7 @@ export default {
             let rejects = this.LoanApplications.filter(a=>{return a.Status == 'rejected'})
             return this.returnMapping(rejects)
           } else {
-            return this.cashReleasedSample
+            return this.returnActiveLoans
           }
         } catch (error) {
           return []
@@ -583,6 +584,39 @@ export default {
         } catch (error) {
           return []
         }
+      },
+      returnActiveLoans(){
+        try {
+          let withLoans = this.MemberData.filter(a=> {return a.activeLoans !== undefined && a.activeLoans.length !== 0})
+
+          let mapDisplay = []
+          
+          withLoans.forEach(q=>{
+            q.activeLoans.forEach(w=>{
+              console.log('loan data',w)
+              let object = {
+                memberid: q['.key'],
+                trackingNo: w.CashReleaseTrackingID.toUpperCase(),
+                designation: q.Designation,
+                lastname: q.LastName,
+                firstname: q.FirstName,
+                requestAmount: parseInt(w.Amount),
+                date: date.formatDate(new Date(w.dateReleased),'MM-DD-YYYY'),
+                currentBalance: w.TotalBalance - w.paidAmount
+              }
+
+              mapDisplay.push(object)
+
+            })
+          })
+          console.log(withLoans,'withLoans')
+          console.log(mapDisplay,'active loans display')
+
+          return mapDisplay
+        } catch (error) {
+          console.log(error,'returnActiveLoans')
+          return []
+        }
       }
     },
     methods:{
@@ -595,7 +629,8 @@ export default {
             
 
             let sumLoans = this.$lodash.sumBy(this.getMemberData(id).activeLoans,a=>{
-              return parseInt(a.requestAmount)})
+              return parseInt(a.Amount)})
+              console.log(sumLoans,'sumLoans')
             let balance = (this.getMemberData(id).ShareCapital / 2) - sumLoans
 
             return {

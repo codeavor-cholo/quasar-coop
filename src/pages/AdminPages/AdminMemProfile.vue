@@ -617,20 +617,9 @@ export default {
       },
       GenQr(){
         if(this.MemberData.Designation == 'Driver'){
-
-          var op
-
-          this.$firestore.Units.doc(this.MemberData.PlateNo)
-          .get()
-          .then((doc) => {
-            op = doc.data().Operator
-            })
-            .then(() => {
-              this.qrvalue =
-              'Driver: ' + this.MemberData['.key'] +' '+ 'Operator: ' + op
-            })
+          this.qrvalue = this.MemberData['.key']
         }else{
-          this.qrvalue = 'Operator: ' + this.MemberData['.key']
+          this.qrvalue = this.MemberData['.key']
         }
 
       },
