@@ -332,8 +332,13 @@ export default {
                 let dueInterestDateStart = date.startOfDate(dueInterestDate,'day')
                 console.log(dueInterestDateStart, 'due interest')
 
-                
-                let balance  = q.TotalBalance - q.paidAmount
+                let base = 0
+                if(q.TotalBalance == undefined){
+                  base = parseFloat(q.toPayAmount)
+                } else {
+                  base = parseFloat(q.TotalBalance)
+                }
+                let balance  = base - parseFloat(q.paidAmount)
                 let str = w.FirstName+ ' '+w.LastName+date.formatDate(today,'MMMDDYYYY')+q.CashReleaseTrackingID
                 let SentID = str.replace(/\s/g, "");  
 
@@ -518,6 +523,8 @@ export default {
                         let trackID = doc.id.toString().slice(0,10)
                         this.sendSMS(data.BillingPhone,`${data.Status}, P${data.BillingBalance}.00 worth of balances in your loans. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
                         console.log('sent sucess!')
+
+
                         if(data.Status == 'Interest Rate Added'){
                           firebaseDb.collection('MemberData').doc(data.MemberID).update({
                               Advances: firefirestore.FieldValue.increment(data.InterestAmount),
@@ -531,6 +538,7 @@ export default {
                                 activeLoans: firefirestore.FieldValue.arrayUnion(data.arrayUpdate),
                             }).then(()=>{
                               console.log('active Loans union success')
+                              this.tab = 'Sent Loan'
                             }).catch(error=>{
                             console.log(error,'active Loans union  error')
                             })   
@@ -544,7 +552,7 @@ export default {
                  })
 
                } else {
-
+                 this.tab = 'Sent Loan'
                }          
             }
           })

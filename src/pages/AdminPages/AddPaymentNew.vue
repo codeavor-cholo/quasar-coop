@@ -162,7 +162,7 @@
         icon="payment"
         :done="step > 2"
         >
-        <div class="row">
+        <div class="row" v-if="billPaymentView == false">
             <div class="col-4 q-px-md q-gutter-md">
                 <div class="text-overline text-capitalize">PAYMENT ({{MDetails.memberName}}) - <span class="text-uppercase text-teal">{{MDetails.memberDesignation}}</span>  </div>
                 <q-input v-model="membershipFee" readonly="" type="number" prefix="₱" label="Membership Fee" outlined="" color="teal" v-if="MDetails.isNewMember == true"/>
@@ -263,7 +263,7 @@
             <div class="col q-px-md q-gutter-md">
                 <div v-show="MDetails.isNewMember == false">
                     <div class="text-h6" v-if="jeepneyDetails == null">Select Unit/Jeep below:</div>
-                    <div class="text-h6" v-else>Selected Unit/Jeep: <q-chip color="teal" class="q-pa-md" text-color="white" icon="directions_bus" :label="jeepneyDetails" removable @remove="jeepneyDetails = null"/></div>
+                    <div class="text-h6" v-else>Selected Unit/Jeep: <q-chip color="teal" class="q-pa-md" text-color="white" icon="directions_bus" :label="jeepneyDetails" :removable="!defaultUnitDisabled" @remove="jeepneyDetails = null"/> <q-btn v-show="defaultUnitDisabled" color="grey-8"  dense flat icon="close" label="remove default" size="sm" @click="removeDefaultUnit" /></div>
                 <div v-if="mapUnitsOfMember.length > 0">
                     <q-select 
                         v-model="jeepneyDetails" 
@@ -274,12 +274,14 @@
                         use-input
                         color="grey-10"
                         use-chips
-                        clearable=""
+                        :clearable="!defaultUnitDisabled"
                         emit-value=""
                         map-options=""
                         @new-value="createValue3"
                         @filter="filterFn3"
                         @clear="jeepneyDetails = null"
+                        :disable="defaultUnitDisabled"
+                        v-show="MDetails.defaultUnit == null"
                     >
                         <template v-slot:selected-item="scope">
                             <q-chip
@@ -288,12 +290,13 @@
                                 color="white"
                                 text-color="secondary"
                                 class="q-ma-none"
+                                :disable="defaultUnitDisabled"
                             >
                                 {{ scope.opt.label }}
                             </q-chip>
                         </template>
                     </q-select>    
-                    <div v-show="MDetails.memberDesignation !== 'Operator'"><q-checkbox v-model="defaultUnit"/> Do you want <b>{{jeepneyDetails}}</b> to be your default Unit/Jeep recorded in your payments?</div>   
+                    <div v-show="MDetails.memberDesignation !== 'Operator' && MDetails.defaultUnit == null"><q-checkbox v-model="defaultUnit" :disable="defaultUnitDisabled" @input="defaultUnitCheck"/> Do you want <b>{{jeepneyDetails}}</b> to be your default Unit/Jeep recorded in your payments?</div>   
                 </div>
                 <div v-else>
                     <q-banner class="bg-warning text-white">
@@ -326,10 +329,126 @@
      
             </div>
         </div>
+        <div class="row" v-else>
+            <div class="col-4">
+                <div class="text-h6">Billing Details (#{{returnModel2Data.trackingNumber.toUpperCase()}})</div>
+                <q-card class="my-card q-mr-md bg-grey-2 rounded-borders" flat>
+                    <q-card-section>
+                        <q-list v-if="returnModel2Data.billType == 'loans'">
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Billing Name</q-item-section>
+                                <q-item-section side>{{returnModel2Data.BillingName}}</q-item-section>
+                            </q-item>
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Billing Date</q-item-section>
+                                <q-item-section side>{{returnModel2Data.BillingDate}}</q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Advances</q-item-section>
+                                <q-item-section side>₱ {{returnModel2Data.Advances}}</q-item-section>
+                            </q-item>
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Interest Amount</q-item-section>
+                                <q-item-section side>+ ₱ {{returnModel2Data.InterestAmount}} ({{returnModel2Data.InterestRate}} Interest Rate) </q-item-section>
+                            </q-item>
+
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Billing Balance</q-item-section>
+                                <q-item-section side>₱ {{returnModel2Data.BillingBalance}}</q-item-section>
+                            </q-item>
+                            <div v-show="returnModel2Data.paymentStatus == 'Partial Payment'">
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Partial Payment</q-item-section>
+                                <q-item-section side>- ₱ {{returnModel2Data.billPaidAmount}}</q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Remaining Balance</q-item-section>
+                                <q-item-section side>₱ {{parseFloat(returnModel2Data.BillingBalance) - parseFloat(returnModel2Data.billPaidAmount)}}</q-item-section>
+                            </q-item>
+                            </div>
+                        </q-list>
+                        <q-list v-else>
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Billing Name</q-item-section>
+                                <q-item-section side>{{returnModel2Data.BillingName}}</q-item-section>
+                            </q-item>
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Billing Month</q-item-section>
+                                <q-item-section side>{{returnModel2Data.BillingMonth}}</q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Plate Number</q-item-section>
+                                <q-item-section side>{{returnModel2Data.PlateNumber}}</q-item-section>
+                            </q-item>
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Days Unpaid x Daily (MF)</q-item-section>
+                                <q-item-section side>{{returnModel2Data.NoPayDays}} x ₱ {{returnModel2Data.AmountPerDay}}.00</q-item-section>
+                            </q-item>
+
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Quota Balance</q-item-section>
+                                <q-item-section side>₱ {{returnModel2Data.QuotaBalance | currency}}.00</q-item-section>
+                            </q-item>
+                            <div v-show="returnModel2Data.paymentStatus == 'Partial Payment'">
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Partial Payment</q-item-section>
+                                <q-item-section side>₱ {{returnModel2Data.billPaidAmount}}</q-item-section>
+                            </q-item>
+                            <q-separator />
+                            <q-item>
+                                <q-item-section class="text-weight-bold">Remaining Balance</q-item-section>
+                                <q-item-section side>₱ {{parseFloat(returnModel2Data.QuotaBalance) - parseFloat(returnModel2Data.billPaidAmount)}}</q-item-section>
+                            </q-item>
+                            </div>
+                        </q-list>
+                    </q-card-section>
+                </q-card>
+            </div>
+            <div class="col">
+                <div class="text-h6">Transaction Details</div>  
+                <q-input v-model="amountPaidBills" input-class="text-h6 text-right" clearable type="number" prefix="₱" label="Amount Paid" outlined="" color="teal" ref="amountPaid" autofocus="" @focus="$event.target.select()"/>      
+                <q-list>
+                    <q-item>
+                        <q-item-section>
+                            <q-item-label>TOTAL DUE AMOUNT</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-item-label class="text-h6 text-left">₱ {{returnBillTotal}}.00</q-item-label>
+                        </q-item-section>
+                    </q-item>
+                    <q-separator spaced />
+                    <q-item v-if="returnBillTotal >= amountPaidBills">
+                        <q-item-section>
+                            <q-item-label>REMAINING BALANCE</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-item-label class="text-h6 text-left">₱ {{returnBillTotal - amountPaidBills}}</q-item-label>
+                        </q-item-section>
+                    </q-item>
+                    <q-item v-else>
+                        <q-item-section>
+                            <q-item-label>CHANGE</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-item-label class="text-h6 text-left" v-if="returnChangeBill !== 'INSUFFICIENT AMOUNT !'">₱ {{returnChangeBill}}</q-item-label>
+                            <q-item-label class="text-h6 text-left text-red" v-else>{{returnChangeBill}}</q-item-label>
+                        </q-item-section>
+                    </q-item>
+                </q-list>                 
+            </div>
+        </div>
         
 
         <q-stepper-navigation class="text-right">
-            <q-btn @click="PayFee" color="grey-10" label="Continue" :disable="returnDisabledPayment"/>
+            <q-btn @click="PayFee" color="grey-10" label="Continue" :disable="returnDisabledPayment" v-if="billPaymentView == false"/>
+            <q-btn @click="PayFeeBills" color="grey-10" label="Continue" v-else/>
             <q-btn flat @click="step = 1,clearForm()" color="grey-10" label="Back" class="q-ml-sm" />
         </q-stepper-navigation>
         </q-step>
@@ -368,10 +487,12 @@ Vue.use(VueQrcodeReader);
 export default {
     data(){
         return {
+            amountPaidBills: 0,
             trackingNumber: '',
             text: '',
             step: 1,
             defaultUnit: false,
+            defaultUnitDisabled: false,
             operator: false,
             ifDriver: false,
             model: null,
@@ -423,7 +544,8 @@ export default {
             ShareOfStocks: 0,
             AdvanceSelect: [],
             toPayAdvancesAmount: [],
-            AdvanceOption: 'daily'
+            AdvanceOption: 'daily',
+            billPaymentView: false,
         }
     },
     firestore(){
@@ -462,8 +584,43 @@ export default {
     computed: {
         ...mapGetters('subModules', ['genTransactionID', 'genORNo', 'currencyToNumber']),
         getIncludeOperatorPaymentTotal () {
-            return this.currencyToNumber(this.mf2) +this.currencyToNumber(this.ss2) +this.currencyToNumber(this.sd2) +this.currencyToNumber(this.other2) + this.currencyToNumber(this.returnOtherSum2)
+            if(this.isIncludeOperator){
+                return this.currencyToNumber(this.mf2) +this.currencyToNumber(this.ss2) +this.currencyToNumber(this.sd2) +this.currencyToNumber(this.other2) + this.currencyToNumber(this.returnOtherSum2)
+            } else {
+                return 0
+            }
+            
                 // this.currencyToNumber(this.includeFee.Advances)
+        },
+        returnModel2Data(){
+            try {
+                if(this.model2 !== null){
+                    return this.model2
+                } else {
+                    return {
+                        trackingNumber: '',
+                        billType: 'loans',
+                        BillingName: '',
+                        BillingDate: '',
+                        Advances: 0,
+                        InterestAmount: 0,
+                        InterestRate: 0,
+                        BillingBalance: 0,
+                        QuotaBalance: 0,
+                        BillingMonth: '',
+                        PlateNumber: '',
+                        NoPayDays: 0,
+                        AmountPerDay: 0,
+                        paymentStatus: '',
+                        billPaidAmount: ''
+                    }
+                }
+            } catch (error) {
+                console.log(error,'returnModel2Data')
+                return {
+
+                }
+            }
         },
       membersIdOptions () {
         let opt = this.MemberData.map(d => {
@@ -492,8 +649,6 @@ export default {
             let object = this.returnTrackingNumbersInfo(d.MemberID)
             let text = object.label
 
-            console.log(text,'text')
-
             object.label = d['.key'].slice(0,10).toUpperCase() +' - '+text
             object.value = d['.key'].slice(0,10).toUpperCase() +' - '+text
             object.trackingNumber = d['.key'].slice(0,10).toUpperCase()
@@ -502,6 +657,9 @@ export default {
         })
         // console.log('membersIdOptionsTracking',opt)
         //check if paid already
+
+
+
         let opt2 = this.BillingTrackers.map(a=>{
             let id_member = a.MemberData['.key']
 
@@ -512,13 +670,14 @@ export default {
             object2.label = a['.key'].slice(0,10).toUpperCase() +' - '+text2
             object2.value = a['.key'].slice(0,10).toUpperCase() +' - '+text2
             object2.trackingNumber = a['.key'].slice(0,10).toUpperCase()
+            object2.billType = a.QuotaBalance !== undefined ? 'quota' : 'loans'
             // console.log(object.label,'label check')
-            return object2           
-
+            return {...object2,...a}          
         })
 
         console.log(opt2,'billing trackers')
-
+        this.getLatestBillsOnly(opt2)
+        console.log('getLatestBillsOnly')
         // remove paid membership fee
         // check if still new member
 
@@ -526,19 +685,19 @@ export default {
 
         opt.forEach(a=>{
             let index = this.$lodash.findIndex(this.Transactions, obj=>{return obj.TrackingNumber == a.trackingNumber})
-            if(index == -1){
+            if(index == -1 && this.returnIsNewMember(a.id) == true){
                 unpaid.push(a)
             }
         })
         console.log(unpaid,'unpaid')
-        return unpaid
+        return [].concat(unpaid,this.getLatestBillsOnly(opt2))
         // Object.freeze(options)
       },
       mapUnitsOfMember(){
           try {
-            console.log(this.model)
+            let id = this.model !== null ? this.model : this.model2
             let filter = this.JeepneyData.filter(a=>{
-                return a.MemberID == this.model.OperatorID && a.Status == 'approved'
+                return a.MemberID == id.OperatorID && a.Status == 'approved'
             })
 
             console.log('filter',filter)
@@ -552,6 +711,7 @@ export default {
             console.log('jeep data',map)
             return map
           } catch (error) {
+            console.log()
             return []
           }
       },
@@ -696,9 +856,29 @@ export default {
               return this.MembershipFee.amount
           }
       },
+      returnBillTotal(){
+          if(this.returnModel2Data.billType == 'quota'){
+              if(this.returnModel2Data.paymentStatus == 'Partial Payment'){
+                  return this.returnModel2Data.QuotaBalance - this.returnModel2Data.billPaidAmount
+              }
+              return this.model2.QuotaBalance
+          } else {
+            if(this.returnModel2Data.paymentStatus == 'Partial Payment'){
+                  return this.returnModel2Data.BillingBalance - this.returnModel2Data.billPaidAmount
+              }
+              return this.returnModel2Data.BillingBalance
+          }
+      },
       returnChange(){
           if(this.amountPaid >= this.returnTotalAmount){
               return this.amountPaid - this.returnTotalAmount
+          } else {
+              return 'INSUFFICIENT AMOUNT !'
+          }
+      },
+      returnChangeBill(){
+          if(this.amountPaidBills >= this.returnBillTotal){
+              return this.amountPaidBills - this.returnBillTotal
           } else {
               return 'INSUFFICIENT AMOUNT !'
           }
@@ -756,6 +936,40 @@ export default {
       }
     },
     methods: {
+        getLatestBillsOnly(array){
+            let group = this.$lodash.groupBy(array,a=>{
+                return a.billType == 'quota' ? a.PlateNumber : a.CashReleaseTrackingID
+            })
+
+            let map = this.$lodash.map(group,function(value,key){
+                return {
+                    Marker: key,
+                    Array: value
+                }
+            })
+            console.log(group,'getLatestBillsOnly')
+            console.log(map,'map')
+
+            let latest = []
+
+            map.forEach(a=>{
+                let order = this.$lodash.orderBy(a.Array,n=>{
+                    return n.timestamp.toDate()
+                },'desc')[0]
+                if(order.paymentStatus !== 'Full Payment'){
+                    latest.push(order)
+                }
+                
+            })
+
+            console.log(latest,'latest bills')
+            return latest
+        },
+        returnIsNewMember(id){
+            return this.MemberData.filter(a=>{
+                return a['.key'] == id
+            })[0].isNewMember
+        },
         getUnitDetails(PlateNumber){
             return this.JeepneyData.filter(a=>{
                 return a.PlateNumber == PlateNumber
@@ -768,13 +982,19 @@ export default {
 
             let opt = filter.map(d => {
                 let full = d.FirstName + ' ' + d.LastName
-
+                let opID = ''
+                if(d.Designation == 'Operator'){ opID = d['.key'] }
+                else { 
+                    let op = {...d.Operator}
+                    opID = op.MemberID 
+                }
             return {
                 label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
                 value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
                 fullName: full,
                 id: d['.key'],
-                designation: d.Designation
+                designation: d.Designation,
+                OperatorID: opID
             }
 
             })
@@ -787,6 +1007,7 @@ export default {
             this.scanner = false
         },
         clearForm(){
+            console.log('back click')
             this.operator= false
             this.ifDriver= false
             this.model= null
@@ -966,6 +1187,13 @@ export default {
 
             if(val.trackingNumber !== undefined){
                 this.trackingNumber = val.trackingNumber
+                
+                if(val.billType !== undefined){
+                    this.billPaymentView = true
+                    console.log(this.model2,'billing details')
+                } else {
+                    this.billPaymentView = false
+                }
             }
 
             if(member.Advances !== 0 || member.Advances !== undefined){
@@ -978,6 +1206,19 @@ export default {
                 this.hasCA = false
             }
 
+            if(member.defaultUnit !== undefined){
+                let jeep = member.defaultUnit
+                this.MDetails.defaultUnit = jeep.PlateNumber
+                this.jeepneyDetails = jeep.PlateNumber
+                this.defaultUnitDisabled = true
+                this.defaultUnit = true
+                console.log(this.jeepneyDetails,'jeep default')
+            } else {
+                this.MDetails.defaultUnit = null
+                this.defaultUnitDisabled = false
+                this.defaultUnit = false
+                this.jeepneyDetails = null
+            }
 
             if(val !== null){
                 this.MDetails.memberID = val.id
@@ -985,11 +1226,21 @@ export default {
                 this.MDetails.memberDesignation = member.Designation
                 this.MDetails.isNewMember = member.isNewMember
                 this.MDetails.operator = member.Operator
+                
+
 
 
                 let sumAdvances = this.$lodash.sumBy(member.activeLoans,a=>{
-                    return parseInt(a.toPayAmount) - parseInt(a.paidAmount)
+                    let sum = 0
+                    if(a.TotalBalance == undefined){
+                        sum = (parseFloat(a.toPayAmount) - parseFloat(a.paidAmount))
+                    } else {
+                        sum = (parseFloat(a.TotalBalance) - parseFloat(a.paidAmount))
+                    }
+                    return sum
                 })
+
+                console.log(sumAdvances,'sumAdvances')
 
 
                 this.MDetails.advances = sumAdvances
@@ -1034,8 +1285,150 @@ export default {
             
             this.$refs.stepper.next()
         },
-        async PayFeeTest () {
-            
+        async PayFeeBills () {
+            let vm = this
+            const bill = vm.model2
+            let billID = bill['.key']
+            let billType = bill.billType
+            let MemberID = this.MDetails.memberID
+
+
+            var payment = {
+                MemberID: this.MDetails.memberID,
+                OrNo: this.OrNo,
+                TransactionID: this.TransactionID,
+                TransactionType: 'Bills Payment',    
+                Total: this.returnBillTotal,
+                AmountPaid: parseFloat(this.amountPaidBills),  
+                TrackingNumber: this.trackingNumber, 
+                timestamp: firefirestore.FieldValue.serverTimestamp()         
+            }
+            let smsAmount = this.returnBillTotal
+            let remainingBalance = 0
+            if(this.returnBillTotal >= this.amountPaidBills){
+                remainingBalance = this.returnBillTotal - this.amountPaidBills
+                payment.remainingBalance = remainingBalance
+                smsAmount = this.amountPaidBills
+            }
+
+            let status = 'Full Payment'
+            if(remainingBalance > 0){
+                status = 'Partial Payment'
+                payment.paymentStatus = status
+            } else {
+                payment.paymentStatus = status
+            }
+
+            let loanID = bill.CashReleaseTrackingID
+            let activeLoans = this.returnSelectedMember.activeLoans
+            let update = activeLoans.filter(a=>{ 
+                return a.CashReleaseTrackingID == loanID
+            })[0]
+
+            let totalAmountPaid = parseFloat(this.amountPaidBills)
+            if(bill.paymentStatus == 'Partial Payment'){
+                totalAmountPaid = totalAmountPaid + parseFloat(bill.billPaidAmount)
+                if(totalAmountPaid > this.returnBillTotal){
+                    totalAmountPaid = this.returnBillTotal
+                }
+            } else {
+                totalAmountPaid = this.returnBillTotal
+            }
+
+
+            console.log('payment',payment)
+            console.log('bill',billID, bill)
+
+            firebaseDb.collection('Transactions').add(payment)
+            .then(async (doc) => {
+                this.$forceUpdate()
+                console.log(doc.id,'doc id')
+                console.log(payment, 'payment details')
+                vm.sendSMS(doc.id,payment.MemberID,smsAmount) 
+
+                if(billType == 'quota'){
+                    //update billing with status
+                    firebaseDb.collection('BillingTrackers').doc(billID).update({paymentStatus: status,billPaidAmount: totalAmountPaid})
+                    .then(()=>{
+                        console.log('bill updated success')
+                        vm.$q.notify({
+                        icon: 'info',
+                        color: 'positive',
+                        message: 'Bill Payment Success'
+                        })
+                        vm.$refs.stepper.next()
+                        vm.clearForm()
+                     }).catch((err)=>{
+                         console.log(err,'bill update error')
+                     }) 
+
+                } else {
+                    firebaseDb.collection('BillingTrackers').doc(billID).update({paymentStatus: status,billPaidAmount: totalAmountPaid})
+                    .then(()=>{
+                        console.log('bill updated success')
+                        //update advances and active loans in member data
+
+                        // array remove
+                        let arrayRemove = {...update}
+
+                        // array update
+                        let arrayUpdate = {...update}
+                        arrayUpdate.paidAmount = parseFloat(arrayUpdate.paidAmount) + parseFloat(this.amountPaidBills)
+                        
+                        if(status == 'Full Payment'){
+                            firebaseDb.collection('MemberData').doc(MemberID).update({
+                                Advances: firefirestore.FieldValue.increment(-Math.abs(update.TotalBalance)),
+                                activeLoans: firefirestore.FieldValue.arrayRemove(arrayRemove),
+                            }).then(()=>{
+                                console.log('active Loans remove success because paid full')
+                                vm.$q.notify({
+                                    icon: 'info',
+                                    color: 'positive',
+                                    message: 'Bill Payment Success'
+                                })
+                                vm.$refs.stepper.next()
+                                vm.clearForm()
+                            })                
+                        } else {
+                            firebaseDb.collection('MemberData').doc(MemberID).update({
+                                activeLoans: firefirestore.FieldValue.arrayRemove(arrayRemove),
+                            }).then(()=>{
+                                console.log('partially paid')
+                                firebaseDb.collection('MemberData').doc(MemberID).update({
+                                    activeLoans: firefirestore.FieldValue.arrayUnion(arrayUpdate),
+                                }).then(()=>{
+                                console.log('active Loans union success')
+                                vm.$q.notify({
+                                    icon: 'info',
+                                    color: 'positive',
+                                    message: 'Bill Payment Success'
+                                })
+                                vm.$refs.stepper.next()
+                                vm.clearForm()
+
+                                }).catch(error=>{
+                                console.log(error,'active Loans union  error')
+                                })   
+                            }).catch(error=>{
+                                console.log(error,'active Loans remove error')
+                            }) 
+                        }
+                     }).catch((err)=>{
+                         console.log(err,'bill update error')
+                     }) 
+
+                }
+
+
+            }).catch(err => {
+                vm.$q.notify({
+                icon: 'info',
+                color: 'negative',
+                message: 'An error occur'
+                })
+                console.log(err)
+            })
+
         },
         async PayFee () {
         // format the payment
@@ -1234,7 +1627,7 @@ export default {
                     'Access-Control-Allow-Origin': '*',
             }
             let message = 'SMS Reciept for the payment of P'+ amount + '.00 on '+ TodayDate +'. PaymentID# '+ trackID.toUpperCase()
-            let apinumber = 1
+            let apinumber = 2
 
             let data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
             console.log(data,'data sent')
@@ -1275,6 +1668,61 @@ export default {
               return a.trackID == id
           })[0].paidAmount
       },
+      removeDefaultUnit(){
+        this.$q.dialog({
+        title: `Remove Default Unit`,
+        message: 'Would you like to remove the default unit saved ?',
+        persistent: true,
+        cancel: true
+        }).onOk(() => {
+            firebaseDb.collection('MemberData').doc(this.MDetails.memberID).update({
+                defaultUnit: firefirestore.FieldValue.delete() 
+            }).then(()=>{
+                console.log('success delete')
+                this.changeMemberDetails({id: this.MDetails.memberID})
+                console.log('update views')
+            })            
+        })  
+      },
+      defaultUnitCheck(val){
+          console.log(val,'defaultUnitCheck')
+          console.log(this.jeepneyDetails,'jeep')
+          if(this.jeepneyDetails == null){
+            this.$q.dialog({
+            title: `No Unit Selected!`,
+            message: 'Please select unit to save as your default unit.',
+            persistent: true
+            }).onOk(() => {
+                this.defaultUnit = false
+            })              
+          } else {
+            if(val == true){
+                this.$q.dialog({
+                title: `Confirm Default Unit - ${this.jeepneyDetails}`,
+                message: `Would you like to make this unit ${this.jeepneyDetails} your default unit to use in daily payments ?`,
+                cancel: true,
+                persistent: true
+                }).onOk(() => {
+                    firebaseDb.collection('MemberData').doc(this.MDetails.memberID).update({
+                        defaultUnit: this.getUnitDetails(this.jeepneyDetails)
+                    }).then(()=>{
+                        this.$q.notify({
+                            icon: 'info',
+                            color: 'positive',
+                            message: 'Update Default Unit Success'
+                        })  
+                        this.changeMemberDetails({id: this.MDetails.memberID})                      
+                    })
+                    //save to database as default unit
+                    this.defaultUnitDisabled = true
+                }).onCancel(()=>{
+                    this.defaultUnit = false
+                })        
+            }
+          }
+
+
+      }
 
     }
 }
