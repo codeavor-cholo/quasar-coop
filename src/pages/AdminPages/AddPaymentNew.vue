@@ -1040,6 +1040,8 @@ export default {
             this.AdvanceOption='daily'
             this.toPayAdvancesAmount= []
             this.jeepneyDetails= null
+            this.amountPaidBills = 0
+            this.billPaymentView = false
         },
         createValue (val, done) {
         // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
