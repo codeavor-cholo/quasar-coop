@@ -1329,7 +1329,7 @@ export default {
             }
 
             let totalAmountPaid = parseFloat(this.amountPaidBills)
-            if(bill.paymentStatus == 'Partial Payment'){
+            if(bill.paymentStatus == 'Partial Payment' || status == 'Partial Payment'){
                 totalAmountPaid = totalAmountPaid + parseFloat(bill.billPaidAmount)
                 if(totalAmountPaid > this.returnBillTotal){
                     totalAmountPaid = this.returnBillTotal
