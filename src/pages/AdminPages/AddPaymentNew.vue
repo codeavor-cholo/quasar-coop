@@ -1321,9 +1321,12 @@ export default {
 
             let loanID = bill.CashReleaseTrackingID
             let activeLoans = this.returnSelectedMember.activeLoans
-            let update = activeLoans.filter(a=>{ 
-                return a.CashReleaseTrackingID == loanID
-            })[0]
+            let update = null
+            if(billType == 'loans'){
+                update = activeLoans.filter(a=>{ 
+                    return a.CashReleaseTrackingID == loanID
+                })[0]
+            }
 
             let totalAmountPaid = parseFloat(this.amountPaidBills)
             if(bill.paymentStatus == 'Partial Payment'){
