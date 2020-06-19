@@ -1,6 +1,7 @@
 <template>
     <q-page>
         <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Generate Billing <q-icon name="mdi-arrow-right-box" /> {{tab}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span> 
+          <!-- <q-btn color="primary" icon="check" label="OK" @click="test" class="float-right q-mr-md" dense/> -->
           <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="adjust date" @click="adjustDate = true" /> 
         </h6>
         
@@ -83,16 +84,26 @@
 
         <q-dialog v-model="adjustDate" persistent>
           <q-card>
+
             <q-card-section class="row items-center">
+            <q-banner class="bg-info text-white full-width q-mt-md">
+              <q-icon name="info" /> This function is for demo purposes only.
+            </q-banner>
               <q-date
                 v-model="today"
                 landscape
                 flat
+                color="teal"
                 minimal
+                class="full-width"
               />
+              <q-banner class="bg-warning text-white">
+                <q-icon name="warning" /> When testing this function, adjust date once and refresh the window to refresh the data correctly for the next adjustment of date.
+              </q-banner>
             </q-card-section>
+
             <q-card-actions align="right">
-              <q-btn flat label="OK" color="primary" v-close-popup />
+              <q-btn flat label="done" color="teal" v-close-popup />
             </q-card-actions>
           </q-card>
         </q-dialog>
@@ -107,14 +118,17 @@ const sri = require('simple-random-id');
 export default {
     data(){
         return {
-            tab: 'New Loan',
+            tab: 'New',
             today: date.formatDate(new Date(2020,6,1),'YYYY/MM/DD'),
             splitterModel: 20,
             drawer: false,
             filter: '',
-            pagination: {},
+            pagination: {
+              page: 1,
+              rowsPerPage: 0
+            },
             adjustDate: false,
-            selected: {}
+            selected: {},
         }
     },
     firestore () {
@@ -123,6 +137,7 @@ export default {
         JeepneyData: firebaseDb.collection('JeepneyData'),
         Transactions: firebaseDb.collection('Transactions'),
         BillingTrackers: firebaseDb.collection('BillingTrackers'),
+        LastBillingTrackers: firebaseDb.collection('BillingTrackers'),
 
         ManagementFeeDriver: firebaseDb.collection('FixedPayments').doc('ManagementFeeDriver'),
         ManagementFeeOperator: firebaseDb.collection('FixedPayments').doc('ManagementFeeOperator'),
@@ -151,6 +166,71 @@ export default {
               }
             })
 
+            let dataSaved = []
+            let withoutBills = []
+
+            let cloneUnsent = this.$lodash.clone(unsent)
+            let otherUnsent = []
+
+            if(cloneUnsent.length > 0){
+              let withRemainingBalanceBills = this.$lodash.clone(this.returnWithQuotaBalanceLastMonth)
+              // console.log(withRemainingBalanceBills,'after unsent')
+              withRemainingBalanceBills.forEach(a=>{
+                cloneUnsent.forEach(q=>{
+                  if(a.PlateNumber == q.PlateNumber && a.BillingName == q.BillingName){
+                    console.log(a,'same')
+                    let obj = {...q}
+                    console.log(obj,'obj')
+                    obj.thisMonthQuota = q.QuotaBalance
+                    obj.QuotaBalance = a.lastBillBalance + q.QuotaBalance
+                    obj.BillingMonth = q.BillingMonth
+                    obj.lastMonthBillingStatement = {...a}
+                    delete obj.billPaidAmount
+                    delete obj.trackID
+                    delete obj.DateSent
+                    obj.Transactions = q.Transactions
+                    obj.NoPayDays = q.NoPayDays
+                    obj.Count = q.Count
+                    obj.AmountPerDay = q.AmountPerDay
+                    
+                    dataSaved.push(obj)
+                  } 
+                })
+                  let index = this.$lodash.findIndex(dataSaved,x=>{
+                    return x.PlateNumber == a.PlateNumber && x.BillingName == a.BillingName
+                  })
+
+                  if(index < 0){
+                    let obj = {...a}
+                    obj.lastMonthBillingStatement = {...a}
+                    dataSaved.push(obj)
+                  }
+              }) 
+ 
+              
+              cloneUnsent.forEach(q=>{
+                let index = this.$lodash.findIndex(dataSaved,a=>{
+                  return a.PlateNumber == q.PlateNumber && a.BillingName == q.BillingName
+                })
+
+                if(index < 0){
+                  withoutBills.push(q)
+                }
+              }) 
+
+              otherUnsent = [...dataSaved,...withoutBills]
+              unsent = this.$lodash.clone(otherUnsent)
+              console.log(dataSaved,'dataSaved')
+              console.log(withoutBills,'without')
+              console.log('otherUnsent concat',otherUnsent)
+
+
+            } else {
+              otherUnsent = this.returnWithQuotaBalanceLastMonth
+              console.log('otherUnsent',otherUnsent)
+              unsent = this.$lodash.clone(otherUnsent)
+            }
+
             let loans = this.returnWithAdvancesInterest
             let unsentloans = []
             let sentloans = []
@@ -159,7 +239,6 @@ export default {
               if(this.$lodash.findIndex(this.BillingTrackers, a=>{ return a.SentID == b.SentID}) == -1){
                 unsentloans.push(b)
               } else {
-
                 sentloans.push(b)
               }
             })
@@ -170,7 +249,17 @@ export default {
               return a.Advances !== undefined
             })
 
-            if(this.tab == 'New') return unsent
+            let todayBase = new Date(this.today)
+            let todayStartMonth = date.startOfDate(todayBase,'month')
+            let todayBase1week = date.addToDate(todayStartMonth,{days: 7})
+            console.log(todayStartMonth,'todayStart')
+            console.log(todayBase1week,'todayBase1week')
+            if (date.isBetweenDates(todayBase,todayStartMonth, todayBase1week, { inclusiveFrom: true, inclusiveTo: false })) {
+              if(this.tab == 'New') return unsent
+            }
+
+
+            if(this.tab == 'New') return []
             else if(this.tab == 'Sent'){ return sent }
             else if(this.tab == 'New Loan'){ return unsentloans }
             else { return sentAdvances }
@@ -204,6 +293,64 @@ export default {
               loancolumns.push({ name: 'DateSent', align: 'left', label: 'Date Sent', field: 'DateSent', sortable: true })
               return loancolumns 
             }
+        },
+        returnWithQuotaBalanceLastMonth(){
+          try {
+            const bills = this.$lodash.clone(this.LastBillingTrackers)
+            console.log(bills,'bills')
+            let lastMonth2 = date.subtractFromDate(new Date(this.today),{month: 2})
+            // console.log(lastMonth,'lastMonth')
+            let billingMonth = date.formatDate(lastMonth2,'MMM')
+            let billingMonthYear = date.formatDate(lastMonth2,'YYYY')    
+            let lastBillingMonth = billingMonth+' '+billingMonthYear
+            console.log(lastBillingMonth,'lastBillingMonth')
+            let withRemainingBalanceBills = []
+
+            bills.forEach(a=>{
+              let paidBills = a.billPaidAmount !== undefined ? parseFloat(a.billPaidAmount) : 0
+              let remainingBal = parseFloat(a.QuotaBalance) - paidBills
+
+              if(lastBillingMonth == a.BillingMonth && a.paymentStatus !== 'Full Payment' && remainingBal !== 0){
+                a.lastBillBalance = remainingBal
+                withRemainingBalanceBills.push(a)
+              }
+            })
+            
+            console.log(withRemainingBalanceBills,'withRemainingBalanceBills')
+            let today = this.today
+            // console.log(today,'today base')
+            let todayDate = date.formatDate(today,'DD')
+            let todayMonth = date.formatDate(today,'M')
+            let todayYear = date.formatDate(today,'YYYY')
+            let lastMonthStart = new Date(todayYear,parseInt(todayMonth)-2,1) 
+            let lastMonthEnd = date.endOfDate(lastMonthStart, 'month')
+            let lastMonth = date.formatDate(lastMonthStart,'MMM')
+            let lastMonthYear = date.formatDate(lastMonthStart,'YYYY')
+
+            const out = []
+            
+            withRemainingBalanceBills.forEach(a=>{
+                  a.BillingMonth = lastMonth+ ' '+lastMonthYear
+                  a.QuotaBalance = a.lastBillBalance
+                  let str = a.BillingName+a.BillingMonth+a.PlateNumber
+                  a.SentID = str.replace(/\s/g, "")  
+                  a.NoPayDays = 0
+                  a.Count = 0   
+                  a.AmountPerDay = this.ManagementFeeOperator.amount
+                  let object2Push = {...a}
+                  delete object2Push.trackID
+                  delete object2Push['.key']
+                  delete object2Push.timestamp
+                  delete object2Push.Transactions
+                  a.LastMonthBillStatement = object2Push
+                  out.push(object2Push)   
+            })
+            console.log(out,'out')
+            return out
+          } catch (error) {
+            console.log(error,'returnWithQuotaBalanceLastMonth')
+            return []
+          }
         },
         returnJeepneyTransactions(){
           try {
@@ -293,8 +440,6 @@ export default {
               }
             })
 
-            // console.log(withBalance,'withBalance')
-
             return withBalance
           } catch (error) {
             return []
@@ -330,7 +475,7 @@ export default {
                 // console.log(activated,'date activated')
                 let dueInterestDate = date.addToDate(activated,{month: 2})
                 let dueInterestDateStart = date.startOfDate(dueInterestDate,'day')
-                console.log(dueInterestDateStart, 'due interest')
+                // console.log(dueInterestDateStart, 'due interest')
 
                 let base = 0
                 if(q.TotalBalance == undefined){
@@ -371,7 +516,14 @@ export default {
                     console.log(total2Pay,'total2Pay')
                   
                     let arrayUpdate = {...q}
-                    arrayUpdate.TotalBalance = q.TotalBalance + interestAmount
+                    let toAdd = 0
+                    if(q.TotalBalance == undefined){
+                      toAdd = parseFloat(q.toPayAmount)
+                    } else {
+                      toAdd = parseFloat(q.TotalBalance)
+                    }
+
+                    arrayUpdate.TotalBalance = toAdd + interestAmount
 
                     let object = {
                       BillingName: w.FirstName+ ' '+w.LastName,
@@ -397,10 +549,10 @@ export default {
                 } else {
                     let AMonthAfter = date.addToDate(activated,{month: 1})
                     let AMonthAfterStart = date.startOfDate(AMonthAfter,'day')
-                    console.log(AMonthAfterStart,'AMonthAfterStart')
+                    // console.log(AMonthAfterStart,'AMonthAfterStart')
 
                     let AMonthAfter1week = date.addToDate(new Date(AMonthAfterStart),{days: 7})
-                    console.log(AMonthAfter1week,'AMonthAfter1week')
+                    // console.log(AMonthAfter1week,'AMonthAfter1week')
                     if (date.isBetweenDates(new Date(today), new Date(AMonthAfterStart), new Date(AMonthAfter1week), { inclusiveFrom: true, inclusiveTo: true })) {
                       let object = {
                         BillingName: w.FirstName+ ' '+w.LastName,
@@ -417,7 +569,7 @@ export default {
                         Status: 'Notice To Pay',
                         CashReleaseTrackingID: q.CashReleaseTrackingID,
                       }      
-                      console.log(object,'object')
+                      // console.log(object,'object')
                       withInterest.push(object)    
                     }        
                 }
@@ -481,7 +633,7 @@ export default {
 
           this.$q.dialog({
             title: this.tab.includes('New') ? 'Confirm Billing': 'Confirm Resend',
-            message: this.tab.includes('New') ? 'Would you like to generate and send billing to members now?' : 'Would you like to resend billing to members now?',
+            message: this.tab.includes('New') ? 'Would you like to generate and send billing to members now? Note: Please do generate billing statements in proper order of months to prevent error.' : 'Would you like to resend billing to members now? Note: Please do generate billing statements in proper order of months to prevent error',
             cancel: true,
             persistent: true
           }).onOk(() => {
@@ -503,15 +655,33 @@ export default {
                       })                  
                   
                 })
+                this.tab == 'Sent'
               } else {
-                withBalance.forEach(a=>{
-                  let data = a
-                  this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
-                  console.log('sent sucess!')
+                this.$q.dialog({
+                  title: 'Resend billing ?',
+                  message: 'This will resend the recent generated billings only. Click OK to Continue.',
+                  cancel: true,
+                  persistent: true
+                }).onOk(() => {
+                  let sentAll = []
+                  withBalance.forEach(a=>{
+                    let data = a
+                    if(date.formatDate(new Date(a.DateSent),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')){
+                      this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
+                      sentAll.push(a)
+                      console.log('sent sucess!')
+                    } 
 
+                  })
+                  if(sentAll.length == 0){
+                      this.$q.notify({
+                        type: 'negative',
+                        message: `NO RECENT BILLINGS TO SEND`
+                      })  
+                  }
+              
                 })
               }
-
             } else {
                if(this.tab == 'New Loan'){
                  withAdvances.forEach(a=>{
@@ -552,7 +722,29 @@ export default {
                  })
 
                } else {
-                 this.tab = 'Sent Loan'
+                this.$q.dialog({
+                  title: 'Resend billing ?',
+                  message: 'This will resend the recent generated billings only. Click OK to Continue.',
+                  cancel: true,
+                  persistent: true
+                }).onOk(() => {
+                  let sentAll = []
+                  withBalance.forEach(a=>{
+                    let data = a
+                    if(date.formatDate(new Date(a.DateSent),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')){
+                      this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
+                      sentAll.push(a)
+                      console.log('sent sucess!')
+                    }
+                  })
+                  if(sentAll.length == 0){
+                      this.$q.notify({
+                        type: 'negative',
+                        message: `NO RECENT BILLINGS TO SEND`
+                      })  
+                  }
+              
+                })
                }          
             }
           })
@@ -562,6 +754,9 @@ export default {
       },
       getDateSent(SentID){
         return this.BillingTrackers.filter(a=>{return SentID == a.SentID})[0]
+      },
+      test(){
+        console.log(this.returnWithQuotaBalanceLastMonth)
       }
     }
 }

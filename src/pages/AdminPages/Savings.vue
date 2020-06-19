@@ -134,8 +134,8 @@
 
                 </div>
                 <q-item>  
-                  <q-btn color="teal" icon="check_circle" label="APPROVE WITHDRAWAL" class="q-mt-md full-width" disable="" v-if="tab == 'Withdraw Requests'"/>
-                  <q-btn color="teal" icon="money" label="RELEASE CASH" class="q-mt-md full-width" disable="" v-else-if="tab == 'Approved Requests'"/>   
+                  <q-btn color="teal" icon="check_circle" label="APPROVE WITHDRAWAL" class="q-mt-md full-width" v-if="tab == 'Withdraw Requests'" @click="approveWithdrawalSavings"/>
+                  <q-btn color="teal" icon="money" label="RELEASE CASH" class="q-mt-md full-width" v-else-if="tab == 'Approved Requests'" @click="cashReleaseSavings"/>   
                   <div v-else></div>                 
                 </q-item>
                 <q-item>
@@ -153,6 +153,7 @@
 <script>
 import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 import { date } from 'quasar'
+import axios from 'axios'
 
 export default {
     data(){
@@ -246,6 +247,7 @@ export default {
         MemberData: firebaseDb.collection('MemberData'),
         Transactions: firebaseDb.collection('Transactions'),
         WithdrawalApplications: firebaseDb.collection('WithdrawalApplications'),
+        WithdrawCashReleaseTrackers: firebaseDb.collection('WithdrawCashReleaseTrackers'),
       }
     },
     computed:{
@@ -256,9 +258,9 @@ export default {
           } else if(this.tab == 'Withdraw Requests'){
             return this.returnWithdrawalRequestData
           } else if(this.tab == 'Approved Requests'){
-            return this.approvedSample
+            return this.returnCashReleaseData
           } else {
-            return this.cashReleasedSample
+            return this.returnDoneCashReleaseData
           }
         } catch (error) {
           return []
@@ -330,16 +332,69 @@ export default {
       returnWithdrawalRequestData(){
         try {
           let req = this.WithdrawalApplications.filter(b=>{return b.status == 'onprocess'})
+          console.log(req,'req')
           let map = req.map(a=>{
             return {
+                  withdrawAppID: a['.key'],
                   memberid: a.MemberID,
                   designation: a.Designation,
                   lastname: a.LastName,
                   firstname: a.FirstName,
-                  requestAmount: parseInt(a.Amount),
+                  requestAmount: parseFloat(a.Amount),
                   savings: a.SavingsDeposit,
                   balance: a.RemainingBalance,
-                  date: date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')            
+                  date: date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') ,
+                  Phone: this.getMemberData(a.MemberID).Phone               
+            }
+          })
+          console.log(map,'withdraw')
+          return map          
+        } catch (error) {
+          return []
+        }
+      },
+      returnCashReleaseData(){
+        try {
+          let req = this.WithdrawalApplications.filter(b=>{return b.status == 'approved'})
+          console.log(req,'req')
+          let map = req.map(a=>{
+            return {
+                  withdrawAppID: a['.key'],
+                  memberid: a.MemberID,
+                  designation: a.Designation,
+                  lastname: a.LastName,
+                  firstname: a.FirstName,
+                  requestAmount: parseFloat(a.Amount),
+                  savings: a.SavingsDeposit,
+                  balance: a.RemainingBalance,
+                  date: date.formatDate(a.dateApproved.toDate(),'MM-DD-YYYY') ,
+                  trackingNo: a.CashReleaseTrackingID.toUpperCase(),
+                  Phone: this.getMemberData(a.MemberID).Phone               
+            }
+          })
+          console.log(map,'withdraw')
+          return map          
+        } catch (error) {
+          return []
+        }
+      },
+      returnDoneCashReleaseData(){
+        try {
+          let req = this.WithdrawalApplications.filter(b=>{return b.status == 'released'})
+          console.log(req,'req')
+          let map = req.map(a=>{
+            return {
+                  withdrawAppID: a['.key'],
+                  memberid: a.MemberID,
+                  designation: a.Designation,
+                  lastname: a.LastName,
+                  firstname: a.FirstName,
+                  requestAmount: parseFloat(a.Amount),
+                  savings: a.SavingsDeposit,
+                  balance: a.RemainingBalance,
+                  date: date.formatDate(a.dateReleased,'MM-DD-YYYY') ,
+                  trackingNo: a.CashReleaseTrackingID.toUpperCase(),
+                  Phone: this.getMemberData(a.MemberID).Phone               
             }
           })
           console.log(map,'withdraw')
@@ -369,7 +424,7 @@ export default {
           return id == a.MemberID && a.SavingsDeposit != 0
         })
         let order = this.$lodash.orderBy(filter,'dateCheck','desc')
-        console.log(id, order)
+        // console.log(id, order)
         if(order.length == 0){
           return []
         } else {
@@ -387,6 +442,115 @@ export default {
           this.drawer = false
         }
 
+      },
+      approveWithdrawalSavings(){
+        let data = this.returnSelectRow
+        this.$q.dialog({
+          title: 'Confirm Withdraw Approval',
+          message: 'Would you like to approve this withdrawal request?',
+          cancel: true,
+          persistent: true
+        }).onOk(() => {
+          console.log('>>>> OK')
+          console.log(data,'data')
+          firebaseDb.collection("WithdrawalApplications").doc(data.withdrawAppID).update({status: 'approved',dateApproved: firefirestore.FieldValue.serverTimestamp()})
+          .then(()=>{
+            console.log('update success! approved')
+            firebaseDb.collection("WithdrawCashReleaseTrackers").add({MemberID: data.memberid,requestAmount: data.requestAmount, withdrawAppID: data.withdrawAppID})
+            .then((doc)=>{
+              let trackID = doc.id.toString().slice(0,10)
+              this.sendSMS(data.Phone,`Your P${data.requestAmount}.00 savings withdrawal is approved! Use this Tracking# ${trackID.toUpperCase()} to get your cash. `)
+              firebaseDb.collection("WithdrawalApplications").doc(data.withdrawAppID).update({CashReleaseTrackingID: trackID})
+              .then(()=>{
+                this.selected = {}
+                this.drawer = false
+                this.$q.notify({
+                  type: 'positive',
+                  message: `Savings Withdrawal Application Approval Success`
+                })  
+              })
+              .catch(error=>{
+                console.log('update error',error)
+              })
+            })
+            //send SMS that loan is approved
+          })
+          .catch(error=>{
+            console.log(error,'error')
+          })
+        })        
+      },
+      cashReleaseSavings(){
+        let data = this.returnSelectRow
+        console.log(data,'data')
+        let releaseID = this.WithdrawCashReleaseTrackers.filter(a=>{
+          return data.withdrawAppID == a.withdrawAppID
+        })[0]
+
+        console.log(releaseID['.key'],'getId')
+        const newday = new Date()
+        let today = newday.getTime()
+        console.log(today,'today')
+
+        this.$q.dialog({
+          title: `Confirm Cash Release`,
+          message: `Do you confirm this ₱	${data.requestAmount}.00 Savings Withdrawal ?`,
+          cancel: true,
+          persistent: true
+        }).onOk(() => {
+          
+          firebaseDb.collection("WithdrawCashReleaseTrackers").doc(releaseID['.key']).update({Status: 'released',dateReleased: today })
+          .then(()=>{
+            console.log('withdrwal cash trackers update success')
+            firebaseDb.collection("WithdrawalApplications").doc(data.withdrawAppID).update({status: 'released',dateReleased: today, withdrawAppID: data.withdrawAppID })
+            .then(()=>{
+              console.log('withdrwal updated release')
+              firebaseDb.collection("MemberData").doc(data.memberid).update({
+                SavingsDeposit: firefirestore.FieldValue.increment(-Math.abs(data.requestAmount))
+              }).then(()=>{
+                console.log('member savings updated')
+                let timeWithdraw = date.formatDate(new Date(), 'MM-DD-YYYY, HH:mm A')
+                this.sendSMS(data.Phone,`P${data.requestAmount}.00 is withdrawed from your account on ${timeWithdraw}.`)
+                this.selected = {}
+                this.drawer = false    
+                this.$q.notify({
+                  type: 'positive',
+                  message: `Withdraw Savings Cash Release Confirmation Success`
+                })    
+              }).catch(error=>{
+                console.log('memberdata update error',error)
+              })
+            }).catch(error=>{
+              console.log('savings application update error',error)
+            })
+          }).catch(error=>{
+            console.log('tracker update error',error)
+          })       
+        })
+      },
+      getMemberData(id){
+        try {
+          return this.$lodash.filter(this.MemberData,a=>  {return a['.key'] == id} )[0]
+        } catch (error) {
+          return {}
+        }
+      },
+      sendSMS(number,message){
+        // this.$refs.stepper.next()
+        let header= {
+              'Access-Control-Allow-Origin': '*',
+        }
+        let apinumber = 2
+
+        var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+        console.log(data)
+        axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+        .then(response => {
+          console.log(response)
+        })
+        .catch((error) => {
+        console.log(error.response)
+        })   
       }
     } // end of methods
 }
