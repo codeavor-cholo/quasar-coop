@@ -92,7 +92,7 @@
               <q-date
                 v-model="today"
                 landscape
-                flat
+                flat 
                 color="teal"
                 minimal
                 class="full-width"

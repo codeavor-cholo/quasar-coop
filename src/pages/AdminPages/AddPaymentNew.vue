@@ -471,7 +471,7 @@
     </q-page>
 </template>
 <script>
-import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
+import { firebaseDb, firebaseSto, firefirestore, Auth2,firebaseAuth } from 'boot/firebase';
 
 import Vue from "vue";
 import money from 'v-money'
@@ -546,7 +546,18 @@ export default {
             toPayAdvancesAmount: [],
             AdvanceOption: 'daily',
             billPaymentView: false,
+            uid: ''
         }
+    },
+    created(){
+        let self = this
+        firebaseAuth.onAuthStateChanged(function(user) {
+            
+            if (user) {
+                let gg = {...user}
+                self.uid = gg.uid
+            }
+        })
     },
     firestore(){
         return {
@@ -1333,7 +1344,8 @@ export default {
                 Total: this.returnBillTotal,
                 AmountPaid: parseFloat(this.amountPaidBills),  
                 TrackingNumber: this.trackingNumber, 
-                timestamp: firefirestore.FieldValue.serverTimestamp()         
+                timestamp: firefirestore.FieldValue.serverTimestamp(),
+                staffID: this.uid      
             }
             let smsAmount = this.returnBillTotal
             let remainingBalance = 0
@@ -1506,10 +1518,11 @@ export default {
             } : null,
             // paidForOperator: null,
             SharedTotal: this.operator ? this.returnTotalAmount : null,
-            Total: this.returnTotalAmount - this.getIncludeOperatorPaymentTotal,
+            Total: this.operator ? this.returnTotalAmount - this.getIncludeOperatorPaymentTotal : this.returnTotalAmount,
             AmountPaid: Number(this.amountPaid),
             jeepneyDetails: this.jeepneyDetails !== null ? this.getUnitDetails(this.jeepneyDetails) : null,
-            timestamp: firefirestore.FieldValue.serverTimestamp()
+            timestamp: firefirestore.FieldValue.serverTimestamp(),
+            staffID: this.uid  
         }
 
         if(this.trackingNumber !== ''){
@@ -1597,6 +1610,7 @@ export default {
                 timestamp: firefirestore.FieldValue.serverTimestamp(),
                 AmountPaid: this.getIncludeOperatorPaymentTotal,
                 jeepneyDetails: this.jeepneyDetails !== null ? this.getUnitDetails(this.jeepneyDetails) : null,
+                staffID: this.uid  
               }
               firebaseDb.collection('Transactions').add(includeOperatorPayment)
                 .then(async (doc) => {
@@ -1662,7 +1676,7 @@ export default {
                     'Access-Control-Allow-Origin': '*',
             }
             let message = 'SMS Reciept for the payment of P'+ amount + '.00 on '+ TodayDate +'. PaymentID# '+ trackID.toUpperCase()
-            let apinumber = 2
+            let apinumber = 4
 
             let data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
             console.log(data,'data sent')

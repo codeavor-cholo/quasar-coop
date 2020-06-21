@@ -5,13 +5,13 @@
         <q-btn flat round dense icon="menu" @click="left = !left" />
 
         <q-toolbar-title>
-          <!-- <q-avatar>
-            <img src="https://cdn.quasar.dev/logo/svg/quasar-logo.svg" />
-          </q-avatar> -->
-          <small>Potchi</small>
+          <q-avatar>
+            <img src="statics/icons/New-GSIS-Cooperative.png" />
+          </q-avatar>
+          <small class="q-ml-md">Admin Dashboard</small>
           <q-space />
         </q-toolbar-title>
-          <q-btn color="teal" class="text-white" icon="mdi-logout-variant" />
+          <q-btn color="teal" class="text-white" icon="mdi-logout-variant" @click="logout"/>
       </q-toolbar>
     </q-header>
 
@@ -19,20 +19,18 @@
       <q-img
         class="absolute-top"
         src="https://cdn.quasar.dev/img/material.png"
-        style="height: 150px"
+        style="height: 200px"
       >
-        <div class="absolute-center bg-transparent">
-          <q-avatar size="100px" class="q-mt-sm">
-            <img
-              src="https://i.pinimg.com/originals/02/23/25/022325055802a3b4af381fa65a8b42de.png"
-            />
+        <div class="absolute-center text-center bg-transparent q-py-md">
+          <q-avatar size="100px" class="q-mt-sm" text-color="white" color="grey-10">
+            {{LoggedOn.FirstName.slice(0,1)}}
           </q-avatar>
-          <div class="text-weight-bold">Grizzly Bear</div>
-          <div>@wearebarebears</div>
+          <div class="text-weight-bold q-mt-sm">{{LoggedOn.FirstName}} {{LoggedOn.LastName}}</div>
+          <div>@{{LoggedOn.Username}}</div>
         </div>
       </q-img>
       <q-scroll-area
-        style="height: calc(100% - 150px); margin-top: 150px; border-right: 1px solid #ddd"
+        style="height: calc(100% - 250px); margin-top: 200px; border-right: 1px solid #ddd"
       >
       <!-- Start of Sidebar Menu inside the Drawer -->
        <q-list separator bordered>
@@ -206,7 +204,7 @@
               <q-item
                     expand-separator
                    :content-inset-level="0.5"
-                    to="/admin/addstaff"
+                    to="/admin/users"
                     exact
                     >
                   <q-item-section avatar>
@@ -254,13 +252,69 @@
 </template>
 
 <script>
+import { firebaseAuth,firebaseApp,firebaseDb } from 'boot/firebase'
 export default {
   name: "Layout",
-
+  created(){
+    let self = this
+    firebaseAuth.onAuthStateChanged(function(user) {
+        
+        if (user) {
+          let gg = {...user}
+          console.log('createdUser',user)
+          console.log('createdUser',user.uid)
+          let username = gg.email.toString().split('@')
+          self.memberid = username[0].toUpperCase()
+          self.uid = gg.uid
+        } else {
+            // No user is signed in.
+            self.$router.push('/adminlogin')
+        }
+    })
+  },
   data() {
     return {
-      left: false
+      left: false,
+      memberid: '',
+      uid: '',
+      log: {}
     };
+  },
+  firestore () {
+    return {
+      DashboardUsers: firebaseDb.collection('DashboardUsers'),
+    }
+  },  
+  computed:{
+    LoggedOn(){
+      try {
+        return this.DashboardUsers.filter(a=>{
+          return a['.key'] == this.uid
+        })[0]
+      } catch (error) {
+        console.log(error,'LoggedOn')
+        return {}
+      }
+    }
+  },
+  methods:{
+    logout(){
+      this.$q.dialog({
+          title: `Are you sure you want to logout?`,
+          type: 'negative',
+          color: 'teal',
+          textColor: 'white',
+          icon: 'warning',
+          ok: 'Ok',
+          cancel: 'Cancel'
+          
+      }).onOk(()=>{
+        firebaseAuth.signOut()
+          .then(() => {
+
+          })
+      })      
+    }
   }
 };
 </script>

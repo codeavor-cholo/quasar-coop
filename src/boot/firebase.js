@@ -1,5 +1,6 @@
 import { firebase } from "@firebase/app";
 import "@firebase/firestore";
+import Vue from 'vue'
 
 
 var firebaseConfig = {
@@ -39,5 +40,7 @@ var firebaseConfig = {
  //2nd app
  let secondaryApp = firebase.initializeApp(firebaseConfig, "secondary");
  let Auth2 = secondaryApp.auth();
+
+ Vue.prototype.$firebase = firebase
 
  export {Auth2, firebaseAuth, firebaseDb, firebaseSto, firefirestore}

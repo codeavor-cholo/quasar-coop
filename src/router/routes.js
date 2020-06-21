@@ -11,57 +11,59 @@ const routes = [
       { path: '/query', component: () => import('pages/PublicPages/QueryTest.vue') }
     ]
   },
+  // {
+  //   path: '/dashboard',
+  //   redirect: '/member/dashboard',
+  //   meta: {isMember: true},
+  //   component: () => import('layouts/NewMemberLayout.vue'),
+  //   children: [
+  //     {
+  //       path: '/member/dashboard/:penRegId',
+  //       props: true,
+  //       component: () => import('pages/MemberPages/Dashboard.vue')
+  //     },
+  //     {
+  //       path: '/member/profile/:penRegId',
+  //       props: true,
+  //       component: () => import('pages/MemberPages/Profile.vue')
+  //     },
+  //     {
+  //       path: '/member/transactions/:penRegId',
+  //       props: true,
+  //       component: () => import('pages/MemberPages/Transactions.vue')
+  //     }
+  //   ]
+  // },
+  // {
+  //   path: '/dashboard',
+  //   redirect: '/collector/dashboard',
+  //   meta: {isCollector: true},
+  //   component: () => import('layouts/CollectorLayout.vue'),
+  //   children: [
+  //     {
+  //       path: '/collector/dashboard',
+  //       component: () => import('pages/CollectorPages/DashboardCollector.vue')
+  //     },
+  //     {
+  //       path: '/collector/addpayment',
+  //       component: () => import('pages/CollectorPages/AddPaymentCollector.vue')
+  //     },
+  //     {
+  //       path: '/collector/dailycollections',
+  //       component: () => import('pages/CollectorPages/CollectorDailyCollections.vue')
+  //     },
+  //     {
+  //       path: '/collector/membersmonitor',
+  //       component: () => import('pages/CollectorPages/MembersMonitoring.vue')
+  //     },
+  //   ]
+  // },
   {
-    path: '/dashboard',
-    redirect: '/member/dashboard',
-    meta: {isMember: true},
-    component: () => import('layouts/NewMemberLayout.vue'),
+    path: '/adminlogin',
+    component: () => import('layouts/NoLayout.vue'),
     children: [
-      {
-        path: '/member/dashboard/:penRegId',
-        props: true,
-        component: () => import('pages/MemberPages/Dashboard.vue')
-      },
-      {
-        path: '/member/profile/:penRegId',
-        props: true,
-        component: () => import('pages/MemberPages/Profile.vue')
-      },
-      {
-        path: '/member/transactions/:penRegId',
-        props: true,
-        component: () => import('pages/MemberPages/Transactions.vue')
-      }
-    ]
-  },
-  {
-    path: '/dashboard',
-    redirect: '/collector/dashboard',
-    meta: {isCollector: true},
-    component: () => import('layouts/CollectorLayout.vue'),
-    children: [
-      {
-        path: '/collector/dashboard',
-        component: () => import('pages/CollectorPages/DashboardCollector.vue')
-      },
-      {
-        path: '/collector/addpayment',
-        component: () => import('pages/CollectorPages/AddPaymentCollector.vue')
-      },
-      {
-        path: '/collector/dailycollections',
-        component: () => import('pages/CollectorPages/CollectorDailyCollections.vue')
-      },
-      {
-        path: '/collector/membersmonitor',
-        component: () => import('pages/CollectorPages/MembersMonitoring.vue')
-      },
-    ]
-  },
-  {
-    path: '/login',
-    meta: {requiresAuth: true},
-    component: () => import('pages/PublicPages/Login.vue')
+      { path: '', component: () => import('pages/AdminPages/Login.vue') },
+    ],
   },
   {
     path: "/admin",
@@ -81,6 +83,10 @@ const routes = [
       {
         path: "/admin/dashboard",
         component: () => import("pages/AdminPages/Dashboard.vue")
+      },
+      {
+        path: "/admin/users",
+        component: () => import("pages/AdminPages/DashboardUsers.vue")
       },
       {
         path: "/admin/profile/:penRegId",
