@@ -55,7 +55,7 @@
                       <q-tr :props="props"  @click="onRowClick(props)" :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
                         <q-td v-for="col in props.cols.filter(col => col.name !== 'actions')" :key="col.name" >
                           <q-icon name="double_arrow" v-show="col.name == 'PlateNumber' && props.row == selected" />
-                          {{ col.typeOf == 'money' ? `₱ ${col.value}.00` : col.value }}
+                          <span v-if="col.typeOf == 'money'">{{col.value | currency}}</span><span v-else>{{col.value}}</span>
                         </q-td>
                       </q-tr>
                     </template>
@@ -603,10 +603,10 @@ export default {
         if(this.selected != props.row)
         {
           this.selected = props.row
-          this.drawer = true
+          // this.drawer = true
         } else {
           this.selected = {}
-          this.drawer = false
+          // this.drawer = false
         }
       },
       sendSMS(number,message){

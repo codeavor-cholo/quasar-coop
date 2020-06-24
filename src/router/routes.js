@@ -81,6 +81,10 @@ const routes = [
         component: () => import("pages/AdminPages/PendingReg.vue")
       },
       {
+        path: "/admin/dailycollections",
+        component: () => import("pages/AdminPages/DailyCollections.vue")
+      },
+      {
         path: "/admin/dashboard",
         component: () => import("pages/AdminPages/Dashboard.vue")
       },

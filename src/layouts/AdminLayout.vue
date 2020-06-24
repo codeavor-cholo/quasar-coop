@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lff">
-    <q-header elevated class="bg-teal text-white">
+    <q-header elevated class="bg-teal text-white noPrint">
       <q-toolbar>
         <q-btn flat round dense icon="menu" @click="left = !left" />
 
@@ -15,7 +15,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="left" side="left" none>
+    <q-drawer v-model="left" side="left" none class=" noPrint">
       <q-img
         class="absolute-top"
         src="https://cdn.quasar.dev/img/material.png"
@@ -213,6 +213,22 @@
                     <q-item-section class="text-uppercase">Add Staff</q-item-section>
                 </q-item>
             </q-expansion-item>
+             <q-expansion-item
+              expanded-separator
+              icon="receipt"
+              label="Reports"
+              :content-inset-level="0.5"
+            >
+                <q-item
+                to="/admin/dailycollections"
+                exact
+                >
+                  <q-item-section avatar>
+                      <q-icon name="brightness_low" />
+                  </q-item-section>
+                  <q-item-section>Daily Collections</q-item-section>
+                </q-item>           
+             </q-expansion-item>
             <q-item
             to="/admin/paymentmaintenance"
             exact
@@ -240,7 +256,7 @@
       <router-view />
     </q-page-container>
 
-    <q-footer bordered class="bg-teal text-white">
+    <q-footer bordered class="bg-teal text-white noPrint" >
       <q-toolbar>
         <q-toolbar-title>
           <!-- <img src="https://cdn.quasar.dev/logo/svg/quasar-logo.svg" /> -->
@@ -322,4 +338,11 @@ export default {
 .q-item.q-router-link--active, .q-item--active{
   color:teal;
   }
+@media print {
+   .noPrint {display:none;}
+   .my-card {
+       width:100%;
+   }
+
+}
 </style>
