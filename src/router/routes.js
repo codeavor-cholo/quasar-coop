@@ -77,13 +77,30 @@ const routes = [
         component: () => import("pages/AdminPages/PendingRegForm.vue")
       },
       {
+        path: "/admin/rejectedregform/:penRegId",
+        props:true,
+        component: () => import("pages/AdminPages/RejectedApplicationView.vue")
+      },
+      {
         path: "/admin/pendingreg",
         component: () => import("pages/AdminPages/PendingReg.vue")
+      },
+      {
+        path: "/admin/allapplications",
+        component: () => import("pages/AdminPages/AllPreRegApplications.vue")
       },
       {
         path: "/admin/dailycollections",
         component: () => import("pages/AdminPages/DailyCollections.vue")
       },
+      {
+        path: "/admin/dailyremittance",
+        component: () => import("pages/AdminPages/DailyRemittance.vue")
+      },
+      {
+        path: "/admin/memberpayments",
+        component: () => import("pages/AdminPages/MemberPaymentsReports.vue")
+      },      
       {
         path: "/admin/dashboard",
         component: () => import("pages/AdminPages/Dashboard.vue")
@@ -99,7 +116,7 @@ const routes = [
       },
       {
         path: "/admin/addmember/",
-        component: () => import("pages/AdminPages/AddMember.vue")
+        component: () => import("pages/AdminPages/AddMemberNew.vue")
       },
       {
         path: "/admin/allmember",

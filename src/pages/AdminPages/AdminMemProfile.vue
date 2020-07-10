@@ -3,7 +3,12 @@
         <q-card class="my-card" flat bordered>
         <!-- start toolbar -->
         <!-- <q-btn @click="test">test</q-btn> -->
-        <q-card-actions align="right">
+        <q-card-actions>
+          <div class="row justify-between full-width">
+          <div class="col row justify-start">
+          <q-btn color="teal"  flat icon="arrow_left" label="back to pending applications" @click="$router.push('/admin/pendingreg')" />
+          </div>
+          <div class="col row justify-end">
           <q-btn @click="inception = true; OrTid();" flat v-if="MemberData.MembershipFee">
             Membership Fee: {{ MemberData.MembershipFee }}
             </q-btn>
@@ -63,27 +68,25 @@
             <q-btn flat color="teal-4" @click="bar = !bar; listDrivers();" v-if="MemberData.Designation == 'Operator'">
             Unit/s Details
             </q-btn>
-            <q-btn flat color="teal-4" @click="bar = !bar; driverUnit();"  v-if="MemberData.Designation == 'Driver'">
+            <!-- <q-btn flat color="teal-4" @click="bar = !bar; driverUnit();"  v-if="MemberData.Designation == 'Driver'">
             Jeepney
+            </q-btn> -->
+
+
+            <q-btn flat @click="upd = !upd, onUpdateMemberData()" color="teal-4" v-if="upd">
+            Update
             </q-btn>
 
-            <div class="">
-              <div v-if="upd">
-                <q-btn flat @click="upd = !upd, onUpdateMemberData()" color="teal-4">
-                Update
-                </q-btn>
-              </div>
 
-              <div v-else>
-                <q-btn flat @click="updateMemberData()" color="teal-4" label="Save" />
-                <q-btn flat @click="cancelUpdate()" color="teal-4" label="Cancel" />
-              </div>
 
-            </div>
+            <q-btn flat @click="updateMemberData()" color="teal-4" label="Save" v-else/>
+            <q-btn flat @click="cancelUpdate()" color="teal-4" label="Cancel" v-if="!upd"/>
 
             <q-btn flat color="teal-4">
             Resign
             </q-btn>
+            </div>
+            </div>
         </q-card-actions>
         <!-- end toolbar -->
 
@@ -91,6 +94,10 @@
 
         <q-card-section class="row">
         <q-card-section class="col-md-4 col-sm-12 col-xs-12 q-pt-md">
+          <q-banner :class="!MemberData.isNewMember ? 'bg-teal text-white':'bg-warning text-white'" >
+            <div v-if="!MemberData.isNewMember"><q-icon name="check_circle" /> Membership fee is paid.</div>
+            <div v-else><q-icon name="warning" /> Membership Fee is still unpaid.</div>
+          </q-banner>
             <img
             style="height:200px; width:200px; border-radius: 50%;"
             class="rounded-borders"
@@ -270,16 +277,254 @@
               </q-input>
             </div>
 
-            <div class="q-pa-md">
+
+            <!-- <div class="q-pa-md">
               <q-input v-model="MemberData.Email" label="Email" :readonly="upd">
                 <template v-slot:before>
                  <q-icon name="mdi-human-handsup" />
                 </template>
               </q-input>
-            </div>
+            </div> -->
         </q-card-section>
       </q-card-section>
     </q-card>
+    <q-card class="my-card q-mt-md" flat bordered>
+      <q-card-section class="row justify-between">
+        <div class="text-h6">Jeepney & Units</div>
+        <div v-if="MemberData.Designation == 'Driver'">
+          <q-banner :class="MemberData.defaultUnit !== undefined  ? 'bg-teal text-white':'bg-warning text-white'" >
+            <span v-if="MemberData.defaultUnit !== undefined"> <q-icon name="check_circle" /> {{MemberData.defaultUnit.PlateNumber}} is the default unit.</span>  
+            <span v-else> <q-icon name="warning" /> There is no default unit yet. </span>
+            <template v-slot:action>
+              <q-btn flat color="white" label="Remove" v-if="MemberData.defaultUnit !== undefined"/>
+              <q-btn flat color="white" label="Update Default Unit"/>
+            </template>
+          </q-banner>
+        </div>
+        <div v-else>
+          <q-btn color="teal" outline  icon="add" label="add unit" @click="addUnitDialog = true" />
+        </div>
+      </q-card-section>
+      <q-card-section v-show="MemberData.Designation !== 'Driver'">
+        <q-item v-for="jeep in getJeeps(MemberData['.key'])" :key="jeep['.key']">
+          <q-item-section top avatar>
+            <q-avatar color="teal" text-color="white" icon="commute"/>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="text-h6">{{jeep.PlateNumber}}</q-item-label>
+            <q-item-label caption lines="10" v-if="getDefaultDrivers(jeep.PlateNumber).length > 0 ">
+              <span v-for="driver in getDefaultDrivers(jeep.PlateNumber)" :key="driver">{{driver}}</span>
+            </q-item-label>
+            <q-item-label caption lines="10" v-else>
+              No Default Driver
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side >
+            <!-- <q-btn color="grey-10" flat icon="delete" label="delete" @click="onClick" /> -->
+          </q-item-section>
+        </q-item>
+        <q-separator spaced inset v-show="getJeepsPending(MemberData['.key']).length > 0"/>
+        <q-item v-for="jeep in getJeepsPending(MemberData['.key'])" :key="jeep['.key']">
+          <q-item-section top avatar>
+            <q-avatar color="warning" text-color="white" icon="warning"/>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="text-h6">{{jeep.PlateNumber}}</q-item-label>
+            <q-item-label caption lines="2" >
+              Pending Application
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-separator spaced inset v-show="getJeepsReject(MemberData['.key']).length > 0"/>
+        <q-item v-for="jeep in getJeepsReject(MemberData['.key'])" :key="jeep['.key']">
+          <q-item-section top avatar>
+            <q-avatar color="red" text-color="white" icon="close"/>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="text-h6">{{jeep.PlateNumber}}</q-item-label>
+            <q-item-label caption lines="2" >
+              {{jeep.rejectReason}}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-card-section>
+    </q-card>
+
+
+    <q-card class="my-card q-mt-md" flat bordered>
+      <q-card-section>
+        <div class="text-h6">Account Summary</div>
+      </q-card-section>
+      <q-card-section>
+        <div class="row">
+          <div class="col">
+             <div class="text-overline">Savings</div>
+             <q-item class="q-px-md">
+               <q-item-section top avatar>
+                 <q-avatar color="teal" text-color="white" icon="payment" />
+               </q-item-section>
+               <q-item-section>
+                 <q-item-label class="text-h6 text-teal">{{MemberData.SavingsDeposit | currency}}</q-item-label>
+                 <q-item-label caption lines="2" v-if="getLastDateTransactions('savings',MemberData['.key']) !== null">Last Transaction: {{$moment(getLastDateTransactions('savings',MemberData['.key']).timestamp.toDate()).fromNow()}}</q-item-label>
+               </q-item-section>
+             </q-item>
+          </div>
+          <div class="col">
+            <div class="text-overline">Cash Advances</div>
+             <q-item class="q-px-md" v-for="(loan,i) in MemberData.activeLoans" :key="i">
+               <q-item-section top avatar>
+                 <q-avatar color="teal" text-color="white">
+                   {{i+1}}
+                 </q-avatar>
+               </q-item-section>
+               <q-item-section>
+                 <q-item-label class="text-h6 text-teal">
+                   <span v-if="loan.TotalBalance == undefined">{{loan.toPayAmount | currency}}</span>
+                   <span v-else>{{loan.TotalBalance | currency}}</span>
+                   
+                   </q-item-label>
+                 <q-item-label caption lines="2" v-if="getLastDateTransactions('loan',MemberData['.key'],loan) !== null">Last Transaction: {{$moment(getLastDateTransactions('loan',MemberData['.key'],loan).timestamp.toDate()).fromNow()}}
+                  <br>#{{loan.CashReleaseTrackingID.toUpperCase()}}
+
+                 </q-item-label>
+               </q-item-section>
+             </q-item>
+          </div>
+          <div class="col">
+            <div class="text-overline">Billings</div>
+             <q-item class="q-px-md" v-for="(bill,i) in getBillings(MemberData['.key'])" :key="i">
+               <q-item-section top avatar>
+                 <q-avatar color="teal" text-color="white" icon="list_alt" />
+               </q-item-section>
+               <q-item-section>
+                 <q-item-label class="text-overline text-teal">
+                   <span v-if="bill.QuotaBalance !== undefined">
+                      {{bill.QuotaBalance | currency}}
+                   </span>
+                   <span v-else>
+                      {{bill.BillingBalance | currency}}
+                   </span>
+                  </q-item-label>
+                 <q-item-label caption lines="2">
+                   <span v-if="bill.QuotaBalance !== undefined">
+                      <b>{{bill.PlateNumber}}</b> - {{bill.BillingMonth}}
+                   </span>
+                   <span v-else>
+                      <b>#{{bill.CashReleaseTrackingID.toUpperCase()}}</b> - {{bill.BillingDate}}
+                   </span>
+                 </q-item-label>
+               </q-item-section>
+             </q-item>            
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
+    <q-card class="my-card q-mt-md" flat bordered>
+      <q-card-section class="row justify-between">
+        <div class="text-h6">Latest Transactions</div>
+        <q-input v-model="transactionFilter" filled color="teal" type="search" dense  label="Search" clearable="" style="width:250px;">
+            <template v-slot:append>
+            <q-icon name="search" />
+            </template>
+        </q-input>
+      </q-card-section>
+      <q-card-section>
+        <q-table
+          :data="getLatestTransactions"
+          :columns="columns"
+          row-key="name"
+          flat
+          :filter="transactionFilter"
+          :pagination.sync="initialPagination"
+        >
+            <template v-slot:body="props">
+                <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
+                <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
+                    <q-icon name="double_arrow" v-show="col.name == 'MemberID' && props.row == selected" />
+                    <span v-if="col.typeOf == 'money'">
+                      {{ col.value | currency }}
+                    </span>
+                    <span v-else>{{ col.value }}</span>
+                </q-td>
+                </q-tr>
+            </template>  
+        </q-table>
+
+      </q-card-section>
+    </q-card>
+
+
+<q-dialog v-model="addUnitDialog" persistent>
+  <q-card class="" style="width:80vw;">
+    <q-card-section class="row items-center">
+      <div class="text-h6">Add Unit/Jeep</div>
+    </q-card-section>
+    <q-card-section>
+      <div class="row text-grey-8">
+        <div class="col">
+          <div class="row">
+            <div class="col q-pr-md">
+              <q-input v-model="JeepneyDetails.PlateNumber" input-class="text-uppercase" type="text" outlined="" label="Enter Plate Number" color="teal"/>
+              <q-input
+                class="q-my-md"
+                color="teal-4"
+                type="file"
+                outlined=""
+                dense
+                hint="Upload Jeepney ORCR"
+                accept="image/*"
+                @change="onFilePicked2"
+                @onfocus="resetimginput2"
+                v-if="uploadReady"
+                ref="imginput2"
+                >
+                <template v-slot:prepend>
+                  <q-icon name="attach_file"/>
+                </template>
+              </q-input>
+
+              <img :src="imageUrl2" width='300' height='150' v-if="imageUrl2 !== null">
+            </div>
+            <div class="col-3 q-gutter-md">
+                <q-btn color="primary" icon="add" label="ADD to list" @click="addJeep2List" />
+                <q-btn color="grey-8" label="reset form" flat @click="resetJeepForm" />
+            </div>
+
+
+          </div>
+
+
+
+          <q-separator spaced inset class="q-mt-lg"/>
+          <span class="q-my-md text-overline q-mt-md">
+            YOU HAVE <span class="text-teal">{{JeepneyList.length}}</span> JEEPNEY / UNITS ADDED: 
+          </span>
+          <q-list separator="">
+            <q-item v-for="(jeep,i) in JeepneyList" :key="i">
+              <q-item-section top thumbnail class="q-ml-none">
+                <img :src="jeep.ORCRurl">
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label caption>Plate No.#</q-item-label>
+                <q-item-label class="text-weight-bold">{{jeep.PlateNumber}}</q-item-label>
+              </q-item-section>
+
+              <q-item-section side top>
+                <q-btn color="grey" icon="delete" flat dense @click="onDelete(jeep,i)" />
+              </q-item-section>
+            </q-item> 
+          </q-list>
+
+        </div>
+      </div>
+    </q-card-section>
+    <q-card-actions align="right">
+      <q-btn flat label="Cancel" color="grey-8" v-close-popup @click="removeNewUnitDetails"/>
+      <q-btn flat label="SEND FOR APPROVAL" icon-right="send" color="teal" @click="saveNewUnits" :disable="JeepneyList == 0"/>
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 
 <q-dialog v-model="bar">
   <q-card class="my-card" style="width: 700px; max-width: 80vw;">
@@ -409,9 +654,13 @@
   </q-dialog>
 
   <!-- Print Contract Dialog -->
-  <q-dialog v-model="contract">
-      
-    <print-contract :MemberData="MemberData"></print-contract>
+  <q-dialog v-model="contract" maximized="">
+    <q-card style="width:80vw" flat>
+      <q-card-section>
+        <print-contract :MemberData="MemberData"></print-contract>
+      </q-card-section>
+    </q-card>
+    <!-- <print-contract :MemberData="MemberData"></print-contract> -->
     
   </q-dialog>
 
@@ -438,6 +687,24 @@ export default {
   },
     data(){
         return{
+          imageUrl2: null,
+          JeepneyList: [],
+          addUnitDialog: false,
+          selected: {},
+          transactionFilter: '',
+          initialPagination: {
+              descending: false,
+              page: 1,
+              rowsPerPage:10
+              // rowsNumber: xx if getting data from a server
+          },  
+          columns: [
+              { name: 'TransactionID', align: 'left', label: 'TransactionID#', field: 'TransactionID', sortable: true }, 
+              { name: 'OrNo', align: 'left', label: 'OrNo#', field: 'OrNo', sortable: true },            
+              { name: 'TransactionType', align: 'left', label: 'Transaction Type', field: 'TransactionType', sortable: true },
+              { name: 'Total', align: 'left', label: 'Total', field: 'Total', sortable: true, typeOf: 'money' }, 
+              { name: 'Date', align: 'left', label: 'Date', field: 'showDate', sortable: true, typeOf: 'date' },          
+          ],
           addDriverDialog: false,
           loadingState: false,
           contract: false,
@@ -467,7 +734,13 @@ export default {
           drvOperator: '',
           verifyPlateNo: true,
           tempMemData: {},
-      
+          uploadReady: true,
+          JeepneyDetails:{
+            PlateNumber: '',
+            ORCR: null
+          },
+          PlateNumber: ''  
+              
         }
     },
     props: ['penRegId'],
@@ -478,11 +751,210 @@ export default {
           Members: firebaseDb.collection('MemberData'),
           DriverData: firebaseDb.collection('MemberData').where('Designation', '==', 'Driver'),
           Units: firebaseDb.collection('Units'),
+          JeepneyData: firebaseDb.collection('JeepneyData'),
           Transactions: firebaseDb.collection('Transactions'),
+          BillingTrackers: firebaseDb.collection('BillingTrackers'),
           // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
       }
     },
     methods: {
+      removeNewUnitDetails(){
+        this.JeepneyDetails.PlateNumber = ''
+        this.JeepneyDetails.ORCR = null
+        this.JeepneyList = []
+        this.imageUrl2 = null
+      },
+      jeepAddUpload(){
+          this.JeepneyList.forEach(a=>{
+            const filename = a.ORCR.name
+            const ext = filename.slice(filename.lastIndexOf('.'))
+            let childurl = a.PlateNumber+'_'+this.MemberData['.key'] + ext
+            return firebaseSto.ref('JeepUploads/' + childurl).put(a.ORCR)
+            .then(snapshot => {
+                return snapshot.ref.getDownloadURL();
+            }).
+            then(downloadURL => {
+                console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
+
+                let toSave = {
+                  PlateNumber: a.PlateNumber,
+                  ORCR: downloadURL,
+                  dateAdded: firefirestore.FieldValue.serverTimestamp(),
+                  MemberID: this.MemberData['.key']
+                }
+                return firebaseDb.collection("JeepneyData").add(toSave);
+            })
+            .catch(error => {
+                // Use to signal error if something goes wrong.
+                console.log(`Failed to upload file and get link - ${error.message}`);
+            })
+          })
+      },
+      saveNewUnits(){
+        console.log(this.JeepneyList,'newUnits')
+        this.$q.dialog({
+          title: `Save ${this.JeepneyList.length} New Units`,
+          message: 'Would you like to saved these news units ?',
+          persistent: true,
+          cancel: true
+        }).onOk(() => {
+          this.$q.loading.show({
+              message: '<h6>Some important <b>process</b> is in progress.<br/><span class="text-teal">Hang on...</span></h6>'
+          })
+          this.jeepAddUpload()
+          this.$q.loading.hide()
+          this.addUnitDialog = false
+          this.$q.notify({
+            color: 'teal',
+            textColor: 'white',
+            icon: 'check',
+            message: "Adding Units for Approval Success",
+            })
+        })        
+      },
+      addJeep2List(){
+        if(this.JeepneyDetails.PlateNumber == '' || this.JeepneyDetails.ORCR == null){
+          this.$q.dialog({
+            title: 'Incomplete UNIT Details!',
+            message: 'Please fill up all details for your unit/jeep details',
+            persistent: true
+          })
+        } else {
+          this.JeepneyDetails.PlateNumber = this.JeepneyDetails.PlateNumber.toUpperCase()
+          this.JeepneyList.push(this.JeepneyDetails)
+          this.resetJeepForm()
+          console.log(this.JeepneyList,'jeep list')
+        }      
+      },
+      resetimginput2(){
+        // this.imageUrl2 = null
+        this.$refs.imginput2.resetValidation()
+      },
+      onFilePicked2(event){
+        const files = event.target.files
+        console.log(files,'files input')
+        let filename = files[0].name
+        if (filename.lastIndexOf('.') <= 0){
+          return alter('Please add a valid file!')
+        }
+          const fileReader = new FileReader()
+          fileReader.addEventListener('load', () => {
+          this.imageUrl2 = fileReader.result
+          this.JeepneyDetails.ORCRurl = fileReader.result
+        })
+        fileReader.readAsDataURL(files[0])
+        this.JeepneyDetails.ORCR = files[0]
+        console.log(this.JeepneyDetails.ORCR,'ORCR')
+      },
+      resetJeepForm(){
+        this.JeepneyDetails = {
+          ORCR: null,
+          PlateNumber: ''
+        }
+        this.imageUrl2 = null
+        this.uploadReady = false
+        this.$nextTick(() => {
+          this.uploadReady = true
+        })
+      },
+      onDelete(jeep,i){
+        console.log(jeep,i)
+        this.JeepneyList.splice(i,1)
+      },
+      getDefaultDrivers(plate){
+        try {
+          let filter = this.Members.filter(a=>{
+            return a.defaultUnit !== undefined && a.defaultUnit.PlateNumber == plate
+          })
+          
+          let map = filter.map(a=>{
+            return `${a['.key']} - ${a.FirstName} ${a.LastName}`
+          })
+
+          return map
+
+
+        } catch (error) {
+          console.log(error,'getDefaultDrivers')
+          return null
+        }
+
+      },
+      getJeeps(key){
+        return this.JeepneyData.filter(a=>{
+          return key == a.MemberID && a.Status == 'approved'
+        })
+      },
+      getJeepsPending(key){
+        return this.JeepneyData.filter(a=>{
+          let base = a.Status !== 'approved' && a.Status !== 'rejected' ? 'pending' : a.Status
+          console.log(base,'base')
+          a.Status = base         
+            return key == a.MemberID && a.Status == 'pending'
+        })
+      },
+      getJeepsReject(key){
+        return this.JeepneyData.filter(a=>{
+          return key == a.MemberID && a.Status == 'rejected'
+        })
+      },
+      getBillings(key){
+        console.log(this.$lodash.orderBy(this.BillingTrackers.filter(a=>{
+          return a.MemberData['.key'] == key
+        }),b=>{
+          return b.timestamp
+        },'desc'),'getBillings')
+        return this.$lodash.orderBy(this.BillingTrackers.filter(a=>{
+          return a.MemberData['.key'] == key
+        }),b=>{
+          return b.timestamp
+        },'desc')
+      },
+      getLastDateTransactions(type,key,loan = null){
+        try {
+          let filter = this.Transactions.filter(a=>{
+            if(type == 'savings'){
+              return a.MemberID == key && a.SavingsDeposit !== 0
+            } else {
+              return a.MemberID == key && a.AdvancesAmount !== 0 && a.Advances !== undefined
+            }
+          })
+
+          let order = null
+          if(loan !== null){
+            console.log(loan,'loan value')
+            let cashID = loan.CashReleaseTrackingID
+            let sameLoan = []
+            filter.forEach(a=>{
+              a.Advances.forEach(x=>{
+                if(x.trackID == cashID){
+                  console.log(x.trackID , cashID)
+                  sameLoan.push(a)
+                }
+              })
+            })
+            order = this.$lodash.orderBy(sameLoan,a=>{
+              return a.timestamp
+            },'desc')[0]
+
+            
+            
+          } else {
+            order = this.$lodash.orderBy(filter,a=>{
+              return a.timestamp
+            },'desc')[0]
+          }
+
+
+        console.log(order.timestamp.toDate(),`${type}`)
+
+          return order          
+        } catch (error) {
+          console.log(error,'getLastDateTransactions')
+          return null
+        }
+
+      },
       test () {
         // this.bus.$emit('genQR')
         console.log(this)
@@ -726,6 +1198,9 @@ export default {
             this.loading1 = false
           })
         })
+      },
+      checkIfIncludedInTransactions(Plate){
+        
       }
  },
   mounted () {
@@ -733,6 +1208,19 @@ export default {
     this.datetoday()
   },
   computed: {
+    getLatestTransactions(){
+      try {
+        return this.$lodash.orderBy(this.Transactions.filter(a=>{
+          a.showDate = this.$moment(a.timestamp.toDate()).format('LLL')
+          return this.MemberData['.key'] == a.MemberID
+        }),b=>{
+          return b.timestamp
+        },'desc')
+      } catch (error) {
+        console.log(error,'getLatestTransactions')
+        return []
+      }
+    }
     // Drivers(){
     //   console.log('ss', this.UnitsDriver)
     //   return this.UnitsDriver

@@ -132,7 +132,7 @@
                     </div>
                 </q-form>
               </q-card-section>
-              <q-separator/>
+              <!-- <q-separator/>
               <div class="row justify-center">
                 <q-btn
                 class="col q-ma-md"
@@ -144,7 +144,7 @@
                 @click="rejectMember"
                 color="teal-4"
                 label="Reject"/>
-              </div>
+              </div> -->
           </q-card>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default {
   firestore () {
     return {
         // Doc
-        PenReg: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),
+        PenReg: firebaseDb.collection('RejectedApplications').doc(this.penRegId),
         Jeeps: firebaseDb.collection('JeepneyData').where('operatorPreRegID', '==', this.penRegId),
         // PenReg: {
         //   ref: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),

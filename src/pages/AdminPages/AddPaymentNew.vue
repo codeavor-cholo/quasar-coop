@@ -168,7 +168,7 @@
                 <q-input v-model="membershipFee" readonly="" type="number" prefix="₱" label="Membership Fee" outlined="" color="teal" v-if="MDetails.isNewMember == true"/>
                 <div class="q-gutter-md" v-else>
                     <q-input v-model="mf1" type="number" prefix="₱" label="Management Fee" outlined="" color="teal" clearable @clear="mf1 = 0" readonly=""/>
-                    <q-input v-model="ss1" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss1 = 0" readonly=""/>
+                    <q-input v-model="ss1" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss1 = 0" :min="ShareOfStocks.amount"/>
                     <q-input v-model="sd1" type="number" prefix="₱" label="Savings Deposit" outlined="" color="teal" clearable @clear="sd1 = 0"/>
                     <div class="text-overline"><q-checkbox v-model="showOther1" dense="" class="q-mr-sm"/> OTHERS</div>
                     
@@ -239,7 +239,7 @@
                 </div>
                 <div v-show="operator" class="q-gutter-md">
                     <q-input v-model="mf2" type="number" prefix="₱" label="Management Fee" outlined="" color="teal" clearable @clear="mf2 = 0" readonly=""/>
-                    <q-input v-model="ss2" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss2 = 0" readonly=""/>
+                    <q-input v-model="ss2" type="number" prefix="₱" label="Share of Stocks" outlined="" color="teal" clearable @clear="ss2 = 0" :min="ShareOfStocks.amount"/>
                     <q-input v-model="sd2" type="number" prefix="₱" label="Savings Deposit" outlined="" color="teal" clearable @clear="sd2 = 0"/>
                     <div class="text-overline"><q-checkbox v-model="showOther2" dense="" class="q-mr-sm"/> OTHERS</div>
                     <div v-show="showOther2">
@@ -736,7 +736,25 @@ export default {
       },
       mapUnitsOfMember(){
           try {
-            let id = this.model !== null ? this.model : this.model2
+            let id = null
+
+            
+            if(this.model !== null || this.model2 !== null){
+                id = this.model !== null ? this.model : this.model2
+            } else {
+                let ops = this.MemberData.filter(a=>{
+                    return a['.key'] == this.memberIDs
+                })[0]
+
+                console.log(ops,'ops')
+                if(ops.Designation == 'Driver'){
+                    id = {OperatorID: ops.Operator.MemberID}
+                } else {
+                    id = {OperatorID: ops['.key']}
+                }
+
+            }
+            console.log(id,'id mapUnitsOfMember')
             let filter = this.JeepneyData.filter(a=>{
                 return a.MemberID == id.OperatorID && a.Status == 'approved'
             })
@@ -1676,7 +1694,7 @@ export default {
                     'Access-Control-Allow-Origin': '*',
             }
             let message = 'SMS Reciept for the payment of P'+ amount + '.00 on '+ TodayDate +'. PaymentID# '+ trackID.toUpperCase()
-            let apinumber = 4
+            let apinumber = 1
 
             let data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
             console.log(data,'data sent')
@@ -1688,7 +1706,7 @@ export default {
                 url: 'https://smsapisender.000webhostapp.com/index.php',
             }      
 
-            axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+            axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
             .then(response => {
             console.log(response)
             })

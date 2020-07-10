@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lff">
     <q-header elevated class="bg-teal text-white noPrint">
-      <q-toolbar>
+      <q-toolbar class="noPrint">
         <q-btn flat round dense icon="menu" @click="left = !left" />
 
         <q-toolbar-title>
@@ -91,6 +91,16 @@
                     </q-item-section>
                       <q-item-section class="text-uppercase">Pending Unit/Jeep Applications</q-item-section>
                   </q-item>
+                   <q-item
+                    expand-separator
+                    to="/admin/allapplications"
+                    exact
+                    >
+                    <q-item-section avatar>
+                      <q-icon name="list_alt" />
+                    </q-item-section>
+                      <q-item-section class="text-uppercase">All Applications</q-item-section>
+                  </q-item>
            </q-expansion-item>
           <!-- End of Sidemenu Member -->
          <!-- Start of Payment Member -->
@@ -114,7 +124,7 @@
                 <q-item
                     expand-separator
                    :content-inset-level="0.5"
-                    to="/admin/allpayment"
+                    to="/admin/dailycollections"
                     exact
                     >
                   <q-item-section avatar>
@@ -227,7 +237,29 @@
                       <q-icon name="brightness_low" />
                   </q-item-section>
                   <q-item-section>Daily Collections</q-item-section>
-                </q-item>           
+                </q-item>       
+
+
+                <q-item
+                to="/admin/dailyremittance"
+                exact
+                >
+                  <q-item-section avatar>
+                      <q-icon name="money" />
+                  </q-item-section>
+                  <q-item-section>Daily Remittance</q-item-section>
+                </q-item>  
+
+                <q-item
+                to="/admin/memberpayments"
+                exact
+                >
+                  <q-item-section avatar>
+                      <q-icon name="recent_actors" />
+                  </q-item-section>
+                  <q-item-section>Member Payments</q-item-section>
+                </q-item>  
+
              </q-expansion-item>
             <q-item
             to="/admin/paymentmaintenance"
@@ -343,6 +375,8 @@ export default {
    .my-card {
        width:100%;
    }
+
+   .q-header {display:none;}
 
 }
 </style>

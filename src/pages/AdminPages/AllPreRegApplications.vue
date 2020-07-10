@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h6 class="q-ma-none q-pl-md q-pt-md text-teal"> Members <q-icon name="mdi-arrow-right-box" /> Pending Unit/Jeep Applications </h6>
+    <h6 class="q-ma-none q-pl-md q-pt-md text-teal"> Members <q-icon name="mdi-arrow-right-box" /> All Member Applications </h6>
     <q-separator />
     <div v-if="loading">
       <q-spinner-oval
@@ -14,36 +14,47 @@
       <q-markup-table separator="horizontal" flat bordered>
         <thead class="bg-teal">
           <tr class="text-h4 q-ml-md text-white">
-            <th class="text-left">Plate Number</th>
-            <th class="text-left">Operator ID</th>
+            <th class="text-left">Name of Applicant</th>
+            <th class="text-left">Approver / Rejector</th>
              <th class="text-left">Status</th>
-            <th class="text-left">ORCR</th>
+             <th class="text-left">Reject Reason</th>
+            <th class="text-left">Date Processed</th>
             <th class="text-left"></th>
           </tr>
         </thead>
 
 
         <tbody>
-          <tr v-for="(PendingReg, id) in returnJeepneyData" :key="id">
-            <td class="text-left">{{ PendingReg.PlateNumber }}</td>
-            <td class="text-left">{{ PendingReg.MemberID }}</td>
-            <td class="text-left">
-                <q-icon name="warning" size="md" v-if="PendingReg.Status == null" color="warning"/>
-                <q-icon name="check_circle" size="md" v-if="PendingReg.Status == 'approved'" color="teal" />
-                <q-icon name="cancel" size="md" v-if="PendingReg.Status == 'rejected'" color="red" />
+          <tr v-for="(PendingReg, id) in returnRejectAndApproved" :key="id">
+            <td class="text-left">{{ PendingReg.FirstName }} {{ PendingReg.LastName }}</td>
+            <td class="text-left"> <span v-if="PendingReg.approvedBy !== undefined">{{PendingReg.approvedBy}}</span> <span v-else>{{PendingReg.rejectedBy}}</span> </td>
+             <td class="text-left">
+                <q-icon name="check_circle" size="md" v-if="PendingReg.approvedBy !== undefined" color="teal" />
+                <q-icon name="cancel" size="md" v-else color="red" />
+            </td>           
+            <td class="text-left text-red text-weight-bold">
+                <span v-if="PendingReg.approvedBy == undefined"> {{PendingReg.rejectReason}}</span>
             </td>
-            <td class="text-left"><q-btn dense flat icon="visibility" label="view orcr" @click="onClickORCR(PendingReg.ORCR)" /></td>
             <td class="text-left">
-                <div v-if="PendingReg.Status == null">
-                    <q-btn flat label="REJECT UNIT" icon-right="cancel" @click="rejectUnit(PendingReg['.key'])"/>
-                    <q-btn flat label="APPROVE UNIT" icon-right="check_circle" @click="approveUnit(PendingReg['.key'])" color="teal"/>
-                </div>
-                <div v-else-if="PendingReg.Status == 'rejected'" class="text-red text-weight-bold">
-                    <q-icon name="cancel" class="q-mr-sm"/>{{PendingReg.rejectReason}}
-                </div>
-                <div v-else>
-                    No actions available.
-                </div>
+                <span v-if="PendingReg.approvedBy !== undefined">{{$moment(PendingReg.dateApproved.toDate()).fromNow()}}</span> <span v-else>{{$moment(PendingReg.dateRejected.toDate()).fromNow()}}</span>
+            </td>
+            <td>
+                <q-btn flat 
+                v-if="PendingReg.approvedBy !== undefined"
+                color="secondary"
+                class="full-width" 
+                icon-right="mdi-arrow-right" 
+                label="View Profile" 
+                @click="loadProfile(PendingReg['.key'])"
+                />
+                <q-btn flat 
+                v-else
+                color="red"
+                class="full-width" 
+                icon-right="mdi-arrow-right" 
+                label="View Application" 
+                @click="loadPreReg(PendingReg['.key'])"
+                />
             </td>
             <!-- <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td> -->
           </tr>
@@ -85,7 +96,8 @@ export default {
     firestore () {
       return {
             JeepneyData: firebaseDb.collection('JeepneyData'),
-            MemberData: firebaseDb.collection('MemberData')
+            MemberData: firebaseDb.collection('MemberData'),
+            RejectedApplications: firebaseDb.collection('RejectedApplications')
         }
     },
     mounted () {
@@ -103,12 +115,13 @@ export default {
                     if(a.MemberID !== null && a.MemberID !== undefined){
                         a.timestamp = this.getMemberTimeStamp(a.MemberID)
                     }
-                    return a.MemberID !== null && a.MemberID !== undefined && a.dateAdded !== undefined
+                    return a.MemberID !== null && a.MemberID !== undefined
                 })
                 console.log(filter,'filter')
 
                 let order = this.$lodash.orderBy(filter,a=>{
-                    return a.dateAdded
+                    console.log(a.timestamp)
+                    return a.timestamp
                  },'desc')
                 console.log(order,'order')
                 return order
@@ -116,10 +129,29 @@ export default {
                 console.log(error)
                 return []
             }
+        },
+        returnRejectAndApproved(){
+            try {
+                let concat = [...this.RejectedApplications,...this.MemberData]
+                let order = this.$lodash.orderBy(concat,a=>{
+                    a.baseTime = a.dateApproved == undefined ? a.dateRejected : a.dateApproved
+                    console.log(a.baseTime.toDate())
+                    return a.baseTime
+                 },'desc')
+                return order
+            } catch (error) {
+                console.log(error,'returnRejectAndApproved')
+                return []
+            }
         }
     },
     methods: {
-
+        loadPreReg(id) {
+            this.$router.push('/admin/rejectedregform/' + id)
+        },
+        loadProfile(id) {
+            this.$router.push('/admin/profile/' + id)
+        },
         isDate(value) {
             switch (typeof value) {
                 case 'number':

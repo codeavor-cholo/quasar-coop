@@ -544,7 +544,7 @@ export default {
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         console.log(data)
-        axios.post('https://smsapisender.000webhostapp.com/index.php', data)
+        axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
         .then(response => {
           console.log(response)
         })

@@ -1,37 +1,40 @@
 <template>
     <q-page>
-        <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4 noPrint">Reports <q-icon name="mdi-arrow-right-box" /> Daily Collections ({{returnToday}})
+        <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4 noPrint">Reports <q-icon name="mdi-arrow-right-box" /> Member Payments
           <!-- <q-btn color="primary" icon="check" label="OK" @click="test" class="float-right q-mr-md" dense/> -->
-          <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="filter date" @click="adjustDate = true" /> 
+          <span v-if="returnLabel !== null" class="text-weight-light"><q-icon name="mdi-arrow-right-box" /> {{returnLabel}}</span>
+          <q-chip @click="adjustDate = true" clickable="" icon="event" color="warning" text-color="white" :label="returnFilterLabel" dense removable="" class="float-right q-mr-md cursor-pointer" v-show="goFilter" @remove="goFilter = false"/>
+          <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="filter date" @click="adjustDate = true" v-show="model !== null" /> 
         </h6>   
         <q-separator class="noPrint"/>     
         <div class="fit  table-cut">
         <div class="fit yesPrint">
             <div class="text-h6 row justify-between fit q-mb-md">
                 <div>
-                    Daily Collections Report
+                    <div>Member Payments</div>
+                    <span v-show="returnLabel !== null"><q-icon name="mdi-arrow-right-box" /> {{returnLabel}}</span>
+                    <br><span><q-icon name="mdi-arrow-right-box"/> <span v-if="returnFilterLabel !== ''"> {{returnFilterLabel}}</span> <span v-else> All Payments</span> </span>
                     <div class="text-caption">Prepared By: {{returnLogged.FirstName}} {{returnLogged.LastName}}</div>
                 </div>
                 <div class="text-right">
-                    {{$moment(today).format('LL')}}
+                    
                 </div>
             </div>
             <hr style="border-height:1px;border-color:#444444" class="full-width">
         </div>
         <q-table
             class="q-pa-md"
-            :data="returnDailyCollections"
-            :columns="showInDetails == true ? columns2 : columns"
-            row-key=".key"
+            :data="returnMemberPayments"
+            :columns="columns"
+            row-key="name"
             flat
             :pagination.sync="initialPagination"
             :filter="filter"
         >
             <template v-slot:top>
 
-                <div class="fit noPrint">
-                    <q-btn color="teal" :label="showInDetails == true ? 'Back to Summary' : 'Show In Detailed'"  :icon="showInDetails == true ? 'arrow_right' : 'view_module    '" @click="showInDetails = !showInDetails" class="float-right q-ml-md"/>
-                    <q-btn color="grey-10" icon="print" label="print report" @click="printMe" class="float-right"/>
+                <div class="fit noPrint row justify-between">
+                    
                     <!-- <q-btn-toggle
                     v-model="byButton"
                     toggle-color="teal"
@@ -42,11 +45,49 @@
                     ]"
                     class="float-right q-mr-md"
                     /> -->
-                    <q-input v-model="filter" filled color="teal" type="search" dense  label="Search" clearable="" style="width:250px;">
-                        <template v-slot:append>
-                        <q-icon name="search" />
+    
+                    <q-select 
+                        :dense="model !== null"
+                        style="width:450px;"
+                        v-model="model" 
+                        :options="membersIdOpt" 
+                        :label="model == null ? 'Search Member': ''" 
+                        filled 
+                        input-debounce="0"
+                        use-input
+                        color="grey-10"
+                        use-chips
+                        clearable=""
+                        @new-value="createValue"
+                        @filter="filterFn"
+                        @input="changeMemberDetails"
+                        @clear="removeMemberDetails"
+                    >
+                        <template v-slot:selected-item="scope">
+                            <q-chip
+                                dense
+                                :tabindex="scope.tabindex"
+                                color="white"
+                                text-color="secondary"
+                                class="q-ma-none"
+                            >
+                                {{ scope.opt.label }}
+                            </q-chip>
                         </template>
+                    </q-select>
+                    <div class="row" v-if="model == null">
+                        <q-banner class="bg-info text-white float-right">
+                           <q-icon name="info" /> Select a member to show payment records
+                        </q-banner>
+                    </div>
+                    <div class="row" v-else>
+                    <q-input v-model="filter" v-show="model !== null" filled color="teal" type="search" dense  label="Search"  clearable="" style="width:250px;" class="q-mr-md">
+                            <template v-slot:append>
+                            <q-icon name="search" />
+                            </template>
                     </q-input>
+                    <q-btn color="grey-10" icon="print" label="print report" @click="printMe" v-show="model !== null"/>
+                    </div>
                 </div>
             </template>  
             <template v-slot:header="props">
@@ -65,9 +106,16 @@
                 <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
                 <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
                     <q-icon name="double_arrow" v-show="col.name == 'MemberID' && props.row == selected" />
-                    <span v-if="col.typeOf !== 'money'">{{ col.value  }}</span><span v-else>{{ col.value | currency }}</span>
+                    <span v-if="col.typeOf == 'money'">{{ col.value | currency }}</span>
+                    <span v-else-if="col.typeOf == 'date'">
+                        {{$moment(col.value).format('LLL')}}
+                    </span>
+                    <span v-else>{{ col.value }}</span>
                 </q-td>
-                <q-td key="Actions" class="noPrint">
+                <q-td key="Actions" v-if="props.row == selected" class="noPrint">
+                    <q-btn color="teal" icon="receipt" label="view receipt" @click="viewGo(props.row)" flat/>
+                </q-td>
+                <q-td key="Actions" v-else class="noPrint">
                     <q-btn color="teal" icon="receipt" label="view receipt" @click="viewGo(props.row)" flat/>
                 </q-td>
                 </q-tr>
@@ -97,7 +145,7 @@
             <hr style="border-height:1px;border-color:#444444" class="full-width">
             <div class="text-h6 row justify-between fit q-mt-md text-teal text-weight-bold bg-grey-1 q-pa-md">
                 <div>
-                    Total Collections Amount:
+                    Member Payment Total:
                 </div>
                 <div class="text-right">
                     {{returnSumDailyCollections | currency}}
@@ -107,21 +155,30 @@
         </div>
 
         <q-dialog v-model="adjustDate" persistent>
-          <q-card>
-
-            <q-card-section class="row items-center">
-              <q-date
-                v-model="today"
-                landscape
-                flat 
-                color="teal"
-                minimal
-                class="full-width"
-              />
+          <q-card style="width:50vw" class="q-pa-md">
+            <q-card-section class="row items-center justify-between">
+                <div class="text-h6">Filter Date</div>
+                <q-btn-toggle
+                v-model="dateButtonOption"
+                toggle-color="teal"
+                :options="[
+                    {label: 'by date', value: 'byDate'},
+                    {label: 'date range', value: 'dateRange'},
+                ]"
+                @input="goFilter = false"
+                />
+            </q-card-section>
+            <q-card-section class="row items-center" v-if="dateButtonOption == 'byDate'">
+                <q-input v-model="filterDateInput" type="date" label="Date" outlined="" class="col q-mr-md" color="teal" :rules="[val => !!val || 'Field is required']"/>
+            </q-card-section>
+            <q-card-section class="row items-center" v-else>
+                <q-input v-model="filterDateFrom" type="date" label="From" outlined="" class="col q-mr-md" color="teal" :rules="[val=> new Date(val) < new Date(this.filterDateTo) || 'Check Your Date Range',val => !!val || 'Field is required']"/>
+                <q-input v-model="filterDateTo" type="date" label="To" outlined="" class="col" color="teal" :rules="[val=> new Date(val) > new Date(this.filterDateFrom) || 'Check Your Date Range',val => !!val || 'Field is required',val=> new Date(val) < new Date() || `There is no payment records in the future. Please select today's date for the date range maximum.`]"/>
             </q-card-section>
 
-            <q-card-actions align="right">
-              <q-btn flat label="done" color="teal" v-close-popup />
+            <q-card-actions align="right" class="row justify-between">
+              <q-btn flat label="remove filter" color="grey-10" icon="close" v-close-popup @click="goFilter = false" v-show="goFilter"/>
+              <q-btn flat label="done" color="teal" v-close-popup @click="showInputData"/>
             </q-card-actions>
           </q-card>
         </q-dialog>
@@ -138,7 +195,7 @@
                 </q-card-section>
                 <q-card-section >
                 <q-table
-                    :data="returnDailyCollections"
+                    :data="returnMemberPayments"
                     :columns="columnsPrint"
                     row-key="name"
                     
@@ -163,7 +220,11 @@
                         <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : '#'">
                         <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
                             <q-icon name="double_arrow" v-show="col.name == 'MemberID' && props.row == selected" />
-                            <span v-if="col.typeOf !== 'money'">{{ col.value  }}</span><span v-else>{{ col.value | currency }}</span>
+                            <span v-if="col.typeOf == 'money'">{{ col.value | currency }}</span>
+                            <span v-else-if="col.typeOf == 'date'">
+                                {{$moment(col.value).format('LLL')}}
+                            </span>
+                            <span v-else>{{ col.value }}</span>
                         </q-td>
                         </q-tr>
                     </template>  
@@ -189,7 +250,7 @@
                         <hr style="border-height:1px;border-color:#444444" class="full-width">
                         <div class="text-h6 row justify-between fit q-mt-md text-teal text-weight-bold">
                             <div>
-                                Total Collections Amount:
+                                Member Payment Total:
                             </div>
                             <div class="text-right">
                                 {{returnSumDailyCollections | currency}}
@@ -219,8 +280,13 @@ export default {
     },
     data(){
         return{
-            showInDetails: false,
-            byButton: 'day',
+            goFilter: false,
+            filterDateInput: date.formatDate(new Date(),'YYYY-MM-DD'),
+            filterDateTo:  date.formatDate(new Date(),'YYYY-MM-DD'),
+            filterDateFrom: '',
+            membersIdOpt: Object.freeze(this.membersIdOptions),
+            model: null,
+            dateButtonOption: 'byDate',
             printWholeReport: false,
             payDialog: false,
             initialPagination: {
@@ -235,29 +301,16 @@ export default {
             data: [],
             selected: {},
             columns: [
-                { name: 'MemberID', align: 'left', label: 'Member ID', field: 'MemberID', sortable: true },
-                { name: 'BillingName', align: 'left', label: 'Name', field: 'BillingName', sortable: true },
+                { name: 'Date', align: 'left', label: 'Date', field: 'basisDate', sortable: true, typeOf: 'date' },   
                 { name: 'TransactionID', align: 'left', label: 'TransactionID#', field: 'TransactionID', sortable: true }, 
                 { name: 'OrNo', align: 'left', label: 'OrNo#', field: 'OrNo', sortable: true },            
                 { name: 'TransactionType', align: 'left', label: 'Transaction Type', field: 'TransactionType', sortable: true },
+
                 { name: 'Total', align: 'left', label: 'Total', field: 'Total', sortable: true, typeOf: 'money' },
+                
                 { name: 'Actions', align: 'left', label: 'Actions', },            
             ],
-            columns2: [
-                { name: 'MemberID', align: 'left', label: 'Member ID', field: 'MemberID', sortable: true },
-                { name: 'OrNo', align: 'left', label: 'OrNo#', field: 'OrNo', sortable: true },            
-                { name: 'TransactionType', align: 'left', label: 'Transaction Type', field: 'TransactionType', sortable: true },
-                { name: 'MF', align: 'left', label: 'MGT.FEE', field: 'ManagementFee', sortable: true, typeOf: 'money' }, 
-                { name: 'SS', align: 'left', label: 'S/S', field: 'ShareCapital', sortable: true, typeOf: 'money' }, 
-                { name: 'MSD', align: 'left', label: 'MSD', field: 'SavingsDeposit', sortable: true, typeOf: 'money' }, 
-                { name: 'ADV', align: 'left', label: 'ADV.', field: 'AdvancesAmount', sortable: true, typeOf: 'money' }, 
-                { name: 'AR', align: 'left', label: 'AR', field: 'AmountPaid', sortable: true, typeOf: 'money' }, 
-                { name: 'Total', align: 'left', label: 'Total', field: 'Total', sortable: true, typeOf: 'money' },     
-                { name: 'Actions', align: 'left', label: 'Actions', }, 
-            ],
             columnsPrint: [
-                { name: 'MemberID', align: 'left', label: 'Member ID', field: 'MemberID', sortable: true },
-                { name: 'BillingName', align: 'left', label: 'Name', field: 'BillingName', sortable: true },
                 { name: 'TransactionID', align: 'left', label: 'TransactionID#', field: 'TransactionID', sortable: true }, 
                 { name: 'OrNo', align: 'left', label: 'OrNo#', field: 'OrNo', sortable: true },            
                 { name: 'TransactionType', align: 'left', label: 'Type', field: 'TransactionType', sortable: true },
@@ -274,6 +327,50 @@ export default {
       }
     },
     computed:{
+        returnFilterLabel(){
+            try {
+                if(this.goFilter){
+                    if(this.dateButtonOption == 'byDate'){
+                        return `${this.$moment(this.filterDateInput).format('LL')}`
+                    } else {
+                        return `${this.$moment(this.filterDateFrom).format('LL')} - ${this.$moment(this.filterDateTo).format('LL')}`
+                    }
+                } else {
+                    return ''
+                }
+            } catch (error) {
+                return ''
+            }
+        },
+        returnLabel(){
+            try {
+                return this.model.label
+            } catch (error) {
+                return null
+            }
+        },
+        membersIdOptions () {
+            let opt = this.MemberData.map(d => {
+                let full = d.FirstName + ' ' + d.LastName
+                let opID = ''
+                if(d.Designation == 'Operator'){ opID = d['.key'] }
+                else { 
+                    let op = {...d.Operator}
+                    opID = op.MemberID 
+                }
+            return {
+                label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                fullName: full,
+                id: d['.key'],
+                designation: d.Designation,
+                OperatorID: opID
+            }
+            })
+            console.log(opt,'opt')
+            return opt
+            // Object.freeze(options)
+        },
         returnLogged(){
             try {
                 let user = firebaseAuth.currentUser
@@ -290,7 +387,7 @@ export default {
             return this.today
         },
         returnSumDailyCollectionsBills(){
-            let sum = this.$lodash.sumBy(this.returnDailyCollections.filter(a=>{
+            let sum = this.$lodash.sumBy(this.returnMemberPayments.filter(a=>{
                 return a.TransactionType == 'Bills Payment'
             }),b=>{
                 return parseFloat(b.Total)
@@ -298,7 +395,7 @@ export default {
             return sum
         },
         returnSumDailyCollectionsPayment(){
-            let sum = this.$lodash.sumBy(this.returnDailyCollections.filter(a=>{
+            let sum = this.$lodash.sumBy(this.returnMemberPayments.filter(a=>{
                 return a.TransactionType == 'Payment'
             }),b=>{
                 return parseFloat(b.Total)
@@ -307,32 +404,57 @@ export default {
             return sum
         },
         returnSumDailyCollections(){
-            let sum = this.$lodash.sumBy(this.returnDailyCollections,b=>{
+            let sum = this.$lodash.sumBy(this.returnMemberPayments,b=>{
                 return parseFloat(b.Total)
             })
             return sum
         },
-        returnDailyCollections(){
+        returnMemberPayments(){
             try {
                 let filter = this.Transactions.filter(a=>{
                     let member = this.getMemberData(a.MemberID)
                     if(member !== undefined){
                         a.BillingName = `${member.FirstName} ${member.LastName}`
-                        return date.formatDate(a.timestamp.toDate(),'MMM DD YYYY') == date.formatDate(this.today,'MMM DD YYYY')
-                    }
+                    }                    
+                    a.basisDate = a.timestamp.toDate()
+                    return a.MemberID == this.model.id
                 })
                 console.log(filter,'filter')
+
+                if(this.goFilter){
+                    let baseStart = null
+                    if(this.dateButtonOption == 'byDate'){
+                        filter = filter.filter(a=>{
+                             return date.formatDate(a.timestamp.toDate(),'MMM DD YYYY') == date.formatDate(this.filterDateInput,'MMM DD YYYY')
+                        })
+                    } else {
+                        filter = filter.filter(a=>{
+                            if (date.isBetweenDates(a.timestamp.toDate(),new Date(this.filterDateFrom), new Date(this.filterDateTo), { inclusiveFrom: true, inclusiveTo: false })) {
+                                return a
+                            }
+                        })
+                    }
+                }
+
                 return this.$lodash.orderBy(filter,a=>{
                     return a.timestamp.toDate()
                 },'desc')
             } catch (error) {
-                console.log(error,'returnDailyCollections')
+                console.log(error,'returnMemberPayments')
                 return []
             }
         }
     },
 
     methods:{
+        changeMemberDetails(val){
+            console.log(val,'selected val')
+        },  
+        removeMemberDetails(){
+            this.model = null
+            this.goFilter = false
+            this.dateButtonOption = 'byDate'
+        },
         getMemberData(id){
             try {
                 return this.MemberData.filter(a=>{
@@ -361,6 +483,49 @@ export default {
         },
         printMe(){
             window.print();
+        },
+        createValue (val, done) {
+        // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
+        // and it resets the input textbox to empty string
+        // ----
+        // Calling done(var) when new-value-mode is "add-unique", or done(var, "add-unique") adds "var" content to the model
+        // only if is not already set
+        // and it resets the input textbox to empty string
+        // ----
+        // Calling done(var) when new-value-mode is "toggle", or done(var, "toggle") toggles the model with "var" content
+        // (adds to model if not already in the model, removes from model if already has it)
+        // and it resets the input textbox to empty string
+        // ----
+        // If "var" content is undefined/null, then it doesn't tampers with the model
+        // and only resets the input textbox to empty string
+
+        if (val.length > 2) {
+            if (!this.membersIdOpt.includes(val)) {
+            done(val, 'add-unique')
+            }
+        }
+        },
+
+        filterFn (val, update) {
+            update(() => {
+                if (val === '') {
+                    this.membersIdOpt = this.membersIdOptions
+                }
+                else {
+                    const needle = val.toLowerCase()
+                    this.membersIdOpt = this.membersIdOptions.filter(
+                        v => v.value.toLowerCase().indexOf(needle) > -1
+                    )
+                }
+            })
+        },
+        showInputData(){
+            this.goFilter = true
+            console.log(this.filterDateInput, 'specific')
+
+            console.log(this.filterDateFrom, 'from')
+
+            console.log(this.filterDateTo, 'to')
         }
     }
 }

@@ -18,7 +18,6 @@
             <th class="text-left">First Name</th>
             <th class="text-left">Designation</th>
             <th class="text-left">Phone</th>
-            <th class="text-left">Email</th>
             <th class="text-left"></th>
           </tr>
         </thead>
@@ -30,7 +29,6 @@
             <td class="text-left">{{ PendingReg.FirstName }}</td>
             <td class="text-left">{{ PendingReg.Designation }}</td>
             <td class="text-left">{{ PendingReg.Phone }}</td>
-            <td class="text-left">{{ PendingReg.Email }}</td>
             <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td>
           </tr>
         </tbody>

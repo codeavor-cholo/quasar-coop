@@ -3,16 +3,58 @@
     <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Members <q-icon name="mdi-arrow-right-box" /> All Members</h6>
 
     <q-separator />
-      <div v-if="loading">
+      <!-- <div v-if="loading">
         <q-spinner-oval
         color="primary"
         size="200px"
         :thickness="5"
         class="fixed-center"
         />
+      </div> -->
+
+
+    <div class="q-pa-md col-xs-12 col-sm-12 col-md-12">
+      <div class="q-mb-md full-width row justify-end">
+        <q-input v-model="filter" class="" filled color="teal" type="search" dense label="Search" clearable="" style="width:250px;">
+            <template v-slot:append>
+            <q-icon name="search" />
+            </template>
+        </q-input>
       </div>
-    <div class="q-pa-md col-xs-12 col-sm-12 col-md-12" v-if="!loading">
-      <q-markup-table separator="horizontal" flat bordered>
+
+      <q-table
+        class="q-mb-md"
+        :data="MemberData"
+        :columns="columns"
+        row-key=".key"
+        flat
+        :pagination.sync="initialPagination"
+        :filter="filter"
+      >
+        <template v-slot:body="props">
+            <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : '#'">
+            <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
+                <q-icon name="double_arrow" v-show="col.name == 'MemberID' && props.row == selected" />
+                <span v-if="col.typeOf !== 'status'">{{ col.value  }}</span>
+                <span v-else>
+                  <q-icon name="check_circle" size="md" v-if="col.value == false" color="teal" />
+                  <q-icon name="warning" size="md" v-else color="warning" />
+
+                </span>
+            </q-td>
+            <q-td>
+              <q-btn flat 
+              color="secondary"
+              class="full-width" 
+              icon-right="mdi-arrow-right" 
+              label="View Profile" 
+              @click="loadProfile(props.row['.key'])"
+              />              
+            </q-td>
+            </q-tr>
+        </template>        
+      </q-table>
+      <!-- <q-markup-table separator="horizontal" flat bordered>
       <template>
         <thead color="secondary">
           <tr>
@@ -20,7 +62,7 @@
             <th class="text-left">Last Name</th>
             <th class="text-left">First Name</th>
             <th class="text-left">Phone</th>
-            <th class="text-left">Email</th>
+            <th class="text-left">Membership Fee Paid</th>
             <th class="text-left"></th>
           </tr>
         </thead>
@@ -32,7 +74,10 @@
             <td class="text-left">{{data.LastName}}</td>
             <td class="text-left">{{data.FirstName}}</td>
             <td class="text-left">{{data.Phone}}</td>
-            <td class="text-left">{{data.Email}}</td>
+            <td class="text-left">
+                <q-icon name="check_circle" size="md" v-if="!data.isNewMember" color="teal" />
+                <q-icon name="warning" size="md" v-else color="warning" />
+            </td>
             <td class="text-left">
               <q-btn flat 
               color="secondary"
@@ -45,7 +90,7 @@
           </tr>
         </tbody>
       </template>
-      </q-markup-table>
+      </q-markup-table> -->
     </div>
     </div>
 </template>
@@ -56,6 +101,22 @@ import { firebaseDb } from 'boot/firebase';
 export default {
   data() {
     return {
+      selected: {},
+      initialPagination: {
+          descending: false,
+          page: 1,
+          rowsPerPage:10
+          // rowsNumber: xx if getting data from a server
+      },
+      filter: '',
+      columns: [
+        { name: 'MemberID', align: 'left', label: 'Member ID', field: '.key', sortable: true },
+        { name: 'FirstName', align: 'left', label: 'First Name', field: 'FirstName', sortable: true },
+        { name: 'LastName', align: 'left', label: 'Last Name', field: 'LastName', sortable: true }, 
+        { name: 'Phone', align: 'left', label: 'Phone#', field: 'Phone', sortable: true },            
+        { name: 'MembershipFee', align: 'left', label: 'MF Paid', field: 'isNewMember', sortable: true, typeOf: 'status' },
+        { name: 'Actions', align: 'left', label: 'Actions', },   
+      ],
       loading: true,
       active: true,
       inactive: true,
@@ -77,24 +138,26 @@ export default {
         licenseplate: '',
         phonenumber: ''
       },
-      MemberData: {}
+      // MemberData: {}
     }
   },
-  firestore () {
-    return {
-      MemberData: {
-        }
+    firestore () {
+      return {
+        MemberData: firebaseDb.collection('MemberData'),
+        JeepneyData: firebaseDb.collection('JeepneyData'),
+        Transactions: firebaseDb.collection('Transactions'),
+        DashboardUsers: firebaseDb.collection('DashboardUsers'),
       }
-  },
+    },
   computed: {
     // ...mapGetters('store', ['MemberData'])
   },
   mounted () {
       // Binding Collections
-      this.$bindCollectionAsObject("MemberData", firebaseDb.collection("MemberData"))
-      .then((MemberData) => {
-        this.loading = false
-      })
+      // this.$bindCollectionAsObject("MemberData", firebaseDb.collection("MemberData"))
+      // .then((MemberData) => {
+      //   this.loading = false
+      // })
     },
   methods: {
     loadProfile(id) {
