@@ -251,7 +251,7 @@ export default {
                   let trackID = paymentid.toString().slice(0,10)
                   let number = this.PenReg.Phone
                   let message = 'You passed the evaluation. Please pay P500.00 for your membership fee. Tracking# '+ trackID.toUpperCase()
-                  let apinumber = 2
+                  let apinumber = 4
 
                   var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
                   console.log(data)

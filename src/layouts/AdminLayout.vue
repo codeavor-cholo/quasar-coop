@@ -295,6 +295,7 @@ import { firebaseAuth,firebaseApp,firebaseDb } from 'boot/firebase'
 export default {
   name: "Layout",
   created(){
+    // firebaseAuth.signOut()
     let self = this
     firebaseAuth.onAuthStateChanged(function(user) {
         
