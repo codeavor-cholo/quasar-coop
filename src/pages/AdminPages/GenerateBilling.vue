@@ -3,6 +3,8 @@
         <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Generate Billing <q-icon name="mdi-arrow-right-box" /> {{tab}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span> 
           <!-- <q-btn color="primary" icon="check" label="OK" @click="test" class="float-right q-mr-md" dense/> -->
           <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="adjust date" @click="adjustDate = true" /> 
+          <q-btn color="pink" class="float-right q-mr-md" flat dense="" icon="event" label="delele today sent" @click="deleteTodayShortCut" /> 
+
         </h6>
         <q-separator />
         <q-splitter
@@ -650,14 +652,19 @@ export default {
           // this.drawer = false
         }
       },
-      sendSMS(number,message){
+      delay() {
+        return new Promise(resolve => setTimeout(resolve, 300));
+      },
+      async sendSMS(number,message){
         // this.$refs.stepper.next()
+        
         let header= {
               'Access-Control-Allow-Origin': '*',
         }
-        let apinumber = between(1,4)
+        let apinumber = 4
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+        await this.delay();
         console.log(data)
         axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
         .then(response => {
@@ -680,24 +687,29 @@ export default {
           }).onOk(() => {
             if(this.tab == 'New' || this.tab == 'Sent'){
               if(this.tab == 'New'){
-                withBalance.forEach(a=>{
-                  let data = a
-                  data.timestamp = firefirestore.FieldValue.serverTimestamp()
 
-                    firebaseDb.collection("BillingTrackers").add(data)
-                      .then((doc)=>{
-                        console.log('created billing tracker')
-                        let trackID = doc.id.toString().slice(0,10)
-                        this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
-                        console.log('sent sucess!')
+                // withBalance.forEach(a=>{
+                //   let data = a
+                //   data.timestamp = firefirestore.FieldValue.serverTimestamp()
 
-                      })
-                      .catch(error=>{
-                        console.log('bill generation error',error)
-                      })                  
+                //     firebaseDb.collection("BillingTrackers").add(data)
+                //       .then((doc)=>{
+                //         console.log('created billing tracker')
+                //         let trackID = doc.id.toString().slice(0,10)
+                //         this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                //         console.log('sent sucess!')
+
+                //       })
+                //       .catch(error=>{
+                //         console.log('bill generation error',error)
+                //       })                  
                   
-                })
+                // })
+
+                this.processArray(withBalance)
+
                 this.tab = 'Sent'
+                // this.$forceUpdate()
                 
               } else {
                 this.$q.dialog({
@@ -852,6 +864,47 @@ export default {
           console.log(error,'payLaterCheckerFunction')
           return arrayset
         }
+      },
+      async processArray(array) {
+        array.forEach(async a => {
+          let data = a
+          data.timestamp = firefirestore.FieldValue.serverTimestamp()
+
+            await firebaseDb.collection("BillingTrackers").add(data)
+              .then(async (doc)=>{
+                console.log('created billing tracker')
+                let trackID = doc.id.toString().slice(0,10)
+                await this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                console.log('sent sucess!')
+
+              })
+              .catch(error=>{
+                console.log('bill generation error',error)
+              }) 
+          
+        })
+      },
+      deleteTodayShortCut(){
+        let showToday = this.BillingTrackers.filter(a=>{
+          let today = date.formatDate(this.today,'MM-DD-YYYY')
+          let time = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
+          console.log(today)
+          console.log(time)
+          return a.timestamp !== undefined && today == time
+        })
+
+        console.log(showToday,'showToday')
+        if(showToday.length > 0){
+          showToday.forEach(a=>{
+            firebaseDb.collection("BillingTrackers").doc(a['.key']).delete()
+            .then(()=>{
+              console.log('success delete')
+            })
+          })
+        }
+
+          console.log(showToday,'showToday')
+        
       }
     }
 }

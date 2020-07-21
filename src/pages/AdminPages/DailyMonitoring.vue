@@ -453,7 +453,7 @@ export default {
                 'Access-Control-Allow-Origin': '*',
         }
         let message = `You have P ${paylater.amountToPayBilling}.00 payable for today. If unpaid today, this will reflect in your monthly billing.`
-        let apinumber = 1
+        let apinumber = 4
 
         let data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         console.log(data,'data sent')

@@ -732,7 +732,7 @@ export default {
       }
       let message = 'Use this code: ' + this.PreRegData.verificationCode.toString() + ' to verify you phone number.'
       let number = this.returnNumberNoMask.toString()
-      let apinumber = 1
+      let apinumber = 4
 
       var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
       console.log(data)

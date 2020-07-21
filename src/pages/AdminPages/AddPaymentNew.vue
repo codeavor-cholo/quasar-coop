@@ -1730,7 +1730,7 @@ export default {
                     'Access-Control-Allow-Origin': '*',
             }
             let message = 'SMS Reciept for the payment of P'+ amount + '.00 on '+ TodayDate +'. PaymentID# '+ trackID.toUpperCase()
-            let apinumber = 1
+            let apinumber = 4
 
             let data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
             console.log(data,'data sent')
