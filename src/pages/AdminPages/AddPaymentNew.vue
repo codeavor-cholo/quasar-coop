@@ -299,7 +299,7 @@
                     <div v-show="MDetails.memberDesignation !== 'Operator' && MDetails.defaultUnit == null"><q-checkbox v-model="defaultUnit" :disable="defaultUnitDisabled" @input="defaultUnitCheck"/> Do you want <b>{{jeepneyDetails}}</b> to be your default Unit/Jeep recorded in your payments?</div>   
                 </div>
                 <div v-else>
-                    <q-banner class="bg-warning text-white">
+                    <q-banner class="bg-warning text-white" v-show="MDetails.memberDesignation !== 'Driver'">
                         <q-icon name="warning" /> You have no jeep/units registered yet. Go to Jeep/Unit Registration first.
                     </q-banner>      
                 </div>   
@@ -549,6 +549,7 @@ export default {
             uid: ''
         }
     },
+    props: ['idMember'],    
     created(){
         let self = this
         firebaseAuth.onAuthStateChanged(function(user) {
@@ -568,7 +569,7 @@ export default {
             OtherPayments: firebaseDb.collection('OtherPayments'),
             FixedPayments: firebaseDb.collection('FixedPayments'),
             JeepneyData: firebaseDb.collection('JeepneyData'),
-            
+            PayLater: firebaseDb.collection('PayLater'),
             ManagementFeeDriver: firebaseDb.collection('FixedPayments').doc('ManagementFeeDriver'),
             ManagementFeeOperator: firebaseDb.collection('FixedPayments').doc('ManagementFeeOperator'),
             MembershipFee: firebaseDb.collection('FixedPayments').doc('MembershipFee'),
@@ -583,6 +584,9 @@ export default {
             // has data
             this.TransactionID = ++data[0].TransactionID
             this.OrNo = ++data[0].OrNo
+            console.log(this.idMember,'idMember')
+            let ids = this.idMember.split('&')
+            this.changeMemberDetails({id: ids[0],reason:'paynow',plateNumbers: ids[1]})
           } else {
             // empty Transactions
             var transacIdFormat = 100000
@@ -742,8 +746,9 @@ export default {
             if(this.model !== null || this.model2 !== null){
                 id = this.model !== null ? this.model : this.model2
             } else {
+                let sumthing = this.idMember.split('&')
                 let ops = this.MemberData.filter(a=>{
-                    return a['.key'] == this.memberIDs
+                    return a['.key'] == sumthing[0]
                 })[0]
 
                 console.log(ops,'ops')
@@ -1267,18 +1272,44 @@ export default {
                 this.hasCA = false
             }
 
-            if(member.defaultUnit !== undefined){
-                let jeep = member.defaultUnit
-                this.MDetails.defaultUnit = jeep.PlateNumber
-                this.jeepneyDetails = jeep.PlateNumber
-                this.defaultUnitDisabled = true
-                this.defaultUnit = true
-                console.log(this.jeepneyDetails,'jeep default')
+            // if(member.defaultUnit !== undefined){
+            //     let jeep = member.defaultUnit
+            //     this.MDetails.defaultUnit = jeep.PlateNumber
+            //     this.jeepneyDetails = jeep.PlateNumber
+            //     this.defaultUnitDisabled = true
+            //     this.defaultUnit = true
+            //     console.log(this.jeepneyDetails,'jeep default')
+            // } else {
+            //     this.MDetails.defaultUnit = null
+            //     this.defaultUnitDisabled = false
+            //     this.defaultUnit = false
+            //     this.jeepneyDetails = null
+            // }
+
+            if(val.plateNumbers !== 'NONE' && member.defaultUnit == undefined){
+                // this.MDetails.defaultUnit = this.plateNumbers
+                if(member.Designation == 'Driver'){
+                    this.MDetails.defaultUnit =  null
+                    this.jeepneyDetails = val.plateNumbers    
+                    this.defaultUnitDisabled = false
+                    this.defaultUnit = true  
+                } 
+        
+                
             } else {
-                this.MDetails.defaultUnit = null
-                this.defaultUnitDisabled = false
-                this.defaultUnit = false
-                this.jeepneyDetails = null
+                if(member.defaultUnit !== undefined){
+                    let jeep = member.defaultUnit
+                    this.MDetails.defaultUnit = jeep.PlateNumber
+                    this.jeepneyDetails = jeep.PlateNumber
+                    this.defaultUnitDisabled = true
+                    this.defaultUnit = true
+                    console.log(this.jeepneyDetails,'jeep default')
+                } else {
+                    this.MDetails.defaultUnit = null
+                    this.defaultUnitDisabled = false
+                    this.defaultUnit = false
+                    this.jeepneyDetails = null
+                }
             }
 
             if(val !== null){
@@ -1547,6 +1578,9 @@ export default {
             payment.TrackingNumber = this.trackingNumber
         }
 
+
+        this.payLaterCheckerDeleter(payment)
+
         firebaseDb.collection('Transactions').add(payment)
           .then(async (doc) => {
             this.$forceUpdate()
@@ -1630,6 +1664,8 @@ export default {
                 jeepneyDetails: this.jeepneyDetails !== null ? this.getUnitDetails(this.jeepneyDetails) : null,
                 staffID: this.uid  
               }
+
+              this.payLaterCheckerDeleter(includeOperatorPayment) 
               firebaseDb.collection('Transactions').add(includeOperatorPayment)
                 .then(async (doc) => {
                   await firebaseDb.collection('MemberData').doc(includeOperatorPayment.MemberID).update({
@@ -1789,6 +1825,33 @@ export default {
           }
 
 
+      },
+      payLaterCheckerDeleter(data){
+          try {
+              let check = data
+
+              console.log(data,'data payLaterCheckerDeleter')
+              let today = date.formatDate(new Date(),'MM-DD-YYYY')
+              let filter = this.$lodash.filter(this.PayLater,a=>{
+                  let payDate = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
+                  return a.memberID == check.MemberID && a.plateNumber == check.jeepneyDetails.PlateNumber && today == payDate
+              })[0]
+
+              console.log(filter,'filter payLaterCheckerDeleter')
+
+              if(filter !== undefined){
+                console.log(filter,'data to delete')
+                firebaseDb.collection('PayLater').doc(filter['.key']).delete()
+                .then(()=>{
+                   console.log('sucess deletion of data in pay later')
+                })
+              } else {
+                  console.log('no record in pay later to delete')
+              }
+
+          } catch (error) {
+              console.log(error,'payLaterCheckerDeleter')
+          }
       }
 
     }

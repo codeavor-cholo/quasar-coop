@@ -72,7 +72,7 @@
         >
           
             <q-list class="q-mt-md">
-                <q-item class="q-pa-md">
+                <q-item>
                     <q-item-section avatar>
                     <q-avatar color="teal" class="text-white">
                         {{returnSelectRow.avatar}}

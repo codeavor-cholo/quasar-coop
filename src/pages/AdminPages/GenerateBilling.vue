@@ -4,7 +4,6 @@
           <!-- <q-btn color="primary" icon="check" label="OK" @click="test" class="float-right q-mr-md" dense/> -->
           <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="adjust date" @click="adjustDate = true" /> 
         </h6>
-        
         <q-separator />
         <q-splitter
         v-model="splitterModel"
@@ -115,11 +114,18 @@ import { date, QDialog } from 'quasar'
 import axios from 'axios'
 import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 const sri = require('simple-random-id');
+
+function between(min, max) {  
+  return Math.floor(
+    Math.random() * (max - min) + min
+  )
+}
+
 export default {
     data(){
         return {
             tab: 'New',
-            today: date.formatDate(new Date(2020,6,1),'YYYY/MM/DD'),
+            today: date.formatDate(new Date(),'YYYY/MM/DD'),
             splitterModel: 20,
             drawer: false,
             filter: '',
@@ -138,6 +144,7 @@ export default {
         Transactions: firebaseDb.collection('Transactions'),
         BillingTrackers: firebaseDb.collection('BillingTrackers'),
         LastBillingTrackers: firebaseDb.collection('BillingTrackers'),
+        PayLater: firebaseDb.collection('PayLater'),
 
         ManagementFeeDriver: firebaseDb.collection('FixedPayments').doc('ManagementFeeDriver'),
         ManagementFeeOperator: firebaseDb.collection('FixedPayments').doc('ManagementFeeOperator'),
@@ -219,7 +226,11 @@ export default {
               }) 
 
               otherUnsent = [...dataSaved,...withoutBills]
-              unsent = this.$lodash.clone(otherUnsent)
+
+              console.log(this.payLaterCheckerFunction(otherUnsent),'start of paylater checking')
+
+
+              unsent = this.payLaterCheckerFunction(this.$lodash.clone(otherUnsent))
               console.log(dataSaved,'dataSaved')
               console.log(withoutBills,'without')
               console.log('otherUnsent concat',otherUnsent)
@@ -227,8 +238,9 @@ export default {
 
             } else {
               otherUnsent = this.returnWithQuotaBalanceLastMonth
+              console.log(this.payLaterCheckerFunction(otherUnsent),'start of paylater checking without billing')
               console.log('otherUnsent',otherUnsent)
-              unsent = this.$lodash.clone(otherUnsent)
+              unsent = this.payLaterCheckerFunction(this.$lodash.clone(otherUnsent))
             }
 
             let loans = this.returnWithAdvancesInterest
@@ -258,7 +270,7 @@ export default {
               if(this.tab == 'New') return unsent
             }
 
-
+            // console.log(this.payLaterCheckerFunction(sent,true),'start of paylater checking sent')
             if(this.tab == 'New') return []
             else if(this.tab == 'Sent'){ return sent }
             else if(this.tab == 'New Loan'){ return unsentloans }
@@ -271,7 +283,8 @@ export default {
             { name: 'BillingMonth', align: 'left', label: 'Billing Month', field: 'BillingMonth', sortable: true },            
             { name: 'NoPayDays', align: 'left', label: 'Days Unpaid', field: 'NoPayDays', sortable: true },
             { name: 'AmountPerDay', align: 'left', label: 'MF', field: 'AmountPerDay', sortable: true, typeOf: 'money' },
-            { name: 'QuotaBalance', align: 'left', label: 'Quota Balance', field: 'QuotaBalance', sortable: true, typeOf: 'money' },
+            { name: 'AmountPayables', align: 'left', label: 'Amount Payables', field: 'AmountPayables', sortable: true, typeOf: 'money' },
+            { name: 'QuotaBalance', align: 'left', label: 'Quota Balance + AP', field: 'QuotaBalance', sortable: true, typeOf: 'money' },
           ]
 
           let loancolumns = [
@@ -293,6 +306,34 @@ export default {
               loancolumns.push({ name: 'DateSent', align: 'left', label: 'Date Sent', field: 'DateSent', sortable: true })
               return loancolumns 
             }
+        },
+        returnPayLaterLastMonth(){
+          try {
+            let lastMonth = date.subtractFromDate(new Date(this.today),{month: 1})
+            let payLaterMonth = date.formatDate(lastMonth,'MMM')
+            let payLaterMonthYear = date.formatDate(lastMonth,'YYYY')  
+            let payLaterDate = `${payLaterMonth} ${payLaterMonthYear}`
+
+
+            console.log('returnPayLaterLastMonth')
+            console.log(lastMonth,'lastMonth')
+            let filter = this.$lodash.filter(this.PayLater,a=>{
+              let dateBase = a.timestamp.toDate()
+              let dateMonth = date.formatDate(dateBase,'MMM')
+              let dateYear = date.formatDate(dateBase,'YYYY')  
+              let payLaterDateBase = `${dateMonth} ${dateYear}`
+
+              return payLaterDate == payLaterDateBase
+            })
+
+            console.log(filter,'filter date months')
+
+            console.log('returnPayLaterLastMonth')
+            return filter
+          } catch (error) {
+            console.log(error,'returnPayLaterLastMonth')
+            return []
+          }
         },
         returnWithQuotaBalanceLastMonth(){
           try {
@@ -614,7 +655,7 @@ export default {
         let header= {
               'Access-Control-Allow-Origin': '*',
         }
-        let apinumber = 3
+        let apinumber = between(1,4)
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         console.log(data)
@@ -649,13 +690,15 @@ export default {
                         let trackID = doc.id.toString().slice(0,10)
                         this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
                         console.log('sent sucess!')
+
                       })
                       .catch(error=>{
                         console.log('bill generation error',error)
                       })                  
                   
                 })
-                this.tab == 'Sent'
+                this.tab = 'Sent'
+                
               } else {
                 this.$q.dialog({
                   title: 'Resend billing ?',
@@ -757,6 +800,58 @@ export default {
       },
       test(){
         console.log(this.returnWithQuotaBalanceLastMonth)
+      },
+      payLaterCheckerFunction(arrayset){
+        try {
+          const paylater = this.returnPayLaterLastMonth 
+
+
+          
+          let group = this.$lodash.groupBy(paylater,'plateNumber')
+
+          let map = this.$lodash.map(group,function(value,key){
+            return {
+              PlateNumber: key,
+              PayLaterData: value,
+            }
+          })
+
+          map.forEach(a=>{
+            a.PayLaterSum = this.$lodash.sumBy(a.PayLaterData,b=>{
+              return parseFloat(b.amountToPayBilling)
+            })
+          })
+
+          let payLaterAdded = []
+          arrayset.forEach(a=>{
+            let filterPay = this.$lodash.filter(map,x=>{
+              return a.PlateNumber == x.PlateNumber
+            })[0]
+
+            if(filterPay == undefined){
+              a.AmountPayables = 0
+            } else {
+              a.AmountPayables = filterPay.PayLaterSum
+              a.QuotaBalance = parseFloat(filterPay.PayLaterSum) + parseFloat(a.QuotaBalance)
+            }
+
+          })
+
+
+
+          console.log(paylater,'paylater')
+          console.log(group,'group')
+          console.log(map,'map')
+          console.log(payLaterAdded,'payLaterAdded')
+
+          
+
+
+          return arrayset
+        } catch (error) {
+          console.log(error,'payLaterCheckerFunction')
+          return arrayset
+        }
       }
     }
 }

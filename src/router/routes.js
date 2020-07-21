@@ -147,6 +147,11 @@ const routes = [
         component: () => import("pages/AdminPages/AddPaymentNew.vue")
       },
       {
+        path: "/admin/addpaymentattendance/:idMember",
+        props: true,
+        component: () => import("pages/AdminPages/AddPaymentNew.vue")
+      },
+      {
         path: "/admin/allpayment",
         component: () => import("pages/AdminPages/AllPayment.vue")
       },

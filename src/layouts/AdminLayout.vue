@@ -135,43 +135,10 @@
            </q-expansion-item>
             <!-- End of Payment Member -->
             <!-- Start of Tracking -->
-            <q-expansion-item
-              expand-separator
-              icon="mdi-routes"
-              label="Monitoring"
-              :content-inset-level="0.5"
-            >
-               <q-item
-                    expand-separator
-                   :content-inset-level="0.5"
-                    to="/admin/billings"
-                    exact
-                    >
-                  <q-item-section avatar>
-                    <q-icon name="mdi-jeepney" />
-                  </q-item-section>
-                  <q-item-section class="text-uppercase">MEMBERS</q-item-section>
-                </q-item>
-                <q-item
-                     expand-separator
-                    :content-inset-level="0.5"
-                     to="/admin/monitoring"
-                     exact
-                     >
-                   <q-item-section avatar>
-                     <q-icon name="mdi-account-search" />
-                   </q-item-section>
-                   <q-item-section class="text-uppercase">Daily Monitoring</q-item-section>
-                 </q-item>
-            </q-expansion-item>
+
             <!-- End of Tracking -->
-            <q-expansion-item
-              expanded-separator
-              icon="mdi-credit-card"
-              label="Withdrawals"
-              :content-inset-level="0.5"
-            >
-              <q-item
+
+              <!-- <q-item
                   expand-separator
                   :content-inset-level="0.5"
                   to="/admin/applications"
@@ -181,7 +148,7 @@
                   <q-icon name="mdi-form-dropdown" />
                 </q-item-section>
                   <q-item-section class="text-uppercase">Applications</q-item-section>
-              </q-item>
+              </q-item> -->
               <q-item
                   expand-separator
                   :content-inset-level="0.5"
@@ -204,13 +171,24 @@
                 </q-item-section>
                   <q-item-section class="text-uppercase">Loan</q-item-section>
               </q-item>
-            </q-expansion-item>
-             <q-expansion-item
-              expanded-separator
-              icon="fas fa-user-circle"
-              label="Manage"
-              :content-inset-level="0.5"
+            <q-item
+            to="/admin/paymentmaintenance"
+            exact
             >
+              <q-item-section avatar>
+                  <q-icon name="vertical_split" />
+              </q-item-section>
+              <q-item-section>MANAGE PAYMENT FEES</q-item-section>
+            </q-item>
+            <q-item
+            to="/admin/generatebilling"
+            exact
+            >
+              <q-item-section avatar>
+                  <q-icon name="description" />
+              </q-item-section>
+              <q-item-section>BILLING GENERATION</q-item-section>
+            </q-item>
               <q-item
                     expand-separator
                    :content-inset-level="0.5"
@@ -220,13 +198,43 @@
                   <q-item-section avatar>
                     <q-icon name="mdi-account" />
                   </q-item-section>
-                    <q-item-section class="text-uppercase">Add Staff</q-item-section>
+                    <q-item-section class="text-uppercase">Manage Users</q-item-section>
                 </q-item>
-            </q-expansion-item>
+    
+            <!-- <q-expansion-item
+              expand-separator
+              icon="mdi-routes"
+              label="Monitoring"
+              :content-inset-level="0.5"
+            >
+               <q-item
+                    expand-separator
+                   :content-inset-level="0.5"
+                    to="/admin/billings"
+                    exact
+                    >
+                  <q-item-section avatar>
+                    <q-icon name="mdi-jeepney" />
+                  </q-item-section>
+                  <q-item-section class="text-uppercase">MEMBERS</q-item-section>
+                </q-item>
+
+            </q-expansion-item> -->
+                <q-item
+                     expand-separator
+                    :content-inset-level="0.5"
+                     to="/admin/monitoring"
+                     exact
+                     >
+                   <q-item-section avatar>
+                     <q-icon name="mdi-account-search" />
+                   </q-item-section>
+                   <q-item-section class="text-uppercase">Daily Monitoring</q-item-section>
+                 </q-item>
              <q-expansion-item
               expanded-separator
               icon="receipt"
-              label="Reports"
+              label="REPORTS"
               :content-inset-level="0.5"
             >
                 <q-item
@@ -236,7 +244,7 @@
                   <q-item-section avatar>
                       <q-icon name="brightness_low" />
                   </q-item-section>
-                  <q-item-section>Daily Collections</q-item-section>
+                  <q-item-section>DAILY COLLECTIONS</q-item-section>
                 </q-item>       
 
 
@@ -247,7 +255,7 @@
                   <q-item-section avatar>
                       <q-icon name="money" />
                   </q-item-section>
-                  <q-item-section>Daily Remittance</q-item-section>
+                  <q-item-section>DAILY REMITTANCE</q-item-section>
                 </q-item>  
 
                 <q-item
@@ -257,28 +265,11 @@
                   <q-item-section avatar>
                       <q-icon name="recent_actors" />
                   </q-item-section>
-                  <q-item-section>Member Payments</q-item-section>
+                  <q-item-section>MEMBER PAYMENTS</q-item-section>
                 </q-item>  
 
              </q-expansion-item>
-            <q-item
-            to="/admin/paymentmaintenance"
-            exact
-            >
-              <q-item-section avatar>
-                  <q-icon name="vertical_split" />
-              </q-item-section>
-              <q-item-section>Payment Fee Maintenance</q-item-section>
-            </q-item>
-            <q-item
-            to="/admin/generatebilling"
-            exact
-            >
-              <q-item-section avatar>
-                  <q-icon name="description" />
-              </q-item-section>
-              <q-item-section>Billing Statement Generator</q-item-section>
-            </q-item>
+
        </q-list>
       <!-- End of Sidebar Menu inside the Drawer -->
       </q-scroll-area>
