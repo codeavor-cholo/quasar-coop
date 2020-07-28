@@ -1251,6 +1251,7 @@ export default {
           member.dateResigned = firefirestore.FieldValue.serverTimestamp()
           
           member.resignBalance = this.resignData.BalanceToPay
+          member.resignCashReleased = this.resignData.CashToRelease
           console.log(member,'member after resigned')
 
           let Payables = this.PayLater.filter(a=>{
