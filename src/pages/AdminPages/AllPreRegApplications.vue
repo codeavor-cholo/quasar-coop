@@ -36,7 +36,7 @@
                 <span v-if="PendingReg.approvedBy == undefined"> {{PendingReg.rejectReason}}</span>
             </td>
             <td class="text-left">
-                <span v-if="PendingReg.approvedBy !== undefined">{{$moment(PendingReg.dateApproved.toDate()).fromNow()}}</span> <span v-else>{{$moment(PendingReg.dateRejected.toDate()).fromNow()}}</span>
+                <span v-if="PendingReg.approvedBy !== undefined">{{$moment(PendingReg.dateApproved.toDate()).format('LLLL')}}</span> <span v-else>{{$moment(PendingReg.dateRejected.toDate()).format('LLLL')}}</span>
             </td>
             <td>
                 <q-btn flat 
@@ -135,9 +135,10 @@ export default {
                 let concat = [...this.RejectedApplications,...this.MemberData]
                 let order = this.$lodash.orderBy(concat,a=>{
                     a.baseTime = a.dateApproved == undefined ? a.dateRejected : a.dateApproved
-                    console.log(a.baseTime.toDate())
+                    // console.log(a.baseTime.toDate())
                     return a.baseTime
                  },'desc')
+                 console.log(order,'order')
                 return order
             } catch (error) {
                 console.log(error,'returnRejectAndApproved')
@@ -211,6 +212,9 @@ export default {
                     rejectReason: data
                 })
             })  
+        },
+        turnTimeToSumthing(dateTime){
+            return new Date(dateTime)
         }
         // loadPreReg(id) {
         //     this.$router.push('/admin/pendingregform/' + id)

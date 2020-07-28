@@ -64,6 +64,17 @@
                                 <q-btn color="teal-6" icon="edit" flat @click="onClick('Interest Rates',returnFixedPayments[0].amount)" />
                             </div>
                         </q-item-section>
+                    </q-item> 
+                    <q-item>
+                        <q-item-section>
+                            <span class="text-weight-bold">Share of Stocks (CA)</span> (minimum amount before cash advance)
+                        </q-item-section>
+                        <q-item-section side>
+                            <div class="row q-gutter-md">
+                                <q-input v-model="returnFixedPayments[5].amount" type="number" prefix="₱" filled dense readonly=""/>
+                                <q-btn color="teal-6" icon="edit" flat @click="onClick('ShareOfStocksMin',returnFixedPayments[5].amount)" />
+                            </div>
+                        </q-item-section>
                     </q-item>                                        
                 </q-list>
             </div>
@@ -156,6 +167,7 @@ export default {
     computed:{
         returnFixedPayments(){
             try {
+                console.log(this.FixedPayments,'fixed')
                 return this.FixedPayments                
             } catch (error) {
                 return []
@@ -183,6 +195,8 @@ export default {
                 id = 'ManagementFeeDriver'
             } else if (this.description == 'Share of Stocks') {
                 id = 'ShareOfStocks'
+            } else if (this.description == 'ShareOfStocksMin') {
+                id = 'ShareOfStocksMin'
             } else if (this.description == 'Interest Rates') {
                 id = 'InterestRates'    
             } else {

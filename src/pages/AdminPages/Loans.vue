@@ -1,7 +1,7 @@
 <template>
     <div>
         <q-page>
-      <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Loans <q-icon name="mdi-arrow-right-box" /> {{tab}}</h6>
+      <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Cash Advance <q-icon name="mdi-arrow-right-box" /> {{tab}}</h6>
        <q-separator />
           <q-splitter
             v-model="splitterModel"
@@ -21,6 +21,7 @@
                 <q-tab name="Approved Loans" icon="check" label="Approved Loans" />
                 <q-tab name="Rejected Loans" icon="cancel" label="Rejected Loans" />
                 <q-tab name="Active Loans" icon="autorenew" label="Active Loans" />
+                <q-tab name="Cash Advance Transactions" icon="money" label="Cash Advance Transactions" />
               </q-tabs>
             </div>
           </template>    
@@ -35,7 +36,7 @@
                       :filter="filter"
                   >
                     <template v-slot:top>
-                      <div class="row justify-between">
+                      <div class="row justify-between" v-if="tab !== 'Cash Advance Transactions'">
                         <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
                         <br>
                         <div class="text-caption">Click a row to perform transactions.</div>
@@ -47,12 +48,51 @@
                           </template>
                         </q-input>
                       </div>
+
+                      <div class="row justify-between" v-else>
+                        <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
+                        <br>
+                        <div class="text-caption">Select a member to show his/her savings transactions.</div>
+                        </div>                        
+                        <q-select 
+                            class="absolute-right q-mr-md"
+                            :dense="model !== null"
+                            style="width:450px;"
+                            v-model="model" 
+                            :options="membersIdOpt" 
+                            :label="model == null ? 'Search Member': ''" 
+                            filled 
+                            input-debounce="0"
+                            use-input
+                            color="grey-10"
+                            use-chips
+                            clearable=""
+                            @new-value="createValue"
+                            @filter="filterFn"
+                            @input="changeMemberDetails"
+                            @clear="removeMemberDetails"
+                        >
+                            <template v-slot:selected-item="scope">
+                                <q-chip
+                                    dense
+                                    :tabindex="scope.tabindex"
+                                    color="white"
+                                    text-color="secondary"
+                                    class="q-ma-none"
+                                >
+                                    {{ scope.opt.label }}
+                                </q-chip>
+                            </template>
+                        </q-select>                        
+                      </div>
                     </template>
                     <template v-slot:body="props">
                       <q-tr :props="props"  @click="onRowClick(props)" :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
                         <q-td v-for="col in props.cols.filter(col => col.name !== 'actions')" :key="col.name" :class="col.name == 'memberid' ? 'text-left' : 'text-center'">
                           <q-icon name="double_arrow" v-show="col.name == 'memberid' && props.row == selected" />
-                          {{ col.typeData == 'money' ? '₱ ' + col.value : col.value }}
+                          <span v-if="col.typeData == 'money'">{{'₱ ' + col.value}}</span>
+                          <span v-else-if="col.typeData == 'dateTime'">{{ $moment(col.value).format('LLLL')  }}</span>
+                          <span v-else :class="col.name == 'trackingNo' ? 'text-uppercase' : ''">{{ col.name == 'trackingNo' ? '#' + col.value  : col.value }}</span>
                         </q-td>
                       </q-tr>
                     </template>
@@ -345,6 +385,8 @@ import axios from 'axios'
 export default {
     data(){
         return{
+            model: null,
+            membersIdOpt: Object.freeze(this.membersIdOptions),
             confirmDialog: false,
             MemberData: [],
             Transactions: [],
@@ -403,8 +445,15 @@ export default {
                 { name: 'lastname', align: 'center', label: 'Last name', field: 'lastname', sortable: true },
                 { name: 'firstname', align: 'center', label: 'First name', field: 'firstname', sortable: true },
                 { name: 'request', align: 'center', label: 'Released Amount', field: 'requestAmount', sortable: true, typeData: 'money' },
+                { name: 'total', align: 'center', label: 'To Pay Amount', field: 'total', sortable: true, typeData: 'money' },
                 { name: 'currentBalance', align: 'center', label: 'Current Balance', field: 'currentBalance', sortable: true, typeData: 'money' },
                 { name: 'date', align: 'center', label: 'Date Released', field: 'date', sortable: true},
+            ],
+            loanTransactionsColumns: [
+                { name: 'trackingNo',required: true,label: 'Tracking / Transaction No#',align: 'center',field: 'loanRelatedID',sortable: true},
+                { name: 'transactionNo',required: true,label: 'Transaction Type',align: 'center',field: 'loanRelatedStatus',sortable: true},
+                { name: 'request', align: 'center', label: 'Amount', field: 'loanRelatedAmount', sortable: true, typeData: 'money' },
+                { name: 'date', align: 'center', label: 'Date', field: 'loanRelatedDate', sortable: true, typeData: 'dateTime'},
             ],
             //sampleDATA
             approvedSample: [
@@ -441,6 +490,7 @@ export default {
         Transactions: firebaseDb.collection('Transactions'),
         WithdrawalApplications: firebaseDb.collection('WithdrawalApplications'),
         LoanApplications: firebaseDb.collection('LoanApplications'),
+        BillingTrackers: firebaseDb.collection('BillingTrackers'),
         CashReleaseTrackers: firebaseDb.collection('CashReleaseTrackers'),
         InterestRates: firebaseDb.collection('FixedPayments').doc('InterestRates')
       }
@@ -457,8 +507,10 @@ export default {
           } else if(this.tab == 'Rejected Loans'){
             let rejects = this.LoanApplications.filter(a=>{return a.Status == 'rejected'})
             return this.returnMapping(rejects)
-          } else {
+          } else if(this.tab == 'Active Loans'){
             return this.returnActiveLoans
+          } else {
+            return this.returnLoanTransactions
           }
         } catch (error) {
           return []
@@ -472,8 +524,10 @@ export default {
             return this.approvedColumns
           } else if(this.tab == 'Rejected Loans'){  
             return this.rejectColumns
-          } else {
+          } else if(this.tab == 'Active Loans'){
             return this.cashReleasedColumns
+          } else {
+            return this.loanTransactionsColumns
           }
         } catch (error) {
           return []
@@ -488,11 +542,33 @@ export default {
           } else if(this.tab == 'Rejected Loans'){  
             return 'cancel'
           } else {
-            return 'autorenew'
+            return this.tab == 'Active Loans' ? 'autorenew' : 'money'
           }
         } catch (error) {
           return 'check'
         }
+      },
+      membersIdOptions () {
+          let opt = this.MemberData.map(d => {
+              let full = d.FirstName + ' ' + d.LastName
+              let opID = ''
+              if(d.Designation == 'Operator'){ opID = d['.key'] }
+              else { 
+                  let op = {...d.Operator}
+                  opID = op.MemberID 
+              }
+          return {
+              label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+              value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+              fullName: full,
+              id: d['.key'],
+              designation: d.Designation,
+              OperatorID: opID
+          }
+          })
+          console.log(opt,'opt')
+          return opt
+          // Object.freeze(options)
       },
       returnAdvancesData(){
         try {
@@ -594,6 +670,7 @@ export default {
           withLoans.forEach(q=>{
             q.activeLoans.forEach(w=>{
               console.log('loan data',w)
+              let total = w.TotalBalance == undefined ? w.toPayAmount : w.TotalBalance
               let object = {
                 memberid: q['.key'],
                 trackingNo: w.CashReleaseTrackingID.toUpperCase(),
@@ -602,7 +679,8 @@ export default {
                 firstname: q.FirstName,
                 requestAmount: parseInt(w.Amount),
                 date: date.formatDate(new Date(w.dateReleased),'MM-DD-YYYY'),
-                currentBalance: w.TotalBalance - w.paidAmount
+                total: total,
+                currentBalance: parseFloat(total) - parseFloat(w.paidAmount)
               }
 
               mapDisplay.push(object)
@@ -617,9 +695,170 @@ export default {
           console.log(error,'returnActiveLoans')
           return []
         }
-      }
+      },
+      returnLoanTransactions(){
+            try {
+                const key = this.model.id
+                let filter = this.Transactions.filter(a=>{
+                    return a.MemberID == key 
+                })
+                
+                let loanRelated = []
+                filter.forEach(q=>{
+                    if(q.AdvancesAmount !== 0 && q.AdvancesAmount !== undefined){
+                        
+                        q.Advances.forEach(w=>{
+                            let obj = {...q}
+                            obj.loanRelatedAmount = w.paidAmount
+                            obj.loanRelatedID = w.trackID
+                            obj.loanRelatedDate = obj.timestamp.toDate()
+                            obj.loanRelatedStatus = 'Loan Payment'
+                            loanRelated.push(obj)
+                        })   
+                    } else if (this.checkIfAvailable(q.TrackingNumber) > -1){
+                        q.loanRelatedAmount = q.AmountPaid
+                        q.loanRelatedID = this.getLoanID(q.TrackingNumber).CashReleaseTrackingID.slice(0,10).toUpperCase()
+                        q.loanRelatedDate = q.timestamp.toDate()
+                        q.loanRelatedStatus = 'Loan Payment'
+                        loanRelated.push(q)
+                    }
+                })
+
+                console.log(loanRelated,'loanRelated')
+
+                let apps = this.$lodash.map(this.LoanApplications,a=>{
+                    let appli = {...a}
+                    appli.loanRelatedID = appli.CashReleaseTrackingID !== undefined ? appli.CashReleaseTrackingID.toUpperCase() : appli['.key'].slice(0,10).toUpperCase()
+                    return appli
+                })
+
+                console.log(apps,'apps')
+                let ids = []
+                
+                apps.forEach(a=>{
+                    if(a.MemberID == key){
+                        ids.push(a.CashReleaseTrackingID !== undefined ? a.CashReleaseTrackingID.toUpperCase() : a['.key'].slice(0,10).toUpperCase())
+                    }
+                })
+
+                console.log(ids,'ids')
+
+                let pullRequest = []
+
+                ids.forEach(a=>{
+                    apps.forEach(q=>{
+                        if(q.loanRelatedID){
+                            if(q.loanRelatedID.toUpperCase() == a){
+                                
+                                if(q.timestamp !== undefined){
+                                    let obj = {...q}
+                                    obj.loanRelatedAmount = obj.Amount
+                                    obj.loanRelatedDate = obj.timestamp.toDate()
+                                    obj.loanRelatedStatus = 'Loan Application'
+                                    pullRequest.push(obj)
+                                } 
+                                
+                                if(q.dateApproved !== undefined) {
+                                    let obj = {...q}
+                                    obj.loanRelatedAmount = obj.Amount
+                                    obj.loanRelatedDate = obj.dateApproved.toDate()
+                                    obj.loanRelatedStatus = 'Loan Approved'
+                                    pullRequest.push(obj)                                    
+                                }
+
+                                if(q.dateReleased !== undefined) {
+                                    let obj = {...q}
+                                    obj.loanRelatedAmount = obj.Amount
+                                    obj.loanRelatedDate = new Date(obj.dateReleased)
+                                    obj.loanRelatedStatus = 'Cash Released'
+                                    pullRequest.push(obj)                                    
+                                }
+
+                                if(q.dateRejected !== undefined) {
+                                    let obj = {...q}
+                                    obj.loanRelatedAmount = obj.Amount
+                                    obj.loanRelatedDate = obj.dateRejected.toDate()
+                                    obj.loanRelatedStatus = 'Loan Rejected'
+                                    pullRequest.push(obj)                                    
+                                }
+                            
+                            }
+                        }
+                    })
+                })
+
+                console.log(apps, 'apps')
+                console.log(pullRequest,'pullRequest')
+
+                
+                let order = this.$lodash.orderBy([...loanRelated,...pullRequest],a=>{
+                    return a.loanRelatedDate
+                },'desc')
+
+                console.log(order,'order')
+                return order
+            } catch (error) {
+                console.log(error,'returnTransactions')
+                return []
+            }        
+      },
+      returnBillingsWithLoanPayment(){
+          let key = this.model.id
+          let filter = this.BillingTrackers.filter(a=>{
+              return a.InterestAmount !== undefined && a.MemberID == key
+          })
+          console.log('filter',filter)
+          return filter
+      },
     },
     methods:{
+      checkIfAvailable(trackNo){
+          let filter = this.$lodash.findIndex(this.returnBillingsWithLoanPayment,a=>{
+              return a['.key'].slice(0,10).toUpperCase() == trackNo
+          })
+          return filter
+      },
+      changeMemberDetails(val){
+          console.log(val,'selected val')
+      },  
+      removeMemberDetails(){
+          this.model = null
+      },
+      createValue (val, done) {
+      // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
+      // and it resets the input textbox to empty string
+      // ----
+      // Calling done(var) when new-value-mode is "add-unique", or done(var, "add-unique") adds "var" content to the model
+      // only if is not already set
+      // and it resets the input textbox to empty string
+      // ----
+      // Calling done(var) when new-value-mode is "toggle", or done(var, "toggle") toggles the model with "var" content
+      // (adds to model if not already in the model, removes from model if already has it)
+      // and it resets the input textbox to empty string
+      // ----
+      // If "var" content is undefined/null, then it doesn't tampers with the model
+      // and only resets the input textbox to empty string
+
+      if (val.length > 2) {
+          if (!this.membersIdOpt.includes(val)) {
+          done(val, 'add-unique')
+          }
+      }
+      },
+
+      filterFn (val, update) {
+          update(() => {
+              if (val === '') {
+                  this.membersIdOpt = this.membersIdOptions
+              }
+              else {
+                  const needle = val.toLowerCase()
+                  this.membersIdOpt = this.membersIdOptions.filter(
+                      v => v.value.toLowerCase().indexOf(needle) > -1
+                  )
+              }
+          })
+      },      
       returnMapping(req){
         try {
           console.log(req,'req')
@@ -858,7 +1097,13 @@ export default {
         .catch((error) => {
         console.log(error.response)
         })   
-      }
+      },
+      getLoanID(trackNo){
+          let filter = this.$lodash.filter(this.returnBillingsWithLoanPayment,a=>{
+              return a['.key'].slice(0,10).toUpperCase() == trackNo
+          })[0]
+          return filter
+      },
     }
 }
 </script>

@@ -222,7 +222,7 @@
                         <div class="text-caption q-pl-md q-py-md">Enter amount to pay in each item.</div> 
                         <div v-for="adv in AdvanceSelect" :key="adv['.key']" class="row justify-between">
                             <div class="q-px-md">#{{adv.CashReleaseTrackingID.toUpperCase()}}
-                                <br> <span class="text-caption">Balance: ₱ {{adv.toPayAmount - adv.paidAmount}}</span> 
+                                <br> <span class="text-caption">Balance: ₱ {{ adv.toPayAmount !== undefined ? parseFloat(adv.toPayAmount) - parseFloat(adv.paidAmount) : parseFloat(adv.TotalBalance) - parseFloat(adv.paidAmount)}}</span> 
                             </div>
                             <q-input v-model="toPayAdvancesAmount[adv.CashReleaseTrackingID]" :min="adv.DailyCharge" :max="(adv.toPayAmount - adv.paidAmount)" class="col-6" dense type="number" label="Amount To Pay" prefix="₱" outlined="" color="teal" clearable="" @clear="toPayAdvancesAmount[adv.CashReleaseTrackingID] = 0"/>     
                         </div> 
@@ -1286,7 +1286,7 @@ export default {
             //     this.jeepneyDetails = null
             // }
 
-            if(val.plateNumbers !== 'NONE' && member.defaultUnit == undefined){
+            if(this.idMember !== undefined && this.idMember !== '' && this.idMember !== null && val.plateNumbers !== 'NONE' && member.defaultUnit == undefined){
                 // this.MDetails.defaultUnit = this.plateNumbers
                 if(member.Designation == 'Driver'){
                     this.MDetails.defaultUnit =  null

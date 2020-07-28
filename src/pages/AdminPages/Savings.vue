@@ -21,6 +21,7 @@
                 <q-tab name="Withdraw Requests" icon="payment" label="Withdraw Requests" />
                 <q-tab name="Approved Requests" icon="check" label="Approved Requests" />
                 <q-tab name="Cash Released" icon="money" label="Cash Released" />
+                <q-tab name="Savings Transactions" icon="account_balance_wallet" label="Savings Transactions" />
               </q-tabs>
             </div>
           </template>    
@@ -35,7 +36,7 @@
                       :filter="filter"
                   >
                     <template v-slot:top>
-                      <div class="row justify-between">
+                      <div class="row justify-between" v-if="tab !== 'Savings Transactions'">
                         <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
                         <br>
                         <div class="text-caption">Click a row to perform transactions.</div>
@@ -47,12 +48,51 @@
                           </template>
                         </q-input>
                       </div>
+
+                      <div class="row justify-between" v-else>
+                        <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
+                        <br>
+                        <div class="text-caption">Select a member to show his/her savings transactions.</div>
+                        </div>                        
+                        <q-select 
+                            class="absolute-right q-mr-md"
+                            :dense="model !== null"
+                            style="width:450px;"
+                            v-model="model" 
+                            :options="membersIdOpt" 
+                            :label="model == null ? 'Search Member': ''" 
+                            filled 
+                            input-debounce="0"
+                            use-input
+                            color="grey-10"
+                            use-chips
+                            clearable=""
+                            @new-value="createValue"
+                            @filter="filterFn"
+                            @input="changeMemberDetails"
+                            @clear="removeMemberDetails"
+                        >
+                            <template v-slot:selected-item="scope">
+                                <q-chip
+                                    dense
+                                    :tabindex="scope.tabindex"
+                                    color="white"
+                                    text-color="secondary"
+                                    class="q-ma-none"
+                                >
+                                    {{ scope.opt.label }}
+                                </q-chip>
+                            </template>
+                        </q-select>                        
+                      </div>
                     </template>
                     <template v-slot:body="props">
                       <q-tr :props="props"  @click="onRowClick(props)" :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
                         <q-td v-for="col in props.cols.filter(col => col.name !== 'actions')" :key="col.name" :class="col.name == 'memberid' ? 'text-left' : 'text-center'">
                           <q-icon name="double_arrow" v-show="col.name == 'memberid' && props.row == selected" />
-                          {{ col.typeData == 'money' ? '₱ ' + col.value : col.value }}
+                          <span v-if="col.typeData == 'money'">{{'₱ ' + col.value}}</span>
+                          <span v-else-if="col.typeData == 'dateTime'">{{ $moment(col.value).format('LLLL')  }}</span>
+                          <span v-else :class="col.name == 'trackingNo' ? 'text-uppercase' : ''">{{ col.name == 'trackingNo' && col.value !== 'Walk-In Withdrawal' ? '#' + col.value  : col.value }}</span>
                         </q-td>
                       </q-tr>
                     </template>
@@ -146,7 +186,82 @@
             </q-list>
             
         </q-drawer>    
-       
+
+        <q-dialog v-model="withdrawCashDialog" persistent>
+          <q-card style="width:500px" class="q-pa-md">
+            <q-card-section class="row items-center">
+                <span class="q-py-md">Select a member to perform a transaction</span>
+                <q-select 
+                    :dense="withdrawModel !== null"
+                    style="width:450px;"
+                    v-model="withdrawModel" 
+                    :options="membersIdOpt" 
+                    :label="withdrawModel == null ? 'Search Member': ''" 
+                    filled 
+                    input-debounce="0"
+                    use-input
+                    color="grey-10"
+                    use-chips
+                    clearable=""
+                    @new-value="createValue"
+                    @filter="filterFn"
+                    @input="changeMemberDetailsWithdraw"
+                    @clear="withdrawModel = null, savingsWithdrawModel = 0"
+                >
+                    <template v-slot:selected-item="scope">
+                        <q-chip
+                            dense
+                            :tabindex="scope.tabindex"
+                            color="white"
+                            text-color="secondary"
+                            class="q-ma-none"
+                        >
+                            {{ scope.opt.label }}
+                        </q-chip>
+                    </template>
+                </q-select>                 
+            </q-card-section>
+            <q-card-section v-show="savingsWithdrawModel !== 0">
+              <q-item class="q-pa-md">
+                  <q-item-section avatar>
+                  <q-avatar color="teal" class="text-white">
+                      {{returnWithdrawModel.avatar}}
+                  </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                  
+                  <div class="text-weight-bold">{{returnWithdrawModel.FullName}}</div>
+                  <div class="text-caption text-uppercase">{{returnWithdrawModel.Designation}}</div>
+                  </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section top avatar>
+                  <q-avatar color="teal" text-color="white" icon="account_balance" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-h6">{{savingsWithdrawModel | currency}}</q-item-label>
+                  <q-item-label caption lines="2">Savings</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-card-section>
+            <q-card-section v-show="savingsWithdrawModel !== 0">
+              <q-input v-model="withdrawAmount" outlined="" clearable prefix="₱" type="number" label="Withdraw Amount" :max="savingsWithdrawModel"  :rules="[ val => val <= savingsWithdrawModel || 'Invalid Amount' , val => val >= 0 || 'Invalid Amount']"/>
+            </q-card-section>
+            <q-card-actions align="right" v-show="savingsWithdrawModel !== 0">
+              <q-btn flat label="Cancel" color="grey" v-close-popup @click="withdrawModel = null, savingsWithdrawModel = 0, withdrawAmount = 0"/>
+              <q-btn flat label="Proceed to Cash Released" color="teal" v-close-popup @click="proceedToCashReleaseSavings"/>
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
+
+
+        <q-page-sticky position="bottom-right" :offset="[18, 18]">
+        <q-btn fab icon="present_to_all" color="black" @click="withdrawCashDialog = !withdrawCashDialog">
+            <q-tooltip  anchor="top middle" self="bottom middle">
+                Withdraw Cash
+            </q-tooltip>
+        </q-btn>
+        </q-page-sticky>     
     </div>
     </q-page>
 </template>
@@ -158,12 +273,18 @@ import axios from 'axios'
 export default {
     data(){
         return{
+            withdrawAmount: 0,
+            savingsWithdrawModel: 0,
+            withdrawModel: null,
+            withdrawCashDialog: false,
+            model: null,
+            membersIdOpt: Object.freeze(this.membersIdOptions),
             MemberData: [],
             Transactions: [],
             WithdrawalApplications: [],
             drawer: false,
             selected: {},
-            tab: 'Member Savings',
+            tab: 'Savings Transactions',
             splitterModel: 20,
             filter: '',
             pagination: {
@@ -208,6 +329,13 @@ export default {
                 { name: 'date', align: 'center', label: 'Date Released', field: 'date', sortable: true},
             ],
 
+            savingsTransactionsColumns: [
+                { name: 'trackingNo',required: true,label: 'Tracking / Transaction No#',align: 'center',field: 'baseID',sortable: true},
+                { name: 'transactionNo',required: true,label: 'Transaction Type',align: 'center',field: 'baseTransaction',sortable: true},
+                { name: 'request', align: 'center', label: 'Amount', field: 'baseAmount', sortable: true, typeData: 'money' },
+                { name: 'date', align: 'center', label: 'Date', field: 'baseTime', sortable: true, typeData: 'dateTime'},
+            ],
+
             //sampleDATA
 
 
@@ -236,7 +364,8 @@ export default {
                 savings: 2000,
                 balance: 1800,
                 date: '04-12-2020'                
-              }
+              },
+
             ],
 
 
@@ -251,6 +380,32 @@ export default {
       }
     },
     computed:{
+      membersIdOptions () {
+          let opt = this.MemberData.map(d => {
+              let full = d.FirstName + ' ' + d.LastName
+              let opID = ''
+              if(d.Designation == 'Operator'){ opID = d['.key'] }
+              else { 
+                  let op = {...d.Operator}
+                  opID = op.MemberID 
+              }
+          return {
+              label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+              value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+              fullName: full,
+              id: d['.key'],
+              designation: d.Designation,
+              OperatorID: opID,
+              Savings: d.SavingsDeposit,
+              FirstName: d.FirstName,
+              LastName: d.LastName,
+              memberData: d
+          }
+          })
+          console.log(opt,'opt')
+          return opt
+          // Object.freeze(options)
+      },
       returnDataofTable(){
         try {
           if(this.tab == 'Member Savings'){
@@ -259,8 +414,10 @@ export default {
             return this.returnWithdrawalRequestData
           } else if(this.tab == 'Approved Requests'){
             return this.returnCashReleaseData
-          } else {
+          } else if(this.tab == 'Cash Released'){
             return this.returnDoneCashReleaseData
+          } else {
+            return this.returnSavingsTransactions
           }
         } catch (error) {
           return []
@@ -274,8 +431,10 @@ export default {
             return this.withdrawColumns
           } else if(this.tab == 'Approved Requests'){
             return this.approvedColumns
-          } else {
+          } else if(this.tab == 'Cash Released'){
             return this.cashReleasedColumns
+          } else {
+            return this.savingsTransactionsColumns
           }
         } catch (error) {
           return []
@@ -290,11 +449,46 @@ export default {
           } else if(this.tab == 'Approved Requests'){
             return 'check'
           } else {
-            return 'money'
+            return this.tab == 'Cash Released' ? 'money' : 'account_balance_wallet'
           }
         } catch (error) {
           return 'check'
         }
+      },
+      returnSavingsTransactions(){
+            try {
+                let key = this.model.id
+                let filter = this.Transactions.filter(a=>{
+                    a.baseTime = a.timestamp.toDate()
+                    a.baseAmount = a.SavingsDeposit
+                    a.baseID = a.TransactionID
+                    a.baseTransaction = 'Savings Deposit'
+                    return a.MemberID == key && a.SavingsDeposit !== 0 && a.SavingsDeposit !== undefined
+                })
+
+
+                let applications = this.WithdrawalApplications.filter(a=>{
+                    a.baseTime = new Date(a.dateReleased)
+                    a.baseAmount = a.Amount
+                    a.baseTransaction = 'Withdraw'
+                    a.baseID = a.CashReleaseTrackingID == undefined ? 'Walk-In Withdrawal' : a.CashReleaseTrackingID
+                    return a.MemberID == key && a.status == 'released'
+                })
+
+
+
+
+                let order = this.$lodash.orderBy([...filter,...applications],a=>{
+                    return a.baseTime
+                },'desc')
+
+
+                console.log(order,'order')
+
+                return order
+            } catch (error) {
+                return []
+            }        
       },
       returnSavingsData(){
         try {
@@ -393,13 +587,14 @@ export default {
                   savings: a.SavingsDeposit,
                   balance: a.RemainingBalance,
                   date: date.formatDate(a.dateReleased,'MM-DD-YYYY') ,
-                  trackingNo: a.CashReleaseTrackingID.toUpperCase(),
+                  trackingNo: a.CashReleaseTrackingID !== undefined ? a.CashReleaseTrackingID.toUpperCase() : 'Walk-In Withdrawal',
                   Phone: this.getMemberData(a.MemberID).Phone               
             }
           })
           console.log(map,'withdraw')
           return map          
         } catch (error) {
+          console.log(error,'returnDoneCashReleaseData')
           return []
         }
       },
@@ -414,9 +609,35 @@ export default {
         } catch (error) {
           return this.approvedSample[0]
         }
+      },
+      returnWithdrawModel(){
+        if(this.withdrawModel == null){
+          return {
+            avatar: 1,
+            FullName: '',
+            Designation: ''
+          }
+        } else {
+          return {
+            avatar: this.withdrawModel.fullName.charAt(0),
+            FullName: this.withdrawModel.fullName,
+            Designation: this.withdrawModel.designation,
+            memberData: this.withdrawModel.memberData
+          }          
+        }
       }
     },
     methods:{
+      changeMemberDetails(val){
+          console.log(val,'selected val')
+      },  
+      changeMemberDetailsWithdraw(val){
+        console.log(val)
+        this.savingsWithdrawModel = val.Savings
+      },  
+      removeMemberDetails(){
+          this.model = null
+      },
       getLatestTransationDate(id){
         let filter = this.Transactions.filter(a=>{
           a.dateCheck = a.timestamp.toDate()
@@ -480,6 +701,52 @@ export default {
           })
         })        
       },
+      proceedToCashReleaseSavings(){
+        this.$q.dialog({
+          title: `Proceed Cash Release`,
+          message: `₱	${this.withdrawAmount}.00 Savings Withdrawal by ${this.returnWithdrawModel.FullName}. Once you confirm this request cannot be cancelled / rejected and cash will be release at once. Do you want to continue ?`,
+          cancel: true,
+          persistent: true
+        }).onOk(() => {
+          let model = this.returnWithdrawModel.memberData        
+          const newday = new Date()
+          let today = newday.getTime()
+          let data = {
+            Amount: this.withdrawAmount,
+            Designation: this.returnWithdrawModel.Designation,
+            FirstName: model.FirstName,
+            LastName: model.LastName,
+            MemberID: model['.key'],
+            RemainingBalance: parseFloat(model.SavingsDeposit) - parseFloat(this.withdrawAmount),
+            SavingsDeposit: model.SavingsDeposit,
+            dateApproved: firefirestore.FieldValue.serverTimestamp(),
+            dateReleased: today,
+            status: "released",
+            timestamp: firefirestore.FieldValue.serverTimestamp()        
+          }
+
+          firebaseDb.collection("WithdrawalApplications").add(data)
+          .then(()=>{
+              firebaseDb.collection("MemberData").doc(data.MemberID).update({
+                SavingsDeposit: firefirestore.FieldValue.increment(-Math.abs(data.Amount))
+              }).then(()=>{
+                this.withdrawCashDialog = false
+                this.withdrawModel = null
+                this.withdrawAmount = 0
+                this.savingsWithdrawModel = 0
+                this.tab = 'Cash Released'
+                this.$q.notify({
+                  type: 'positive',
+                  message: `Savings Withdrawal Success`
+                })  
+              })
+          })
+          .catch(error=>{
+            console.log('update error',error)
+          })
+            
+        })        
+      },
       cashReleaseSavings(){
         let data = this.returnSelectRow
         console.log(data,'data')
@@ -540,7 +807,7 @@ export default {
         let header= {
               'Access-Control-Allow-Origin': '*',
         }
-        let apinumber = 2
+        let apinumber = 4
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         console.log(data)
@@ -551,7 +818,42 @@ export default {
         .catch((error) => {
         console.log(error.response)
         })   
+      },
+      createValue (val, done) {
+      // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
+      // and it resets the input textbox to empty string
+      // ----
+      // Calling done(var) when new-value-mode is "add-unique", or done(var, "add-unique") adds "var" content to the model
+      // only if is not already set
+      // and it resets the input textbox to empty string
+      // ----
+      // Calling done(var) when new-value-mode is "toggle", or done(var, "toggle") toggles the model with "var" content
+      // (adds to model if not already in the model, removes from model if already has it)
+      // and it resets the input textbox to empty string
+      // ----
+      // If "var" content is undefined/null, then it doesn't tampers with the model
+      // and only resets the input textbox to empty string
+
+      if (val.length > 2) {
+          if (!this.membersIdOpt.includes(val)) {
+          done(val, 'add-unique')
+          }
       }
+      },
+
+      filterFn (val, update) {
+          update(() => {
+              if (val === '') {
+                  this.membersIdOpt = this.membersIdOptions
+              }
+              else {
+                  const needle = val.toLowerCase()
+                  this.membersIdOpt = this.membersIdOptions.filter(
+                      v => v.value.toLowerCase().indexOf(needle) > -1
+                  )
+              }
+          })
+      },
     } // end of methods
 }
 </script>

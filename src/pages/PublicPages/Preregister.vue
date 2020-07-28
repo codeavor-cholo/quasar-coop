@@ -119,7 +119,7 @@
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
                   />
                   <q-input color="teal-4" standard v-model="PreRegData.Phone" label="Phone No."
-                  lazy-rules
+                   
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
                   mask="(####) ### - ####"
                   />

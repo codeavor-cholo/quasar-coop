@@ -15,7 +15,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="left" side="left" none class=" noPrint">
+    <q-drawer v-model="left" side="left" none class="noPrint">
       <q-img
         class="absolute-top"
         src="https://cdn.quasar.dev/img/material.png"
@@ -30,6 +30,7 @@
         </div>
       </q-img>
       <q-scroll-area
+        class="noPrint"
         style="height: calc(100% - 250px); margin-top: 200px; border-right: 1px solid #ddd"
       >
       <!-- Start of Sidebar Menu inside the Drawer -->
@@ -169,7 +170,7 @@
                 <q-item-section avatar>
                   <q-icon name="mdi-receipt" />
                 </q-item-section>
-                  <q-item-section class="text-uppercase">Loan</q-item-section>
+                  <q-item-section class="text-uppercase">Cash Advance</q-item-section>
               </q-item>
             <q-item
             to="/admin/paymentmaintenance"

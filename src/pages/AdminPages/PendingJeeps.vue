@@ -1,6 +1,7 @@
 <template>
   <div>
-    <h6 class="q-ma-none q-pl-md q-pt-md text-teal"> Members <q-icon name="mdi-arrow-right-box" /> Pending Unit/Jeep Applications </h6>
+    <h6 class="q-ma-none q-pl-md q-pt-md text-teal"> Members <q-icon name="mdi-arrow-right-box" /> Pending Unit/Jeep Applications 
+    </h6>
     <q-separator />
     <div v-if="loading">
       <q-spinner-oval

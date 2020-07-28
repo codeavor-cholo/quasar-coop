@@ -6,7 +6,7 @@
         <q-card-actions>
           <div class="row justify-between full-width">
           <div class="col row justify-start">
-          <q-btn color="teal"  flat icon="arrow_left" label="back to pending applications" @click="$router.push('/admin/pendingreg')" />
+          <q-btn color="teal"  flat icon="arrow_left" label="back" @click="$router.go(-1)" />
           </div>
           <div class="col row justify-end">
           <q-btn @click="inception = true; OrTid();" flat v-if="MemberData.MembershipFee">
@@ -59,30 +59,30 @@
             <!-- end membership payment -->
 
             <q-btn flat round icon="event"/>
-            <q-btn @click="contract = !contract" flat color="teal-4">
+            <q-btn @click="contract = !contract" flat color="teal-4" v-show="!MemberData.isNewMember">
             Print Contract
             </q-btn>
-            <q-btn flat color="teal-4" @click="qrdialog = !qrdialog; GenQr()">
+            <q-btn flat color="teal-4" @click="qrdialog = !qrdialog; GenQr()" v-show="!MemberData.isNewMember">
             Print ID
             </q-btn>
-            <q-btn flat color="teal-4" @click="bar = !bar; listDrivers();" v-if="MemberData.Designation == 'Operator'">
+            <!-- <q-btn flat color="teal-4" @click="bar = !bar; listDrivers();" v-if="MemberData.Designation == 'Operator'">
             Unit/s Details
-            </q-btn>
+            </q-btn> -->
             <!-- <q-btn flat color="teal-4" @click="bar = !bar; driverUnit();"  v-if="MemberData.Designation == 'Driver'">
             Jeepney
             </q-btn> -->
 
 
-            <q-btn flat @click="upd = !upd, onUpdateMemberData()" color="teal-4" v-if="upd">
+            <q-btn flat @click="upd = !upd, onUpdateMemberData()" color="teal-4" v-if="upd" >
             Update
             </q-btn>
 
 
 
-            <q-btn flat @click="updateMemberData()" color="teal-4" label="Save" v-else/>
+            <q-btn flat @click="updateMemberData()" color="teal-4" label="Save" v-else />
             <q-btn flat @click="cancelUpdate()" color="teal-4" label="Cancel" v-if="!upd"/>
 
-            <q-btn flat color="teal-4">
+            <q-btn flat color="teal-4" @click="resignMember" v-show="!MemberData.isNewMember">
             Resign
             </q-btn>
             </div>
@@ -296,8 +296,8 @@
             <span v-if="MemberData.defaultUnit !== undefined"> <q-icon name="check_circle" /> {{MemberData.defaultUnit.PlateNumber}} is the default unit.</span>  
             <span v-else> <q-icon name="warning" /> There is no default unit yet. </span>
             <template v-slot:action>
-              <q-btn flat color="white" label="Remove" v-if="MemberData.defaultUnit !== undefined"/>
-              <q-btn flat color="white" label="Update Default Unit"/>
+              <q-btn flat color="white" label="Remove" v-if="MemberData.defaultUnit !== undefined" @click="removeDefaultUnit"/>
+              <q-btn flat color="white" label="Update Default Unit" @click="updateDefaultUnit"/>
             </template>
           </q-banner>
         </div>
@@ -664,6 +664,307 @@
     
   </q-dialog>
 
+  <q-dialog v-model="resignModule" persistent maximized="">
+    <q-card style="width:80vw;height: 80vh;" flat class="q-py-md">
+      <q-card-section class="row items-center q-py-none">
+        <span class="text-h6 q-pa-none">Resignation > {{resignData.Name}}</span>
+        <q-btn color="grey" flat icon="close" v-close-popup class="absolute-right"/>
+      </q-card-section>
+      <q-card-section class="q-pa-none">
+        
+        <q-stepper
+          flat
+          v-model="step"
+          ref="stepper"
+          color="teal"
+          active-color="teal"
+          animated
+          v-if="isTransferAccount"
+        >
+          <q-step
+            :name="1"
+            title="Confirm Transfer"
+            icon="payment"
+            :done="step > 1"
+          >
+            <div class="q-py-md" v-if="transferMemberID == null">
+              Select a account to transfer account's units & drivers.
+            </div>
+            <div class="q-py-md " v-else>
+              You have selected <b>{{transferMemberID.label}}</b> to transfer this account's units & drivers.
+              <br>Click <b>Continue</b> to confirm.
+            </div>
+            <q-select 
+                style="width:450px;"
+                v-model="transferMemberID" 
+                :options="membersIdOpt" 
+                :label="transferMemberID == null ? 'Search Operator': ''" 
+                filled 
+                input-debounce="0"
+                use-input
+                color="grey-10"
+                use-chips
+                clearable=""
+                @new-value="createValue"
+                @filter="filterFn"
+                @input="changeMemberDetails"
+                @clear="removeMemberDetails"
+            >
+                <template v-slot:selected-item="scope">
+                    <q-chip
+                        dense
+                        :tabindex="scope.tabindex"
+                        color="white"
+                        text-color="secondary"
+                        class="q-ma-none"
+                    >
+                        {{ scope.opt.label }}
+                    </q-chip>
+                </template>
+            </q-select>  
+
+          </q-step>
+          <q-step
+            :name="2"
+            title="Checking for Balances"
+            icon="payment"
+            :done="step > 2"
+          >
+            <q-list>
+              <q-item>
+                <q-item-section avatar>
+                <q-avatar color="teal" class="text-white">
+                    {{resignData.Name.charAt(0)}}
+                </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                
+                <div class="text-weight-bold">{{resignData.Name}}</div>
+                <div class="text-caption text-uppercase">{{resignData.Designation}}</div>
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Savings Deposit</q-item-label>
+                  <q-item-label class="text-h6">{{ resignData.Savings | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Share of Stocks</q-item-label>
+                  <q-item-label class="text-h6">{{ resignData.ShareOfStocks | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Outstanding Balance</q-item-label>
+                  <q-item-label class="text-h6 text-warning">- {{ resignData.OutstandingBalance | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side class="bg-grey-1 q-pa-sm">
+                  <q-item-label class="q-mr-md text-warning" caption v-for="n in resignData.Balances" :key="n"> {{n}} </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator spaced inset />
+              <q-item v-show="resignData.CashToRelease !== 0">
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Cash to Release</q-item-label>
+                  <q-item-label class="text-h6 text-primary">{{ resignData.CashToRelease | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item> 
+              <q-item v-show="resignData.BalanceToPay !== 0">
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Balance to Pay</q-item-label>
+                  <q-item-label class="text-h6 text-red">{{ resignData.BalanceToPay | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>              
+            </q-list>
+
+
+          </q-step>
+          <q-step
+            :name="3"
+            title="Confirm Resign"
+            icon="check"
+            :done="step > 3"
+          >
+            Confirming this will remove the member's access to all platforms.
+            <div v-show="resignData.BalanceToPay > 0">
+              You can still be a member again once you paid up all your outstanding balance.
+              <q-item>
+                <q-item-section>
+                  <q-item-label caption lines="2">Outstanding Balance</q-item-label>
+                  <q-item-label class="text-h6 text-red">{{ resignData.BalanceToPay | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>
+              <q-banner class="bg-warning text-white q-my-md">
+                Member can remember again but you should pay you outstanding balance first.
+              </q-banner>              
+            </div>
+            Do you want to continue this action ? Click Finish to proceed.
+
+
+          </q-step>
+          <template v-slot:navigation>
+            <q-stepper-navigation class="q-gutter-md">
+              <q-btn v-if="step > 1 "  flat color="grey-10" @click="$refs.stepper.previous()" label="Back" class="q-ml-sm" />
+
+              <q-btn @click="step === 3 ? confirmResignation() : $refs.stepper.next()"  :disable="step == 1 && transferMemberID == null" color="teal" :label="step === 3 ?'Finish' : 'Continue'" />
+            </q-stepper-navigation>
+          </template>
+        </q-stepper>
+
+       <q-stepper
+          flat
+          v-model="step"
+          ref="stepper"
+          color="teal"
+          active-color="teal"
+          animated
+          v-else
+        >
+          <q-step
+            :name="1"
+            title="Checking for Balances"
+            icon="payment"
+            :done="step > 1"
+          >
+            <q-list>
+              <q-item>
+                <q-item-section avatar>
+                <q-avatar color="teal" class="text-white">
+                    {{resignData.Name.charAt(0)}}
+                </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                
+                <div class="text-weight-bold">{{resignData.Name}}</div>
+                <div class="text-caption text-uppercase">{{resignData.Designation}}</div>
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Savings Deposit</q-item-label>
+                  <q-item-label class="text-h6">{{ resignData.Savings | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Share of Stocks</q-item-label>
+                  <q-item-label class="text-h6">{{ resignData.ShareOfStocks | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Outstanding Balance</q-item-label>
+                  <q-item-label class="text-h6 text-warning">- {{ resignData.OutstandingBalance | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side class="bg-grey-1 q-pa-sm">
+                  <q-item-label class="q-mr-md text-warning" caption v-for="n in resignData.Balances" :key="n"> {{n}} </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator spaced inset />
+              <q-item v-show="resignData.CashToRelease !== 0">
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Cash to Release</q-item-label>
+                  <q-item-label class="text-h6 text-primary">{{ resignData.CashToRelease | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item> 
+              <q-item v-show="resignData.BalanceToPay !== 0">
+                <q-item-section avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label caption lines="2">Balance to Pay</q-item-label>
+                  <q-item-label class="text-h6 text-red">{{ resignData.BalanceToPay | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>              
+            </q-list>
+
+
+          </q-step>
+          <q-step
+            :name="2"
+            title="Confirm Resign"
+            icon="check"
+            :done="step > 2"
+          >
+            Confirming this will remove the member's access to all platforms.
+            <div v-show="resignData.BalanceToPay > 0">
+              You can still be a member again once you paid up all your outstanding balance.
+              <q-item>
+                <q-item-section>
+                  <q-item-label caption lines="2">Outstanding Balance</q-item-label>
+                  <q-item-label class="text-h6 text-red">{{ resignData.BalanceToPay | currency }}</q-item-label>
+                </q-item-section>
+                <q-item-section side top>
+                  <!-- <q-icon name="star" color="yellow" /> -->
+                </q-item-section>
+              </q-item>
+              <q-banner class="bg-warning text-white q-my-md">
+                Member can remember again but you should pay you outstanding balance first.
+              </q-banner>              
+            </div>
+            Do you want to continue this action ? Click Finish to proceed.
+
+
+          </q-step>
+          <template v-slot:navigation>
+            <q-stepper-navigation class="q-gutter-md">
+              <q-btn v-if="step > 1" flat color="grey-10" @click="$refs.stepper.previous()" label="Back" class="q-ml-sm" />
+
+              <q-btn @click="step === 2 ? confirmResignation() : $refs.stepper.next()" color="teal" :label="step === 2 ?'Finish' : 'Continue'" />
+            </q-stepper-navigation>
+          </template>
+        </q-stepper>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+
+
   </div>
 </template>
 
@@ -673,6 +974,7 @@ import Vue from 'vue'
 import { firebaseDb, firebaseSto, firefirestore } from 'boot/firebase';
 import VueQrcode from '@chenfengyuan/vue-qrcode'
 import Swal from 'sweetalert2'
+import { date, QDialog } from 'quasar'
 
 import PrintContract from '../../components/Admin/Members/PrintContact.vue'
 import PrintId from '../../components/Admin/Members/PrintID.vue'
@@ -687,6 +989,18 @@ export default {
   },
     data(){
         return{
+          resignData:{
+            Name: 'A',
+            Designation: 'Operator',
+            Savings: 0,
+            ShareOfStocks: 0,
+            OutstandingBalance: 0,
+            CashToRelease: 0,
+            BalanceToPay: 0,
+            Balances: []
+          },
+          step: 1,
+          resignModule: false,
           imageUrl2: null,
           JeepneyList: [],
           addUnitDialog: false,
@@ -739,7 +1053,10 @@ export default {
             PlateNumber: '',
             ORCR: null
           },
-          PlateNumber: ''  
+          PlateNumber: '',
+          transferMemberID: null,
+          membersIdOpt: Object.freeze(this.membersIdOptions),
+          isTransferAccount: false,
               
         }
     },
@@ -754,10 +1071,307 @@ export default {
           JeepneyData: firebaseDb.collection('JeepneyData'),
           Transactions: firebaseDb.collection('Transactions'),
           BillingTrackers: firebaseDb.collection('BillingTrackers'),
+          PayLater: firebaseDb.collection('PayLater'),
           // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
       }
     },
     methods: {
+      createValue (val, done) {
+      // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model
+      // and it resets the input textbox to empty string
+      // ----
+      // Calling done(var) when new-value-mode is "add-unique", or done(var, "add-unique") adds "var" content to the model
+      // only if is not already set
+      // and it resets the input textbox to empty string
+      // ----
+      // Calling done(var) when new-value-mode is "toggle", or done(var, "toggle") toggles the model with "var" content
+      // (adds to model if not already in the model, removes from model if already has it)
+      // and it resets the input textbox to empty string
+      // ----
+      // If "var" content is undefined/null, then it doesn't tampers with the model
+      // and only resets the input textbox to empty string
+
+      if (val.length > 2) {
+          if (!this.membersIdOpt.includes(val)) {
+          done(val, 'add-unique')
+          }
+      }
+      },
+      changeMemberDetails(val){
+          console.log(val,'selected val')
+      },  
+      removeMemberDetails(){
+          this.transferMemberID = null
+      },
+      filterFn (val, update) {
+          update(() => {
+              if (val === '') {
+                  this.membersIdOpt = this.membersIdOptions
+              }
+              else {
+                  const needle = val.toLowerCase()
+                  this.membersIdOpt = this.membersIdOptions.filter(
+                      v => v.value.toLowerCase().indexOf(needle) > -1
+                  )
+              }
+          })
+      },
+      resignMember(){
+        let id = this.penRegId
+        let member = this.MemberData
+        this.resignData.ShareOfStocks = member.ShareCapital
+        this.resignData.Savings = member.SavingsDeposit
+        this.resignData.Name = `${member.FirstName} ${member.LastName}`
+
+
+
+        this.resignData.Designation = member.Designation
+        this.resignData.Balances = []
+
+        let billingsLoan = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'CashReleaseTrackingID'),'BillingBalance')
+        console.log(billingsLoan,'billingsLoan')
+        if(billingsLoan !== undefined && billingsLoan !== 0){
+          this.resignData.Balances.push(`Loan Billings = ₱ ${billingsLoan}`)
+        }
+
+        let billingsQuota = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'PlateNumber'),'QuotaBalance')
+        console.log(billingsQuota,'billingsQuota')
+
+        if(billingsQuota !== undefined && billingsQuota !== 0){
+          this.resignData.Balances.push(`Quota Billings = ₱ ${billingsQuota}`)
+        }
+
+        let today = date.formatDate(new Date(),'M YYYY')
+        console.log(today,'today')
+
+        let paylater = this.$lodash.sumBy(this.PayLater.filter(a=>{
+          return today == date.formatDate(a.timestamp.toDate(),'M YYYY') && a.memberID == id
+        }),b=>{
+          return parseFloat(b.amountToPayBilling)
+        })
+
+        if(paylater !== undefined && paylater !== 0){
+          this.resignData.Balances.push(`Payables = ₱ ${paylater}`)
+        }
+
+        let getNoBillingLoans = []
+        let baseLoans = this.getBillings(id).filter(a=>{
+          return a.CashReleaseTrackingID !== undefined
+        })
+
+        if(member.activeLoans !== undefined){
+          member.activeLoans.forEach(a=>{
+            if(baseLoans.length !== 0){
+              let index = this.$lodash.findIndex(baseLoans,x=>{
+                return x.CashReleaseTrackingID.toUpperCase() == a.CashReleaseTrackingID.toUpperCase()
+              })
+
+              if(index == -1 ){
+                getNoBillingLoans.push(a)
+              }
+            } else {
+              getNoBillingLoans.push(a)
+            }
+          })
+        }
+
+        console.log(getNoBillingLoans,'get no billing loans')
+
+        let advancesSum = this.$lodash.sumBy(getNoBillingLoans,a=>{
+          return parseFloat(a.toPayAmount)
+        })
+
+        console.log(advancesSum,'advancesSum')
+
+        if(advancesSum !== undefined && advancesSum !== 0){
+          this.resignData.Balances.push(`Advances = ₱ ${advancesSum}`)
+        }
+
+
+        this.resignData.OutstandingBalance = ( billingsLoan !== undefined ? parseFloat(billingsLoan) : 0 ) + parseFloat(paylater) + ( billingsQuota !== undefined ? parseFloat(billingsQuota) : 0 ) + ( advancesSum !== undefined ? parseFloat(advancesSum) : 0 )
+        if(parseFloat(member.ShareCapital) < this.resignData.OutstandingBalance){
+          this.resignData.BalanceToPay = this.resignData.OutstandingBalance - (parseFloat(member.ShareCapital) + parseFloat(member.SavingsDeposit))
+        } else {
+           this.resignData.CashToRelease = (parseFloat(member.ShareCapital) + parseFloat(member.SavingsDeposit)) - this.resignData.OutstandingBalance
+        }
+
+        console.log(paylater,'paylater')
+
+        if(member.Designation == 'Operator'){
+          let drivers = this.Members.filter(a=> {
+            return a.Designation == 'Driver' && a.Operator.MemberID == id
+          })
+
+          let resigned = drivers.filter(a=>{
+            return a.resigned == true
+          })
+
+          if(drivers.length !== resigned.length){
+            this.$q.dialog({
+              title: `Drivers Still Active!`,
+              message: 'This account is not allowed to resign. Would you like to transfer account?',
+              persistent: true,
+              ok: 'yes, transfer my account',
+              cancel: true
+            }).onOk(() => {
+              this.resignModule = true
+              this.isTransferAccount = true
+            })            
+
+          } 
+        } else {
+          this.resignModule = true
+          this.isTransferAccount = false
+        }      
+
+
+        
+
+      },
+      confirmResignation(){
+        this.$q.dialog({
+          title: `Confirm Resignation`,
+          message: 'Once confirm , this action cannot be undone. Member will officially resign from the coop and all necessary data transfer will be done.',
+          persistent: true,
+          cancel: true,
+          ok: 'Yes, I Confirm this Resignation.'
+        }).onOk(() => {
+          this.resignModule = false
+          this.$q.loading.show({
+            message: 'Processing Member Resignation.'
+          })        
+
+          let member = {...this.MemberData}
+          member.Advances = 0
+          member.SavingsDeposit = 0
+          member.ShareCapital = 0
+          delete member['.key']
+          delete member.activeLoans
+          member.resigned = true
+          member.dateResigned = firefirestore.FieldValue.serverTimestamp()
+          
+          member.resignBalance = this.resignData.BalanceToPay
+          console.log(member,'member after resigned')
+
+          let Payables = this.PayLater.filter(a=>{
+            return a.memberID == this.penRegId
+          })
+
+          console.log(Payables,'payables')
+
+          Payables.forEach(a=>{
+            firebaseDb.collection('PayLater').doc(a['.key']).delete().then(function() {
+                console.log("payables successfully deleted!");
+            }).catch(function(error) {
+                console.error("Error removing document: ", error);
+            });            
+          })
+
+          let billings = this.getBillings(this.penRegId)
+          console.log(billings,'billings')
+
+          billings.forEach(a=>{
+            firebaseDb.collection('BillingTrackers').doc(a['.key']).update({
+                    paymentStatus: 'Full Payment'
+            }).then(()=>{
+              console.log('update success billing trackers')
+            })            
+          })
+
+          firebaseDb.collection('MemberData').doc(this.penRegId).set(member)
+          .then(()=>{
+            console.log('update success')
+          })
+
+          this.$q.loading.show({
+            message: 'Done resetting the member account and billings are paid.'
+          })     
+
+
+          if(this.isTransferAccount){
+            this.transferDriverUnits()
+          } else {
+              this.$router.go(-1)
+              this.$q.notify({
+                color: 'teal',
+                textColor: 'white',
+                icon: 'check',
+                message: "Resignation Done!",
+                })
+              this.$q.loading.hide()
+          }
+          
+          
+
+
+
+        })
+      },
+      transferDriverUnits(){
+        try {
+          this.$q.loading.show({
+            message: 'Starting Transfer of Data to New Operator Account.'
+          }) 
+          let transfer = this.transferMemberID
+          let TransferID = transfer.id
+          let full = transfer.fullName
+          let fn = transfer.FirstName
+          let ln = transfer.LastName
+
+          let newOperator = {
+            FirstName: fn,
+            FullName: full,
+            LastName: ln,
+            MemberID: TransferID
+          }
+
+          let drivers = this.Members.filter(a=> {
+            return a.Designation == 'Driver' && a.Operator.MemberID == this.penRegId
+          })        
+          
+          let jeepneys = this.JeepneyData.filter(a=>{
+            return a.MemberID == this.penRegId
+          })
+
+          console.log(jeepneys,'jeeps')
+          console.log(drivers,'drivers')
+
+          drivers.forEach(a=>{
+            firebaseDb.collection('MemberData').doc(a['.key']).update({
+              Operator: newOperator
+            }).then(()=>{
+              console.log('done driver update' + a['.key'])
+            })
+          })
+
+          jeepneys.forEach(a=>{
+            firebaseDb.collection('JeepneyData').doc(a['.key']).update({
+              MemberID: TransferID
+            }).then(()=>{
+              console.log('done jeep update' + a['.key'])
+            })     
+          })
+          this.$q.loading.show({
+            message: 'Transfer Done'
+          }) 
+          this.$q.notify({
+            color: 'teal',
+            textColor: 'white',
+            icon: 'check',
+            message: "Transfer Done!",
+            })
+          this.$router.go(-1)
+          this.$q.notify({
+            color: 'teal',
+            textColor: 'white',
+            icon: 'check',
+            message: "Resignation Done!",
+            })
+          this.$q.loading.hide()
+        } catch (error) {
+          console.log(error,'transferDriverUnits error')
+        }
+      },
       removeNewUnitDetails(){
         this.JeepneyDetails.PlateNumber = ''
         this.JeepneyDetails.ORCR = null
@@ -899,16 +1513,33 @@ export default {
         })
       },
       getBillings(key){
+        
+
         console.log(this.$lodash.orderBy(this.BillingTrackers.filter(a=>{
-          return a.MemberData['.key'] == key
+          return a.MemberData['.key'] == key 
         }),b=>{
           return b.timestamp
         },'desc'),'getBillings')
         return this.$lodash.orderBy(this.BillingTrackers.filter(a=>{
-          return a.MemberData['.key'] == key
+          return a.MemberData['.key'] == key && a.paymentStatus !== 'Full Payment' && this.checkIfAvailableInActiveLoans(a.CashReleaseTrackingID)
         }),b=>{
           return b.timestamp
         },'desc')
+      },
+      checkIfAvailableInActiveLoans(loansid){
+        if(loansid == undefined){
+          return true
+        }
+        let member = this.MemberData
+        let check = this.$lodash.findIndex(member.activeLoans,a=>{
+          return a.CashReleaseTrackingID.toUpperCase() == loansid.toUpperCase() 
+        })
+
+        if(check > -1){
+          return true
+        } else {
+          return false
+        }
       },
       getLastDateTransactions(type,key,loan = null){
         try {
@@ -1201,6 +1832,83 @@ export default {
       },
       checkIfIncludedInTransactions(Plate){
         
+      },
+      getUnitsOfOperator(operatorID){
+        let filter = this.JeepneyData.filter(a=>{
+            return a.MemberID == operatorID && a.Status == 'approved'
+        })
+
+        console.log('filter',filter)
+        let map = filter.map(a=>{
+            return {
+                value: a.PlateNumber,
+                label: a.PlateNumber,
+                unitData: a
+            }
+        })
+        console.log('jeep data',map)
+        return map      
+      },
+      getUnitDetails(PlateNumber){
+          return this.JeepneyData.filter(a=>{
+              return a.PlateNumber == PlateNumber
+          })[0]
+      },
+      removeDefaultUnit(){
+        this.$q.dialog({
+          title: `Remove Default Unit`,
+          message: 'Would you like to remove the default unit ?',
+          persistent: true,
+          cancel: true
+        }).onOk(() => {
+            firebaseDb.collection('MemberData').doc(this.MemberData['.key']).update({
+                defaultUnit: firefirestore.FieldValue.delete()
+            }).then(()=>{
+                this.$q.notify({
+                    icon: 'info',
+                    color: 'red',
+                    message: 'Removed Default Unit Success'
+                })  
+            })          
+        })
+      },
+      updateDefaultUnit(){
+        let jeeps = this.getJeeps(this.MemberData.Operator.MemberID)
+        console.log(jeeps,'jeeps')
+        if(jeeps.length == 0){
+          this.$q.dialog({
+            title: `Operator has no units approved yet`,
+            persistent: true,
+          })
+        } else {
+          this.$q.dialog({
+          title: 'Jeepney Plate Number',
+          message: 'Choose a jeep / unit:',
+          options: {
+              type: 'radio',
+              model: 'opt1',
+              // inline: true
+              items: this.getUnitsOfOperator(this.MemberData.Operator.MemberID)
+          },
+          cancel: true,
+          persistent: true
+          }).onOk(data => {
+            console.log(data,'data')
+
+            firebaseDb.collection('MemberData').doc(this.MemberData['.key']).update({
+                defaultUnit: this.getUnitDetails(data)
+            }).then(()=>{
+                this.$q.notify({
+                    icon: 'info',
+                    color: 'positive',
+                    message: 'Update Default Unit Success'
+                })  
+            })
+
+
+          })          
+        }
+      
       }
  },
   mounted () {
@@ -1208,6 +1916,36 @@ export default {
     this.datetoday()
   },
   computed: {
+    membersIdOptions () {
+        let opt = this.Members.map(d => {
+            let full = d.FirstName + ' ' + d.LastName
+            let opID = ''
+            if(d.Designation == 'Operator'){ opID = d['.key'] }
+            else { 
+                let op = {...d.Operator}
+                opID = op.MemberID 
+            }
+            return {
+                label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                fullName: full,
+                FirstName: d.FirstName,
+                LastName: d.LastName,
+                id: d['.key'],
+                designation: d.Designation,
+                OperatorID: opID,
+                isNewMember: d.isNewMember
+            }
+        })
+        console.log(opt,'opt')
+
+
+
+        return opt.filter(a=>{
+          return a.designation == 'Operator' && a.isNewMember == false && a.id !== this.penRegId
+        })
+        // Object.freeze(options)
+    },
     getLatestTransactions(){
       try {
         return this.$lodash.orderBy(this.Transactions.filter(a=>{

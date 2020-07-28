@@ -24,7 +24,7 @@
 
       <q-table
         class="q-mb-md"
-        :data="MemberData"
+        :data="getRidOFResigned"
         :columns="columns"
         row-key=".key"
         flat
@@ -105,7 +105,7 @@ export default {
       initialPagination: {
           descending: false,
           page: 1,
-          rowsPerPage:10
+          rowsPerPage:0
           // rowsNumber: xx if getting data from a server
       },
       filter: '',
@@ -113,7 +113,8 @@ export default {
         { name: 'MemberID', align: 'left', label: 'Member ID', field: '.key', sortable: true },
         { name: 'FirstName', align: 'left', label: 'First Name', field: 'FirstName', sortable: true },
         { name: 'LastName', align: 'left', label: 'Last Name', field: 'LastName', sortable: true }, 
-        { name: 'Phone', align: 'left', label: 'Phone#', field: 'Phone', sortable: true },            
+        { name: 'Phone', align: 'left', label: 'Phone#', field: 'Phone', sortable: true },  
+         { name: 'Designation', align: 'left', label: 'Designation', field: 'Designation', sortable: true },          
         { name: 'MembershipFee', align: 'left', label: 'MF Paid', field: 'isNewMember', sortable: true, typeOf: 'status' },
         { name: 'Actions', align: 'left', label: 'Actions', },   
       ],
@@ -151,6 +152,15 @@ export default {
     },
   computed: {
     // ...mapGetters('store', ['MemberData'])
+    getRidOFResigned(){
+      try {
+        return this.MemberData.filter(a=>{
+          return a.resigned !== true
+        })
+      } catch (error) {
+        return []
+      }
+    }
   },
   mounted () {
       // Binding Collections
