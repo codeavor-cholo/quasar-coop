@@ -487,6 +487,7 @@ Vue.use(VueQrcodeReader);
 export default {
     data(){
         return {
+            onDecodeID: null,
             amountPaidBills: 0,
             trackingNumber: '',
             text: '',
@@ -746,9 +747,19 @@ export default {
             if(this.model !== null || this.model2 !== null){
                 id = this.model !== null ? this.model : this.model2
             } else {
-                let sumthing = this.idMember.split('&')
+                let sumthing = null
+                if(this.idMember !== undefined && this.onDecodeID == null){
+                   let val = this.idMember.split('&')
+                   sumthing = val[0]
+                } else {
+                    sumthing = this.onDecodeID
+                }
+
+                console.log(sumthing,'sumthing')
+
+                
                 let ops = this.MemberData.filter(a=>{
-                    return a['.key'] == sumthing[0]
+                    return a['.key'] == sumthing
                 })[0]
 
                 console.log(ops,'ops')
@@ -1069,9 +1080,11 @@ export default {
             console.log(decodedString,'on decode')
             this.changeMemberDetails({id: decodedString})
             this.scanner = false
+            this.onDecodeID = decodedString
         },
         clearForm(){
             console.log('back click')
+            this.onDecodeID = null
             this.operator= false
             this.ifDriver= false
             this.model= null
@@ -1286,18 +1299,22 @@ export default {
             //     this.jeepneyDetails = null
             // }
 
-            if(this.idMember !== undefined && this.idMember !== '' && this.idMember !== null && val.plateNumbers !== 'NONE' && member.defaultUnit == undefined){
+            if(this.idMember !== undefined && this.idMember !== '' && this.idMember !== null && val.plateNumbers !== 'NONE'){
                 // this.MDetails.defaultUnit = this.plateNumbers
-                if(member.Designation == 'Driver'){
+
+                console.log('dto 1')
+                if(member.Designation == 'Driver' && member.defaultUnit !== undefined){
                     this.MDetails.defaultUnit =  null
                     this.jeepneyDetails = val.plateNumbers    
                     this.defaultUnitDisabled = false
                     this.defaultUnit = true  
-                } 
-        
-                
+                }
+           
             } else {
+                console.log('dto choice 2 - 3')
+
                 if(member.defaultUnit !== undefined){
+                    console.log('dto 2')
                     let jeep = member.defaultUnit
                     this.MDetails.defaultUnit = jeep.PlateNumber
                     this.jeepneyDetails = jeep.PlateNumber
@@ -1305,6 +1322,7 @@ export default {
                     this.defaultUnit = true
                     console.log(this.jeepneyDetails,'jeep default')
                 } else {
+                    console.log('dto 3')
                     this.MDetails.defaultUnit = null
                     this.defaultUnitDisabled = false
                     this.defaultUnit = false

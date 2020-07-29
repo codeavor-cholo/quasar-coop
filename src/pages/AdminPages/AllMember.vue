@@ -1,7 +1,9 @@
 <template>
   <div>
-    <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Members <q-icon name="mdi-arrow-right-box" /> All Members</h6>
-
+    <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Members <q-icon name="mdi-arrow-right-box" /> All Members
+    <q-btn color="grey-10" icon="settings" label="settings" @click="openSettings = !openSettings" class="float-right q-mr-md" dense flat/>
+    </h6>
+    
     <q-separator />
       <!-- <div v-if="loading">
         <q-spinner-oval
@@ -35,11 +37,17 @@
             <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : '#'">
             <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
                 <q-icon name="double_arrow" v-show="col.name == 'MemberID' && props.row == selected" />
-                <span v-if="col.typeOf !== 'status'">{{ col.value  }}</span>
-                <span v-else>
+                <span v-if="col.typeOf == 'status'">
                   <q-icon name="check_circle" size="md" v-if="col.value == false" color="teal" />
                   <q-icon name="warning" size="md" v-else color="warning" />
-
+                </span>
+                <span v-else-if="col.typeOf == 'chip'">
+                  <q-chip class="" outline color="red" :label="col.value" v-if="col.value =='resigned'"/>
+                  <q-chip class="" outline color="teal" :label="col.value" v-else-if="col.value =='active'"/>
+                  <q-chip class="" outline color="warning" :label="col.value" v-else/>
+                </span>
+                <span v-else>
+                  {{col.value}}
                 </span>
             </q-td>
             <q-td>
@@ -54,6 +62,28 @@
             </q-tr>
         </template>        
       </q-table>
+
+      <q-dialog v-model="openSettings" persistent>
+        <q-card style="width:50vw;" class="q-pa-md">
+          <q-card-section class="row items-center">
+            <q-avatar icon="settings" color="grey-10" text-color="white" />
+            <span class="q-ml-sm text-h6">Settings</span>
+            <q-btn color="grey" icon="close" dense @click="openSettings = false" flat class="absolute-right" />
+          </q-card-section>
+          <q-card-section>
+            <q-item>
+              <q-item-section>
+                <q-item-label caption lines="2">Member Inactiveness</q-item-label>
+                <q-item-label class="text-h6">{{ZMemberInactiveness.amount}} Months (No Payments)</q-item-label>
+
+              </q-item-section>
+              <q-item-section side top> 
+                <q-btn color="teal" icon="edit" @click="setInactiveTime" flat/>
+              </q-item-section>
+            </q-item>
+          </q-card-section>
+        </q-card>
+      </q-dialog>
       <!-- <q-markup-table separator="horizontal" flat bordered>
       <template>
         <thead color="secondary">
@@ -97,10 +127,12 @@
 
 <script>
 import { firebaseDb } from 'boot/firebase';
+import { date } from 'quasar'
 
 export default {
   data() {
     return {
+      openSettings: false,
       selected: {},
       initialPagination: {
           descending: false,
@@ -116,6 +148,7 @@ export default {
         { name: 'Phone', align: 'left', label: 'Phone#', field: 'Phone', sortable: true },  
          { name: 'Designation', align: 'left', label: 'Designation', field: 'Designation', sortable: true },          
         { name: 'MembershipFee', align: 'left', label: 'MF Paid', field: 'isNewMember', sortable: true, typeOf: 'status' },
+        { name: 'Status', align: 'left', label: 'Status', field: 'Status', sortable: true,  typeOf: 'chip'},
         { name: 'Actions', align: 'left', label: 'Actions', },   
       ],
       loading: true,
@@ -148,6 +181,7 @@ export default {
         JeepneyData: firebaseDb.collection('JeepneyData'),
         Transactions: firebaseDb.collection('Transactions'),
         DashboardUsers: firebaseDb.collection('DashboardUsers'),
+        ZMemberInactiveness: firebaseDb.collection('FixedPayments').doc('ZMemberInactiveness'),
       }
     },
   computed: {
@@ -155,9 +189,16 @@ export default {
     getRidOFResigned(){
       try {
         return this.MemberData.filter(a=>{
-          return a.resigned !== true
+          
+          if(a.resigned == true){
+            a.Status = 'resigned'
+          } else {
+            a.Status = this.checkIfActive(a['.key'])
+          }
+          return a
         })
       } catch (error) {
+        console.log(error,'getRidOFResigned')
         return []
       }
     }
@@ -170,6 +211,54 @@ export default {
       // })
     },
   methods: {
+    setInactiveTime(){
+      this.$q.dialog({
+        title: 'Edit Member Inactiveness Time ?',
+        message: 'Type a number below and click Save to Update.',
+        prompt: {
+          model: '',
+          isValid: val => val >= 1,
+          type: 'number' // optional
+        },
+        ok: 'Save Settings',
+        cancel: {
+          color: 'grey-10',
+          flat: true
+        },
+        persistent: true
+      }).onOk(data => {
+        console.log('>>>> OK, received', data)
+        firebaseDb.collection('FixedPayments').doc('ZMemberInactiveness').update({
+          amount: data
+        }).then(()=>{
+          console.log('settings update')
+          this.$q.notify({
+              color: 'teal-4',
+              textColor: 'white',
+              icon: 'check',
+              message: "Success Saving Changes",
+              }) 
+        })
+      })      
+    },
+    checkIfActive(memberID){
+      let today = new Date()
+      let monthsBase = date.subtractFromDate(today, {month: this.ZMemberInactiveness.amount})
+
+      let transactions = this.Transactions.filter(a=>{
+        return a.MemberID == memberID && a.timestamp.toDate() >= monthsBase && a.timestamp.toDate() <= today
+      })
+
+
+      if(transactions.length == 0){
+        // console.log(memberID + ' ' + transactions.length+ 'payments',)
+        return 'inactive'
+      } else {
+        // console.log(memberID + ' ' + transactions.length+ 'payments',)
+        return 'active'
+      }
+
+    },
     loadProfile(id) {
             this.$router.push('/admin/profile/' + id)
         },

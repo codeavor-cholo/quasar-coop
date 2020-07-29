@@ -3,12 +3,12 @@
         <q-card class="my-card" flat bordered>
         <!-- start toolbar -->
         <!-- <q-btn @click="test">test</q-btn> -->
-        <q-card-actions>
+        <q-card-actions >
           <div class="row justify-between full-width">
           <div class="col row justify-start">
           <q-btn color="teal"  flat icon="arrow_left" label="back" @click="$router.go(-1)" />
           </div>
-          <div class="col row justify-end">
+          <div class="col row justify-end" v-show="returnStatus !== 'resigned'">
           <q-btn @click="inception = true; OrTid();" flat v-if="MemberData.MembershipFee">
             Membership Fee: {{ MemberData.MembershipFee }}
             </q-btn>
@@ -114,7 +114,11 @@
           <input type="file" accept="image/*" ref="fileInput1" @change="onFilePickedPro" v-show="false">
 
 
-            <div class="text-h5 q-mt-sm q-ma-md">Member ID: {{ penRegId }}</div>
+            <div class="text-h5 q-mt-sm q-ma-md">Member ID: {{ penRegId }}
+                  <q-chip class="text-white" color="red" :label="returnStatus.toUpperCase()" v-if="returnStatus =='resigned'"/>
+                  <q-chip class="text-white" color="teal" :label="returnStatus.toUpperCase()" v-else-if="returnStatus =='active'"/>
+                  <q-chip class="text-white" color="warning" :label="returnStatus.toUpperCase()" v-else/>
+            </div>
             <!-- <div class="text-h6 q-mt-sm q-ma-md"
             v-if="MemberData.Designation == 'Driver'">Operator: {{ MemberData.Operator.Name }}</div> -->
             <div class="q-pa-md">
@@ -1072,6 +1076,7 @@ export default {
           Transactions: firebaseDb.collection('Transactions'),
           BillingTrackers: firebaseDb.collection('BillingTrackers'),
           PayLater: firebaseDb.collection('PayLater'),
+          ZMemberInactiveness: firebaseDb.collection('FixedPayments').doc('ZMemberInactiveness')
           // Counter: firebaseDb.collection('Counter').doc("v65AIZI2jjNN2jlEv17N"),
       }
     },
@@ -1117,115 +1122,124 @@ export default {
           })
       },
       resignMember(){
-        let id = this.penRegId
-        let member = this.MemberData
-        this.resignData.ShareOfStocks = member.ShareCapital
-        this.resignData.Savings = member.SavingsDeposit
-        this.resignData.Name = `${member.FirstName} ${member.LastName}`
+        try {
+
+          let id = this.penRegId
+          let member = this.MemberData
+          console.log(member,'member')
+          this.resignData.ShareOfStocks = member.ShareCapital
+          this.resignData.Savings = member.SavingsDeposit
+          this.resignData.Name = `${member.FirstName} ${member.LastName}`
 
 
 
-        this.resignData.Designation = member.Designation
-        this.resignData.Balances = []
+          this.resignData.Designation = member.Designation
+          this.resignData.Balances = []
 
-        let billingsLoan = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'CashReleaseTrackingID'),'BillingBalance')
-        console.log(billingsLoan,'billingsLoan')
-        if(billingsLoan !== undefined && billingsLoan !== 0){
-          this.resignData.Balances.push(`Loan Billings = ₱ ${billingsLoan}`)
-        }
+          let billingsLoan = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'CashReleaseTrackingID'),'BillingBalance')
+          console.log(billingsLoan,'billingsLoan')
+          if(billingsLoan !== undefined && billingsLoan !== 0){
+            this.resignData.Balances.push(`Loan Billings = ₱ ${billingsLoan}`)
+          }
 
-        let billingsQuota = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'PlateNumber'),'QuotaBalance')
-        console.log(billingsQuota,'billingsQuota')
+          let billingsQuota = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'PlateNumber'),'QuotaBalance')
+          console.log(billingsQuota,'billingsQuota')
 
-        if(billingsQuota !== undefined && billingsQuota !== 0){
-          this.resignData.Balances.push(`Quota Billings = ₱ ${billingsQuota}`)
-        }
+          if(billingsQuota !== undefined && billingsQuota !== 0){
+            this.resignData.Balances.push(`Quota Billings = ₱ ${billingsQuota}`)
+          }
 
-        let today = date.formatDate(new Date(),'M YYYY')
-        console.log(today,'today')
+          let today = date.formatDate(new Date(),'M YYYY')
+          console.log(today,'today')
 
-        let paylater = this.$lodash.sumBy(this.PayLater.filter(a=>{
-          return today == date.formatDate(a.timestamp.toDate(),'M YYYY') && a.memberID == id
-        }),b=>{
-          return parseFloat(b.amountToPayBilling)
-        })
+          let paylater = this.$lodash.sumBy(this.PayLater.filter(a=>{
+            return today == date.formatDate(a.timestamp.toDate(),'M YYYY') && a.memberID == id
+          }),b=>{
+            return parseFloat(b.amountToPayBilling)
+          })
 
-        if(paylater !== undefined && paylater !== 0){
-          this.resignData.Balances.push(`Payables = ₱ ${paylater}`)
-        }
+          if(paylater !== undefined && paylater !== 0){
+            this.resignData.Balances.push(`Payables = ₱ ${paylater}`)
+          }
 
-        let getNoBillingLoans = []
-        let baseLoans = this.getBillings(id).filter(a=>{
-          return a.CashReleaseTrackingID !== undefined
-        })
+          let getNoBillingLoans = []
+          let baseLoans = this.getBillings(id).filter(a=>{
+            return a.CashReleaseTrackingID !== undefined
+          })
 
-        if(member.activeLoans !== undefined){
-          member.activeLoans.forEach(a=>{
-            if(baseLoans.length !== 0){
-              let index = this.$lodash.findIndex(baseLoans,x=>{
-                return x.CashReleaseTrackingID.toUpperCase() == a.CashReleaseTrackingID.toUpperCase()
-              })
+          if(member.activeLoans !== undefined){
+            member.activeLoans.forEach(a=>{
+              if(baseLoans.length !== 0){
+                let index = this.$lodash.findIndex(baseLoans,x=>{
+                  return x.CashReleaseTrackingID.toUpperCase() == a.CashReleaseTrackingID.toUpperCase()
+                })
 
-              if(index == -1 ){
+                if(index == -1 ){
+                  getNoBillingLoans.push(a)
+                }
+              } else {
                 getNoBillingLoans.push(a)
               }
+            })
+          }
+
+          console.log(getNoBillingLoans,'get no billing loans')
+
+          let advancesSum = this.$lodash.sumBy(getNoBillingLoans,a=>{
+            return parseFloat(a.toPayAmount)
+          })
+
+          console.log(advancesSum,'advancesSum')
+
+          if(advancesSum !== undefined && advancesSum !== 0){
+            this.resignData.Balances.push(`Advances = ₱ ${advancesSum}`)
+          }
+
+
+          this.resignData.OutstandingBalance = ( billingsLoan !== undefined ? parseFloat(billingsLoan) : 0 ) + parseFloat(paylater) + ( billingsQuota !== undefined ? parseFloat(billingsQuota) : 0 ) + ( advancesSum !== undefined ? parseFloat(advancesSum) : 0 )
+          if(parseFloat(member.ShareCapital) < this.resignData.OutstandingBalance){
+            this.resignData.BalanceToPay = this.resignData.OutstandingBalance - (parseFloat(member.ShareCapital) + parseFloat(member.SavingsDeposit))
+          } else {
+            this.resignData.CashToRelease = (parseFloat(member.ShareCapital) + parseFloat(member.SavingsDeposit)) - this.resignData.OutstandingBalance
+          }
+
+          console.log(paylater,'paylater')
+
+          if(member.Designation == 'Operator'){
+            let drivers = this.Members.filter(a=> {
+              return a.Designation == 'Driver' && a.Operator.MemberID == id
+            })
+
+            let resigned = drivers.filter(a=>{
+              return a.resigned == true
+            })
+
+            if(drivers.length !== resigned.length){
+              this.$q.dialog({
+                title: `Drivers Still Active!`,
+                message: 'This account is not allowed to resign. Would you like to transfer account?',
+                persistent: true,
+                ok: 'yes, transfer my account',
+                cancel: true
+              }).onOk(() => {
+                this.resignModule = true
+                this.isTransferAccount = true
+              })            
             } else {
-              getNoBillingLoans.push(a)
-            }
-          })
+                this.resignModule = true
+                this.isTransferAccount = true              
+            } 
+          } else {
+            this.resignModule = true
+            this.isTransferAccount = false
+          }      
+
+
+                    
+        } catch (error) {
+          console.log(error,'resign')
         }
 
-        console.log(getNoBillingLoans,'get no billing loans')
-
-        let advancesSum = this.$lodash.sumBy(getNoBillingLoans,a=>{
-          return parseFloat(a.toPayAmount)
-        })
-
-        console.log(advancesSum,'advancesSum')
-
-        if(advancesSum !== undefined && advancesSum !== 0){
-          this.resignData.Balances.push(`Advances = ₱ ${advancesSum}`)
-        }
-
-
-        this.resignData.OutstandingBalance = ( billingsLoan !== undefined ? parseFloat(billingsLoan) : 0 ) + parseFloat(paylater) + ( billingsQuota !== undefined ? parseFloat(billingsQuota) : 0 ) + ( advancesSum !== undefined ? parseFloat(advancesSum) : 0 )
-        if(parseFloat(member.ShareCapital) < this.resignData.OutstandingBalance){
-          this.resignData.BalanceToPay = this.resignData.OutstandingBalance - (parseFloat(member.ShareCapital) + parseFloat(member.SavingsDeposit))
-        } else {
-           this.resignData.CashToRelease = (parseFloat(member.ShareCapital) + parseFloat(member.SavingsDeposit)) - this.resignData.OutstandingBalance
-        }
-
-        console.log(paylater,'paylater')
-
-        if(member.Designation == 'Operator'){
-          let drivers = this.Members.filter(a=> {
-            return a.Designation == 'Driver' && a.Operator.MemberID == id
-          })
-
-          let resigned = drivers.filter(a=>{
-            return a.resigned == true
-          })
-
-          if(drivers.length !== resigned.length){
-            this.$q.dialog({
-              title: `Drivers Still Active!`,
-              message: 'This account is not allowed to resign. Would you like to transfer account?',
-              persistent: true,
-              ok: 'yes, transfer my account',
-              cancel: true
-            }).onOk(() => {
-              this.resignModule = true
-              this.isTransferAccount = true
-            })            
-
-          } 
-        } else {
-          this.resignModule = true
-          this.isTransferAccount = false
-        }      
-
-
-        
 
       },
       confirmResignation(){
@@ -1503,7 +1517,7 @@ export default {
       getJeepsPending(key){
         return this.JeepneyData.filter(a=>{
           let base = a.Status !== 'approved' && a.Status !== 'rejected' ? 'pending' : a.Status
-          console.log(base,'base')
+          // console.log(base,'base')
           a.Status = base         
             return key == a.MemberID && a.Status == 'pending'
         })
@@ -1917,6 +1931,33 @@ export default {
     this.datetoday()
   },
   computed: {
+    returnStatus(){
+      try {
+        let member = this.MemberData
+        let memberID = this.penRegId
+        if(member.resigned == true){
+          return 'resigned'
+        } else {
+          let today = new Date()
+          let monthsBase = date.subtractFromDate(today, {month: this.ZMemberInactiveness.amount})
+
+          let transactions = this.Transactions.filter(a=>{
+            return a.MemberID == memberID && a.timestamp.toDate() >= monthsBase && a.timestamp.toDate() <= today
+          })
+
+          if(transactions.length == 0){
+            console.log(memberID + ' ' + transactions.length+ 'payments',)
+            return 'inactive'
+          } else {
+            console.log(memberID + ' ' + transactions.length+ 'payments',)
+            return 'active'
+          }          
+        }
+
+      } catch (error) {
+        return 'inactive'  
+      }
+    },
     membersIdOptions () {
         let opt = this.Members.map(d => {
             let full = d.FirstName + ' ' + d.LastName
