@@ -77,6 +77,11 @@ const routes = [
         component: () => import("pages/AdminPages/PendingRegForm.vue")
       },
       {
+        path: "/admin/notifications",
+        props:true,
+        component: () => import("pages/AdminPages/Notifications.vue")
+      },
+      {
         path: "/admin/rejectedregform/:penRegId",
         props:true,
         component: () => import("pages/AdminPages/RejectedApplicationView.vue")

@@ -471,7 +471,7 @@
     </q-page>
 </template>
 <script>
-import { firebaseDb, firebaseSto, firefirestore, Auth2,firebaseAuth } from 'boot/firebase';
+import { firebaseDb, firebaseSto, notif, Auth2,firebaseAuth, firefirestore} from 'boot/firebase';
 
 import Vue from "vue";
 import money from 'v-money'
@@ -579,7 +579,7 @@ export default {
     },
     async mounted() {
         // this.TransactionID = await this.genTransactionID
-      this.$binding('lastTransaction', firebaseDb.collection('Transactions').orderBy('timestamp', 'desc').limit(1))
+      this.$binding('lastTransaction', firebaseDb.collection('Transactions').orderBy('TransactionID', 'desc').limit(1))
         .then(data => {
           if (data.length != 0) {
             // has data
@@ -1441,7 +1441,8 @@ export default {
 
             let totalAmountPaid = parseFloat(this.amountPaidBills)
             if(bill.paymentStatus == 'Partial Payment' || status == 'Partial Payment'){
-                totalAmountPaid = totalAmountPaid + parseFloat(bill.billPaidAmount)
+                let additional = bill.billPaidAmount !== undefined ? parseFloat(bill.billPaidAmount) : 0
+                totalAmountPaid = parseFloat(this.amountPaidBills) + additional
                 if(totalAmountPaid > this.returnBillTotal){
                     totalAmountPaid = this.returnBillTotal
                 }

@@ -284,7 +284,7 @@ export default {
             WithdrawalApplications: [],
             drawer: false,
             selected: {},
-            tab: 'Savings Transactions',
+            tab: 'Withdraw Requests',
             splitterModel: 20,
             filter: '',
             pagination: {

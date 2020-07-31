@@ -65,7 +65,9 @@ module.exports = function (ctx) {
         'QImg',
         'QFab',
         'QFabAction',
-        'QBtn'
+        'QBtn',
+        'QBadge',
+        'QChip'
       ],
       directives: [],
 

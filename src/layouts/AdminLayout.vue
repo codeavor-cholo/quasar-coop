@@ -5,13 +5,46 @@
         <q-btn flat round dense icon="menu" @click="left = !left" />
 
         <q-toolbar-title>
-          <q-avatar>
+          <q-avatar @click="$router.push('/admin')" class="cursor-pointer">
             <img src="statics/icons/New-GSIS-Cooperative.png" />
           </q-avatar>
-          <small class="q-ml-md">Admin Dashboard</small>
+          <small class="q-ml-md cursor-pointer" @click="$router.push('/admin')">Admin Dashboard</small>
           <q-space />
         </q-toolbar-title>
-          <q-btn color="teal" class="text-white" icon="mdi-logout-variant" @click="logout"/>
+          <q-btn color="white" flat icon="notifications" label="notifications" >
+            <q-badge color="orange" floating v-show="returnNotif.length > 0">{{returnNotif.length}}</q-badge>
+                  <q-menu>
+                  <q-list style="min-width: 250px" class="q-py-md">
+                      <q-item v-for="notif in returnNotif.slice(0,5)" :key="notif['.key']" clickable :to="returnRoutes(notif.notifType)">
+                        <q-item-section top avatar>
+                          <q-avatar color="white" text-color="teal" :icon="returnIcon(notif.notifType)" />
+                        </q-item-section>
+                        <q-item-section>
+                          <!-- <q-item-label>Single line item</q-item-label> -->
+                          <q-item-label class="text-weight-bold" caption lines="2">{{notif.message}}
+                            <br>
+                            <span v-if="notif.notifType == 'jeep'" class="text-weight-light">{{notif.PlateNumber}} ({{notif.MemberID}})</span>
+                            <span v-else-if="notif.notifType == 'payments'" class="text-weight-light">{{notif.total | currency}} (#{{notif.transID}}) </span>
+                          </q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <q-item-label caption>{{$moment(notif.dateTime.toDate()).fromNow()}}</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      <q-item clickable="" class="bg-grey-2" to="/admin/notifications" v-if="returnNotif.length > 0">
+                        <q-item-section>
+                          <q-item-label class="full-width text-center text-uppercase text-teal" overline>More Notifications</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                      <q-item clickable="" class="bg-grey-2" to="/admin/notifications" v-else>
+                        <q-item-section>
+                          <q-item-label class="full-width text-center text-uppercase text-teal" overline>See Old Notifications</q-item-label>
+                        </q-item-section>
+                      </q-item>
+                  </q-list>
+                  </q-menu>
+          </q-btn>
+          <q-btn color="white" flat class="text-white" icon="mdi-logout-variant" @click="logout"/>
       </q-toolbar>
     </q-header>
 
@@ -292,7 +325,8 @@
 </template>
 
 <script>
-import { firebaseAuth,firebaseApp,firebaseDb } from 'boot/firebase'
+import { date } from 'quasar'
+import { firebaseAuth,firebaseApp,firebaseDb,firefirestore } from 'boot/firebase'
 export default {
   name: "Layout",
   created(){
@@ -318,15 +352,71 @@ export default {
       left: false,
       memberid: '',
       uid: '',
-      log: {}
+      log: {},
+      Transactions: [],
+      Notifications: [],
+      WithdrawalApplications: [],
+      LoanApplications: [],
+      PreRegPersonalData: [],
+      JeepneyData: [],
+      length: 0
+      // NewTransactions: Object.freeze(this.Transactions),
     };
+  },
+  watch: {
+
   },
   firestore () {
     return {
       DashboardUsers: firebaseDb.collection('DashboardUsers'),
+      Transactions: firebaseDb.collection('Transactions'),
+      WithdrawalApplications: firebaseDb.collection('WithdrawalApplications'),
+      LoanApplications: firebaseDb.collection('LoanApplications'),
+      PreRegPersonalData: firebaseDb.collection('PreRegPersonalData'),
+      JeepneyData: firebaseDb.collection('JeepneyData'),
+      MemberData: firebaseDb.collection('MemberData'),
+      ZMemberInactiveness: firebaseDb.collection('FixedPayments').doc('ZMemberInactiveness'),
     }
   },  
   computed:{
+    returnNotif(){
+
+      let all = [...this.Transactions,...this.WithdrawalApplications,...this.LoanApplications,...this.PreRegPersonalData,...this.JeepneyData]
+      // console.log(all.length,'all')
+      let today = all.filter(a=>{
+        if(a.ORCR !== undefined){
+          a.timestamp = a.dateAdded
+          a.notifType = 'jeep'
+        }
+
+        if(a.DailyCharge !== undefined){
+          a.notifType = 'loans'
+        }
+
+        if(a.isNewMember !== undefined){
+          a.notifType = 'membership'
+          
+        }
+
+        if(a.OrNo !== undefined){
+          a.notifType = 'payments'
+        }
+
+        if(a.RemainingBalance !== undefined && a.SavingsDeposit !== undefined){
+          a.notifType = 'savings'
+        }
+
+        return a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')
+      })
+      console.log(today,'today')
+      let notifs = []
+      today.forEach(a=>{
+        notifs.push(this.mapNotifications(a,a.notifType))
+      })
+
+      console.log(notifs,'notifs')
+      return this.$lodash.orderBy(notifs,'dateTime','desc')
+    },
     LoggedOn(){
       try {
         return this.DashboardUsers.filter(a=>{
@@ -338,7 +428,74 @@ export default {
       }
     }
   },
+  mounted() {
+          // this.$binding('MemberData', this.$firestoreApp.collection('MemberData'))
+  },
   methods:{
+    returnRoutes(type){
+      if(type == 'payments'){
+        return '/admin/dailycollections'
+      } else if (type == 'jeep') {
+        return '/admin/pendingjeeps'
+      } else if (type == 'membership'){
+        return '/admin/pendingreg'
+      } else if (type == 'savings'){
+        return '/admin/savings'
+      } else if (type == 'loans'){
+        return '/admin/loans'
+      } else {
+        return '/admin/dashboard'
+      }
+    },
+    returnIcon(type){
+      if(type == 'payments'){
+        return 'payment'
+      } else if (type == 'jeep') {
+        return 'commute'
+      } else if (type == 'membership'){
+        return 'person'
+      } else if (type == 'savings'){
+        return 'account_balance'
+      } else if (type == 'loans'){
+        return 'reciept'
+      } else {
+        return 'check'
+      }
+    },
+    mapNotifications(data,type = null){
+      if(type !== null){
+        const newData = data
+        const id = newData['.key']
+        if(type == 'payments'){
+          return {notifType: type, MemberID: newData.MemberID , notifKey: id, message: `New ${newData.TransactionType} from ${newData.MemberID}`, total: newData.Total, transID: newData.TransactionID, dateTime: newData.timestamp}
+        } else if (type == 'jeep'){
+            let dateObject = {dateTime: newData.timestamp,message: 'New Unit Application'}
+            let object = {...newData,...dateObject}
+            return object          
+        } else if (type == 'membership'){
+            let dateObject = {dateTime: moment().toString(),message: 'New Membership Application'}
+            let object = {...newData,...dateObject} 
+            return object        
+        } else if (type == 'savings'){
+            return {notifType: type, MemberID: newData.MemberID , ApplicationKey: id, message: `New Withdrawal Application from ${newData.MemberID}` , amount: newData.Amount, dateTime: newData.timestamp}
+        } else if (type == 'loans'){
+            return {notifType: type, MemberID: newData.MemberID, ApplicationKey: id, message: `New Loan Application from ${newData.MemberID}` , amount: newData.Amount, dateTime: newData.timestamp}
+        } else {
+
+        }
+      }
+    },
+    ifSavedInNotifs(key){
+      let index = this.$lodash.findIndex(this.Notifications,a=>{
+        return key == a.notifKey
+      })
+
+      if(index > -1){
+        return true
+      } else {
+        return false
+      }
+    },
     logout(){
       this.$q.dialog({
           title: `Are you sure you want to logout?`,
