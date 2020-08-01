@@ -507,7 +507,7 @@ export default {
       return new Promise(async (resolve) => {   
 
         let message = `You passed the evaluation! Your AccountNo. is ${id} and your Temporary Password is ${password}.`
-        var senddata = 'number=' + mobile + '&' + 'message=' + message + '&' + 'apinumber=' + 3
+        var senddata = 'number=' + mobile + '&' + 'message=' + message + '&' + 'apinumber=' + 4
         console.log(senddata,'data')
 
         axios.post('https://toned-tabulation.000webhostapp.com/index.php', senddata)
