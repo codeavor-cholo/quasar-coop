@@ -36,7 +36,7 @@
                 <span v-if="PendingReg.approvedBy == undefined"> {{PendingReg.rejectReason}}</span>
             </td>
             <td class="text-left">
-                <span v-if="PendingReg.approvedBy !== undefined">{{$moment(PendingReg.dateApproved.toDate()).format('LLLL')}}</span> <span v-else>{{$moment(PendingReg.dateRejected.toDate()).format('LLLL')}}</span>
+                <span v-if="PendingReg.approvedBy !== undefined">{{PendingReg.dateApproved !== undefined ? $moment(PendingReg.dateApproved.toDate()).format('LLLL') : $moment().format('LLLL')}}</span> <span v-else>{{$moment(PendingReg.dateRejected.toDate()).format('LLLL')}}</span>
             </td>
             <td>
                 <q-btn flat 

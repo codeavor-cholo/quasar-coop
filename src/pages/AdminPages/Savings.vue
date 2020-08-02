@@ -187,7 +187,7 @@
             
         </q-drawer>    
 
-        <q-dialog v-model="withdrawCashDialog" persistent>
+        <q-dialog v-model="withdrawCashDialog">
           <q-card style="width:500px" class="q-pa-md">
             <q-card-section class="row items-center">
                 <span class="q-py-md">Select a member to perform a transaction</span>
@@ -221,6 +221,11 @@
                     </template>
                 </q-select>                 
             </q-card-section>
+            <q-card-section v-show="withdrawModel != null && savingsWithdrawModel == 0">
+              <q-banner class="bg-warning text-white">
+                This member has no savings deposit in his account.
+              </q-banner>
+            </q-card-section>
             <q-card-section v-show="savingsWithdrawModel !== 0">
               <q-item class="q-pa-md">
                   <q-item-section avatar>
@@ -247,9 +252,9 @@
             <q-card-section v-show="savingsWithdrawModel !== 0">
               <q-input v-model="withdrawAmount" outlined="" clearable prefix="₱" type="number" label="Withdraw Amount" :max="savingsWithdrawModel"  :rules="[ val => val <= savingsWithdrawModel || 'Invalid Amount' , val => val >= 0 || 'Invalid Amount']"/>
             </q-card-section>
-            <q-card-actions align="right" v-show="savingsWithdrawModel !== 0">
+            <q-card-actions align="right">
               <q-btn flat label="Cancel" color="grey" v-close-popup @click="withdrawModel = null, savingsWithdrawModel = 0, withdrawAmount = 0"/>
-              <q-btn flat label="Proceed to Cash Released" color="teal" v-close-popup @click="proceedToCashReleaseSavings"/>
+              <q-btn flat label="Proceed to Cash Released" color="teal" v-close-popup @click="proceedToCashReleaseSavings" v-show="savingsWithdrawModel !== 0"/>
             </q-card-actions>
           </q-card>
         </q-dialog>

@@ -176,6 +176,7 @@ import { firebaseDb, firebaseSto, firefirestore, Auth2,firebaseAuth } from 'boot
 import { date } from 'quasar'
 import Vue from "vue";
 import money from 'v-money'
+import { mapGetters, mapMutations } from 'vuex'
 import TransactionDetails from '../../components/TransactionDetails.vue'
 import ViewTransactionsTable from '../../components/ViewTransactionsTable.vue'
 
@@ -515,9 +516,16 @@ export default {
             this.selected = props
             this.transactionsTableView = true
         },
+        ...mapMutations('SubModule', {
+            closeDrawer: 'setDrawerPrint'
+        }),
         printMe(){
+            this.closeDrawer()
+            let self = this
+            setTimeout(function(){ 
             window.print();
-        }
+            }, 2000);
+        },
     }
 }
 </script>

@@ -210,6 +210,7 @@ import { firebaseDb, firebaseSto, firefirestore, Auth2,firebaseAuth } from 'boot
 import { date } from 'quasar'
 import Vue from "vue";
 import money from 'v-money'
+import { mapGetters, mapMutations } from 'vuex'
 import TransactionDetails from '../../components/TransactionDetails.vue'
 
 Vue.use(money, {precision: 4})
@@ -359,9 +360,16 @@ export default {
             this.selected = props
             this.payDialog = true
         },
+        ...mapMutations('SubModule', {
+            closeDrawer: 'setDrawerPrint'
+        }),
         printMe(){
+            this.closeDrawer()
+            let self = this
+            setTimeout(function(){ 
             window.print();
-        }
+            }, 2000);
+        },
     }
 }
 </script>

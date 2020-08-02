@@ -960,6 +960,12 @@ export default {
       },
       returnSelectedMember(){
           try {
+            if(this.onDecodeID !== null){
+                return this.MemberData.filter(d => {
+                    return d['.key'] === this.onDecodeID
+                })[0]                
+            }
+
             if(this.model == null){
                 return this.MemberData.filter(d => {
                     return d['.key'] === this.model2.id

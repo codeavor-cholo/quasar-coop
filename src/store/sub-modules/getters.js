@@ -56,3 +56,7 @@ export function genORNo () {
     })
   })
 }
+
+export function getDrawerPrint (state) {
+  return state.drawerPrint
+}

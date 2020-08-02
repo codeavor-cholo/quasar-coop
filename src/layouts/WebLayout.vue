@@ -46,7 +46,7 @@
             to="/about"
             :class="'gt-sm'"
             />
-            <q-btn flat dark 
+            <!-- <q-btn flat dark 
             icon="lock" 
             label="Admin Dashboard" 
             to="/admin/dashboard"
@@ -59,21 +59,20 @@
             @click="loadPreReg(userDetails.MemberID)"
             :class="'gt-sm'"
             v-if="userDetails.Designation == 'Driver' || userDetails.Designation == 'Operator'"
-            />
+            /> -->
             <q-btn flat dark 
             icon="lock" 
-            label="Log In" 
+            label="Member Log-In" 
             :class="'gt-sm'"
-            to="/login"
-            v-if="!userDetails.userId"
+            @click="loginMember"
             />
-            <q-btn flat dark 
+            <!-- <q-btn flat dark 
             icon="lock" 
             label="Logout" 
             :class="'gt-sm'"
             v-if="userDetails.userId"
             @click="logoutUser"
-            />
+            /> -->
         </q-toolbar>
       </q-header>
 
@@ -140,16 +139,15 @@
                   </q-item-section>
                </q-item>
 
-            <q-item clickable
-               v-ripple 
-               to="/login"
-               v-if="!userDetails.userId"
-               >
+              <q-item clickable
+                v-ripple 
+                @click="loginMember"
+              >
                   <q-item-section avatar>
                     <q-icon name="lock"/>
                   </q-item-section>
                   <q-item-section>
-                    Log In
+                    Member Log-In
                   </q-item-section>
                </q-item>
                <q-item clickable
@@ -224,7 +222,10 @@ export default {
     ...mapActions('store', ['logoutUser']),
     loadPreReg(id) {
             this.$router.push('/member/dashboard/' + id)
-        }
+        },
+    loginMember(){
+      window.open('https://gsis-member.web.app/#/')
+    }
   }
 }
 </script>

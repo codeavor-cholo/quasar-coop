@@ -158,6 +158,7 @@
 <script>
 import { date, QDialog } from 'quasar'
 import axios from 'axios'
+import { mapGetters, mapMutations } from 'vuex'
 import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 
 function between(min, max) {  

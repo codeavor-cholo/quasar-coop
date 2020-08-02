@@ -270,6 +270,7 @@
 import { firebaseDb, firebaseSto, firefirestore, Auth2,firebaseAuth } from 'boot/firebase';
 import { date } from 'quasar'
 import Vue from "vue";
+import { mapGetters, mapMutations } from 'vuex'
 import money from 'v-money'
 import TransactionDetails from '../../components/TransactionDetails.vue'
 
@@ -481,8 +482,15 @@ export default {
             this.selected = props
             this.payDialog = true
         },
+        ...mapMutations('SubModule', {
+            closeDrawer: 'setDrawerPrint'
+        }),
         printMe(){
+            this.closeDrawer()
+            let self = this
+            setTimeout(function(){ 
             window.print();
+            }, 2000);
         },
         createValue (val, done) {
         // Calling done(var) when new-value-mode is not set or "add", or done(var, "add") adds "var" content to the model

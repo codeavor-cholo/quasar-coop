@@ -2,7 +2,7 @@
   <q-layout view="lHh Lpr lff">
     <q-header elevated class="bg-teal text-white noPrint">
       <q-toolbar class="noPrint">
-        <q-btn flat round dense icon="menu" @click="left = !left" />
+        <q-btn flat round dense icon="menu" @click="openThis" />
 
         <q-toolbar-title>
           <q-avatar @click="$router.push('/admin')" class="cursor-pointer">
@@ -48,7 +48,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="left" side="left" none class="noPrint">
+    <q-drawer v-model="printDrawerStatus" side="left" none class="noPrint">
       <q-img
         class="absolute-top"
         src="https://cdn.quasar.dev/img/material.png"
@@ -326,6 +326,7 @@
 
 <script>
 import { date } from 'quasar'
+import { mapGetters, mapMutations } from 'vuex'
 import { firebaseAuth,firebaseApp,firebaseDb,firefirestore } from 'boot/firebase'
 export default {
   name: "Layout",
@@ -379,6 +380,9 @@ export default {
     }
   },  
   computed:{
+    ...mapGetters('SubModule', {
+        printDrawerStatus: 'getDrawerPrint',
+    }),
     returnNotif(){
 
       let all = [...this.Transactions,...this.WithdrawalApplications,...this.LoanApplications,...this.PreRegPersonalData,...this.JeepneyData]
@@ -432,6 +436,12 @@ export default {
           // this.$binding('MemberData', this.$firestoreApp.collection('MemberData'))
   },
   methods:{
+    ...mapMutations('SubModule', {
+        openDrawer: 'setDrawerOpen'
+    }),
+    openThis(){
+      this.openDrawer()
+    },
     returnRoutes(type){
       if(type == 'payments'){
         return '/admin/dailycollections'

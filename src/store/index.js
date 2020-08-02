@@ -3,7 +3,7 @@ import Vuex from 'vuex'
 
 import store from './store'
 
-import subModules from './sub-modules'
+import SubModule from './sub-modules'
 
 Vue.use(Vuex)
 
@@ -20,7 +20,7 @@ export default function (/* { ssrContext } */) {
   const Store = new Vuex.Store({
     modules: {
       store,
-      subModules
+      SubModule
     },
 
     // enable strict mode (adds overhead!)

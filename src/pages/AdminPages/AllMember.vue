@@ -1,7 +1,7 @@
 <template>
   <div>
     <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Members <q-icon name="mdi-arrow-right-box" /> All Members
-    <q-btn color="grey-10" icon="settings" label="settings" @click="openSettings = !openSettings" class="float-right q-mr-md" dense flat/>
+    <q-btn color="grey-10" icon="settings" label="settings" @click="openSettings = !openSettings" class="print-hide float-right q-mr-md" dense flat/>
     </h6>
     
     <q-separator />
@@ -16,7 +16,8 @@
 
 
     <div class="q-pa-md col-xs-12 col-sm-12 col-md-12">
-      <div class="q-mb-md full-width row justify-end">
+      <div class="q-mb-md full-width row justify-end  print-hide">
+        <q-btn color="grey-10" icon="print" label="print report" @click="printMe" class="q-mr-md"/>
         <q-input v-model="filter" class="" filled color="teal" type="search" dense label="Search" clearable="" style="width:250px;">
             <template v-slot:append>
             <q-icon name="search" />
@@ -50,7 +51,7 @@
                   {{col.value}}
                 </span>
             </q-td>
-            <q-td>
+            <q-td class="print-hide">
               <q-btn flat 
               color="secondary"
               class="full-width" 
@@ -128,6 +129,7 @@
 <script>
 import { firebaseDb } from 'boot/firebase';
 import { date } from 'quasar'
+import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   data() {
@@ -146,9 +148,9 @@ export default {
         { name: 'FirstName', align: 'left', label: 'First Name', field: 'FirstName', sortable: true },
         { name: 'LastName', align: 'left', label: 'Last Name', field: 'LastName', sortable: true }, 
         { name: 'Phone', align: 'left', label: 'Phone#', field: 'Phone', sortable: true },  
-         { name: 'Designation', align: 'left', label: 'Designation', field: 'Designation', sortable: true },          
-        { name: 'MembershipFee', align: 'left', label: 'MF Paid', field: 'isNewMember', sortable: true, typeOf: 'status' },
+        { name: 'Designation', align: 'left', label: 'Designation', field: 'Designation', sortable: true },          
         { name: 'Status', align: 'left', label: 'Status', field: 'Status', sortable: true,  typeOf: 'chip'},
+        { name: 'MembershipFee', align: 'left', label: 'MF Paid', field: 'isNewMember', sortable: true, typeOf: 'status' },
         { name: 'Actions', align: 'left', label: 'Actions', },   
       ],
       loading: true,
@@ -211,6 +213,16 @@ export default {
       // })
     },
   methods: {
+    ...mapMutations('SubModule', {
+        closeDrawer: 'setDrawerPrint'
+    }),
+    printMe(){
+        this.closeDrawer()
+        let self = this
+        setTimeout(function(){ 
+          window.print();
+        }, 2000);
+    },
     setInactiveTime(){
       this.$q.dialog({
         title: 'Edit Member Inactiveness Time ?',
