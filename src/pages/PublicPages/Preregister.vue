@@ -387,7 +387,7 @@
         In it, we will provide further instructions to complete your application.
         <q-stepper-navigation>
 
-          <q-btn color="teal" label="Finish" :to="'/'" ></q-btn>
+          <q-btn color="teal" label="Finish" :to="'/home'" ></q-btn>
         </q-stepper-navigation>
       </q-step>
     </q-stepper>
@@ -547,7 +547,6 @@ export default {
             message: "Invalid Operator",
             })
             this.$q.loading.hide()
-          return
         }
       } else {
         this.PreRegData.Occupation = this.Occupation
@@ -582,6 +581,8 @@ export default {
           if(this.PreRegData.Designation == 'Operator'){
             this.jeepAddUpload(id)
             this.$q.loading.hide()
+          } else {
+             this.$q.loading.hide()
           }
         })
         .catch(error => {

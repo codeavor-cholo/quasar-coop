@@ -600,8 +600,8 @@ export default {
     computed: {
         ...mapGetters('subModules', ['genTransactionID', 'genORNo', 'currencyToNumber']),
         getIncludeOperatorPaymentTotal () {
-            return this.currencyToNumber(this.mf2) +this.currencyToNumber(this.ss2) +this.currencyToNumber(this.sd2) +this.currencyToNumber(this.other2) + this.currencyToNumber(this.returnOtherSum2)
-                // this.currencyToNumber(this.includeFee.Advances)
+            return parseFloat(this.mf2) +parseFloat(this.ss2) +parseFloat(this.sd2) +parseFloat(this.other2) + parseFloat(this.returnOtherSum2)
+                // parseFloat(this.includeFee.Advances)
         },
         returnModel2Data(){
             try {
@@ -1669,9 +1669,11 @@ export default {
               let genTransactID = await this.genTransactionID
               let genORNo = await this.genORNo
               let includeOperatorPayment = {
-                OrNo: ++genORNo,
+                // OrNo: ++genORNo,
+                OrNo: this.OrNo+1,
+                TransactionID: this.TransactionID+1,
                 MemberID: payment.Operator.MemberID,
-                TransactionID: ++genTransactID,
+                // TransactionID: ++genTransactID,
                 TransactionType: 'Payment',
                 Designation: 'Operator',
                 MembershipFee: 0,

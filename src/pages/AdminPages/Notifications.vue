@@ -13,10 +13,11 @@
                     <!-- <q-item-label>Single line item</q-item-label> -->
                     <q-item-label class="text-weight-bold" caption lines="2">{{notif.message}}
                     <br>
-                    <span v-if="notif.notifType == 'jeep'" class="text-weight-light">{{notif.PlateNumber}} ({{notif.MemberID}})</span>
+                    <span v-if="notif.notifType == 'jeep'" class="text-weight-light">{{notif.PlateNumber}}</span>
                     <span v-else-if="notif.notifType == 'payments'" class="text-weight-light">{{notif.total | currency}} (#{{notif.transID}}) </span>
                     <span v-else-if="notif.notifType == 'savings'" class="text-weight-light">{{notif.amount | currency}} </span>
                     <span v-else-if="notif.notifType == 'loans'" class="text-weight-light">{{notif.amount | currency}} </span>
+                    <span v-else-if="notif.notifType == 'membership'" class="text-weight-light">{{notif.FirstName}} {{notif.LastName}} - {{notif.Designation}} </span>   
                     </q-item-label>
                 </q-item-section>
                 <q-item-section side>
@@ -103,7 +104,7 @@ export default {
           a.notifType = 'loans'
         }
 
-        if(a.isNewMember !== undefined){
+        if(a.verificationCode !== undefined){
           a.notifType = 'membership'
           
         }
@@ -116,7 +117,7 @@ export default {
           a.notifType = 'savings'
         }
 
-        return a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')
+        return a.timestamp !== null && a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')
       })
       console.log(today,'today')
       let notifs = []
@@ -220,7 +221,7 @@ export default {
             let object = {...newData,...dateObject}
             return object          
         } else if (type == 'membership'){
-            let dateObject = {dateTime: moment().toString(),message: 'New Membership Application'}
+            let dateObject = {dateTime: newData.timestamp,message: 'New Membership Application'}
             let object = {...newData,...dateObject} 
             return object        
         } else if (type == 'savings'){

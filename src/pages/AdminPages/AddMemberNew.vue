@@ -567,9 +567,10 @@ export default {
         .then(()=>{
           if(this.PreRegData.Designation == 'Operator'){
             this.jeepAddUpload(id)
-            
+            this.$q.loading.hide()
+          } else {
+             this.$q.loading.hide()
           }
-          this.$q.loading.hide()
         })
         .catch(error => {
             // Use to signal error if something goes wrong.

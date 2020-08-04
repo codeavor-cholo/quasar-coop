@@ -15,7 +15,7 @@
             <q-badge color="orange" floating v-show="returnNotif.length > 0">{{returnNotif.length}}</q-badge>
                   <q-menu>
                   <q-list style="min-width: 250px" class="q-py-md">
-                      <q-item v-for="notif in returnNotif.slice(0,5)" :key="notif['.key']" clickable :to="returnRoutes(notif.notifType)">
+                      <q-item v-for="notif in returnNotif.slice(0,5)" :key="notif['.key']" clickable :to="returnRoutes(notif.notifType)" v-show="returnNotif">
                         <q-item-section top avatar>
                           <q-avatar color="white" text-color="teal" :icon="returnIcon(notif.notifType)" />
                         </q-item-section>
@@ -23,12 +23,15 @@
                           <!-- <q-item-label>Single line item</q-item-label> -->
                           <q-item-label class="text-weight-bold" caption lines="2">{{notif.message}}
                             <br>
-                            <span v-if="notif.notifType == 'jeep'" class="text-weight-light">{{notif.PlateNumber}} ({{notif.MemberID}})</span>
+                            <span v-if="notif.notifType == 'jeep'" class="text-weight-light">{{notif.PlateNumber}} </span>
                             <span v-else-if="notif.notifType == 'payments'" class="text-weight-light">{{notif.total | currency}} (#{{notif.transID}}) </span>
+                            <span v-else-if="notif.notifType == 'savings'" class="text-weight-light">{{notif.amount | currency}} </span>
+                            <span v-else-if="notif.notifType == 'loans'" class="text-weight-light">{{notif.amount | currency}} </span>   
+                             <span v-else-if="notif.notifType == 'membership'" class="text-weight-light">{{notif.FirstName}} {{notif.LastName}} - {{notif.Designation}} </span>   
                           </q-item-label>
                         </q-item-section>
                         <q-item-section side>
-                          <q-item-label caption>{{$moment(notif.dateTime.toDate()).fromNow()}}</q-item-label>
+                          <q-item-label caption v-show="notif.dateTime !== null && $moment.isDate(notif.dateTime.toDate())">{{$moment(notif.dateTime.toDate()).fromNow()}}</q-item-label>
                         </q-item-section>
                       </q-item>
                       <q-item clickable="" class="bg-grey-2" to="/admin/notifications" v-if="returnNotif.length > 0">
@@ -397,7 +400,7 @@ export default {
           a.notifType = 'loans'
         }
 
-        if(a.isNewMember !== undefined){
+        if(a.verificationCode !== undefined){
           a.notifType = 'membership'
           
         }
@@ -410,7 +413,7 @@ export default {
           a.notifType = 'savings'
         }
 
-        return a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')
+        return a.timestamp !== null && a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')
       })
       console.log(today,'today')
       let notifs = []
@@ -418,8 +421,12 @@ export default {
         notifs.push(this.mapNotifications(a,a.notifType))
       })
 
+      let order = this.$lodash.orderBy(notifs,'dateTime','desc')
+
       console.log(notifs,'notifs')
-      return this.$lodash.orderBy(notifs,'dateTime','desc')
+      return order.filter(a=>{
+        return a.dateTime !== null || a.dateTime !== undefined
+      })
     },
     LoggedOn(){
       try {
@@ -483,7 +490,7 @@ export default {
             let object = {...newData,...dateObject}
             return object          
         } else if (type == 'membership'){
-            let dateObject = {dateTime: moment().toString(),message: 'New Membership Application'}
+            let dateObject = {dateTime: newData.timestamp,message: 'New Membership Application'}
             let object = {...newData,...dateObject} 
             return object        
         } else if (type == 'savings'){
