@@ -89,7 +89,7 @@
                       </div>
                     </template>
                     <template v-slot:body="props">
-                      <q-tr :props="props"  @click="onRowClick(props)" :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
+                      <q-tr :props="props"  @click="tab !== 'Cash Advance Transactions' ? onRowClick(props) : ''" :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
                         <q-td v-for="col in props.cols.filter(col => col.name !== 'actions')" :key="col.name" :class="col.name == 'memberid' ? 'text-left' : 'text-center'">
                           <q-icon name="double_arrow" v-show="col.name == 'memberid' && props.row == selected" />
                           <span v-if="col.typeData == 'money'">{{'₱ ' + col.value}}</span>
