@@ -3,7 +3,7 @@
         <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Generate Billing <q-icon name="mdi-arrow-right-box" /> {{tab}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span> 
           <!-- <q-btn color="primary" icon="check" label="OK" @click="test" class="float-right q-mr-md" dense/> -->
           <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="adjust date" @click="adjustDate = true" /> 
-          <q-btn color="pink" class="float-right q-mr-md" flat dense="" icon="event" label="delele today sent" @click="deleteTodayShortCut" /> 
+          <!-- <q-btn color="pink" class="float-right q-mr-md" flat dense="" icon="event" label="delele today sent" @click="deleteTodayShortCut" />  -->
 
         </h6>
         <q-separator />

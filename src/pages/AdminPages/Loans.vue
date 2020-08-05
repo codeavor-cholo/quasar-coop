@@ -1,6 +1,7 @@
 <template>
     <div>
         <q-page>
+          <div v-show="allTransactionsReport == false">
       <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Cash Advance <q-icon name="mdi-arrow-right-box" /> {{tab}}</h6>
        <q-separator />
           <q-splitter
@@ -51,6 +52,7 @@
 
                       <div class="row justify-between" v-else>
                         <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
+                        <q-btn color="teal" icon="print"  label="print" v-show="model !== null && returnDataofTable.length > 0" outline="" @click="allTransactionsReport = true,printMe()"/>
                         <br>
                         <div class="text-caption">Select a member to show his/her savings transactions.</div>
                         </div>                        
@@ -374,17 +376,31 @@
             </q-card-actions>
           </q-card>
         </q-dialog>
-
+      </div>
+        <div v-show="allTransactionsReport == true" class="q-pb-xl">
+          <div class="row justify-between noPrint q-pa-md">
+            <q-btn color="grey-10" icon="arrow_left" label="back to cash advances" @click="allTransactionsReport = false" class="noPrint"/>
+            <q-btn color="grey-10" icon-right="print" label="print report" @click="printMe" class="noPrint"/>
+          </div>
+          <all-member-savings-cash-advance class="printThis" :type="'Cash Advance'"  :data="returnDataofTable" :columns="returnColumnofTable" :model="model"></all-member-savings-cash-advance>
+        </div>
        </q-page>
+
     </div>
 </template>
 <script>
 import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 import { date, QDialog } from 'quasar'
+import { mapGetters, mapMutations } from 'vuex'
 import axios from 'axios'
+import AllMemberSavingsCashAdvance from '../../components/AllMemberSavingsCashAdvance.vue'
 export default {
+    components: {
+        AllMemberSavingsCashAdvance
+    },
     data(){
         return{
+            allTransactionsReport: false,
             model: null,
             membersIdOpt: Object.freeze(this.membersIdOptions),
             confirmDialog: false,
@@ -1104,11 +1120,29 @@ export default {
           })[0]
           return filter
       },
+        ...mapMutations('SubModule', {
+            closeDrawer: 'setDrawerPrint'
+        }),
+      printMe(){
+          this.closeDrawer()
+          let self = this
+          setTimeout(function(){ 
+          window.print();
+          }, 2000);
+      }
     }
 }
 </script>
 <style scoped>
 .no-choice{
     opacity: 0.6;
+}
+@media print {
+   .noPrint {display:none;
+   padding: 0; margin: 0;}
+   .printThis {
+     padding: 0;
+     margin: 0;
+   }
 }
 </style>

@@ -6,6 +6,7 @@
             <q-table
                 :data="returnDashboardUsers"
                 :columns="columns"
+                :pagination.sync="pagination"
                 row-key=".key"
                 flat
                 :filter="filter"
@@ -103,7 +104,14 @@ export default {
             filter: '',
             selectedKey: '',
             addUserDialog: false,
-            positionsMap: ['Admin','Collector','Secretary']
+            positionsMap: ['Admin','Collector','Secretary'],
+            pagination: {
+              sortBy: 'position',
+              descending: true,
+              page: 1,
+              rowsPerPage: 0
+              // rowsNumber: xx if getting data from a server
+            },
         }
     },
     created(){
@@ -177,6 +185,29 @@ export default {
                 })                
             }
         },
+        deleteUserInServer(uid){
+            return new Promise(async (resolve) => { 
+
+                var senddata = 'uid=' + uid
+                console.log(senddata,'data')
+                // const options = {
+                //     method: 'POST',
+                //     headers: { 'Access-Control-Allow-Origin': '*' },
+                //     data: senddata,
+                //     url: 'https://fierce-oasis-90806.herokuapp.com/changePassword',
+                // }    
+
+                axios.post('https://fierce-oasis-90806.herokuapp.com/deleteUser', senddata)
+                .then(response => {
+                console.log(response,'response')
+                return resolve(response)
+                })
+                .catch(err =>{
+                console.log('deleteUserInServer',err)
+                })                
+                
+            })
+        },
         deleteGo(user){
             this.selectedKey = user['.key']
             this.$q.dialog({
@@ -185,21 +216,28 @@ export default {
                 persistent: true,
                 cancel: true
             }).onOk(()=>{
-                firebaseDb.collection('DashboardUsers').doc(user['.key']).delete().then(function() {
-                    console.log("Document successfully deleted!")
-                    this.$q.notify({
-                        icon: 'info',
-                        message: 'Deletion of Account Successful',
-                        color: 'positive'
-                    })    
-                }).catch(function(error) {
-                    console.error("Error removing document: ", error)
-                    this.$q.notify({
-                        icon: 'error',
-                        message: error+' Delete Account Failed',
-                        color: 'negative'
-                    })      
+                this.deleteUserInServer(user['.key'])
+                .then(()=>{
+                    firebaseDb.collection('DashboardUsers').doc(user['.key']).delete().then(function() {
+                        console.log("Document successfully deleted!")
+                        this.$q.notify({
+                            icon: 'info',
+                            message: 'Deletion of Account Successful',
+                            color: 'positive'
+                        })    
+                    }).catch(function(error) {
+                        console.error("Error removing document: ", error)
+                        this.$q.notify({
+                            icon: 'error',
+                            message: error+' Delete Account Failed',
+                            color: 'negative'
+                        })      
+                    })
                 })
+                .catch((err)=>{
+                    console.log('error in deleting server data',err)
+                })
+
             })
         },
         createUser(){

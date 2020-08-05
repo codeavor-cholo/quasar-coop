@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div>
+    <div v-show="allTransactionsReport == false">
       <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Savings <q-icon name="mdi-arrow-right-box" /> {{tab}}</h6>
        <q-separator />
           <q-splitter
@@ -15,7 +15,7 @@
                 vertical=""
                 active-bg-color="teal-1"
                 active-color="teal"
-                @click="drawer = false, selected = {}"
+                @click="drawer = false, selected = {}, filter = '', model = null"
               >
                 <q-tab name="Member Savings" icon="account_balance" label="Member Savings" />
                 <q-tab name="Withdraw Requests" icon="payment" label="Withdraw Requests" />
@@ -51,8 +51,10 @@
 
                       <div class="row justify-between" v-else>
                         <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
+                        <q-btn color="teal" icon="print"  label="print" v-show="model !== null && returnDataofTable.length > 0" outline="" @click="allTransactionsReport = true,printMe()"/>
                         <br>
                         <div class="text-caption">Select a member to show his/her savings transactions.</div>
+                        
                         </div>                        
                         <q-select 
                             class="absolute-right q-mr-md"
@@ -83,7 +85,7 @@
                                     {{ scope.opt.label }}
                                 </q-chip>
                             </template>
-                        </q-select>                        
+                        </q-select>                      
                       </div>
                     </template>
                     <template v-slot:body="props">
@@ -161,11 +163,11 @@
                   </q-item-section>
                 </q-item>
                 <div class="text-h6 q-pt-md q-px-md" v-show="tab == 'Member Savings'">Latest Transactions</div>
-                <div v-for="(n,i) in getLatestTransationDate(returnSelectRow.memberid)" :key="i" v-show="tab == 'Member Savings'">
-                <q-item clickable="" v-ripple class="cursor-pointer" to="/reciept">
+                <div v-for="(n,i) in getSavingsTransactions(returnSelectRow.memberid)" :key="i" v-show="tab == 'Member Savings'">
+                <q-item clickable="" v-ripple class="cursor-pointer" @click="viewGo(n)">
                     <q-item-section>
-                    <q-item-label>#{{n.TransactionID}}</q-item-label>
-                    <q-item-label caption lines="2">₱ {{n.SavingsDeposit}}.00 (Savings Deposit)</q-item-label>
+                    <q-item-label class="text-uppercase">#{{n.baseID}}</q-item-label>
+                    <q-item-label caption lines="2">₱ {{n.baseAmount}}.00 ({{n.baseTransaction}})</q-item-label>
                     </q-item-section>
                     <q-item-section side top>
                     <q-item-label caption>{{n.showDate}}</q-item-label>
@@ -259,8 +261,19 @@
           </q-card>
         </q-dialog>
 
+        <q-dialog v-model="savingsReciept" >
+            <transaction-details :payID="selectedSavings['.key']" :memberName="selectedSavings.BillingName"></transaction-details>
+        </q-dialog>
 
-        <q-page-sticky position="bottom-right" :offset="[18, 18]">
+        <q-dialog v-model="withdrawReciept" >
+            <savings-cash-advance-reciept :data="withdrawData"></savings-cash-advance-reciept>
+        </q-dialog>
+
+        <!-- <q-dialog v-model="allTransactionsReport" >
+          <all-member-savings-cash-advance :data="returnDataofTable" :columns="returnColumnofTable" :model="model"></all-member-savings-cash-advance>
+        </q-dialog> -->
+
+        <q-page-sticky position="bottom-right" :offset="[30, 30]">
         <q-btn fab icon="present_to_all" color="black" @click="withdrawCashDialog = !withdrawCashDialog">
             <q-tooltip  anchor="top middle" self="bottom middle">
                 Withdraw Cash
@@ -268,16 +281,37 @@
         </q-btn>
         </q-page-sticky>     
     </div>
+    <div v-show="allTransactionsReport == true" class="q-pb-xl">
+      <div class="row justify-between noPrint q-pa-md">
+        <q-btn color="grey-10" icon="arrow_left" label="back to savings" @click="allTransactionsReport = false" class="noPrint"/>
+        <q-btn color="grey-10" icon-right="print" label="print report" @click="printMe" class="noPrint"/>
+      </div>
+      <all-member-savings-cash-advance class="printThis" :type="'Savings'" :data="returnDataofTable" :columns="returnColumnofTable" :model="model"></all-member-savings-cash-advance>
+    </div>
     </q-page>
 </template>
 <script>
 import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 import { date } from 'quasar'
+import { mapGetters, mapMutations } from 'vuex'
 import axios from 'axios'
+import TransactionDetails from '../../components/TransactionDetails.vue'
+import SavingsCashAdvanceReciept from '../../components/SavingsCashAdvanceReciept.vue'
+import AllMemberSavingsCashAdvance from '../../components/AllMemberSavingsCashAdvance.vue'
 
 export default {
+    components: {
+        TransactionDetails,
+        SavingsCashAdvanceReciept,
+        AllMemberSavingsCashAdvance
+    },
     data(){
         return{
+            allTransactionsReport: false,
+            withdrawData: {},
+            withdrawReciept: false,
+            selectedSavings: {},
+            savingsReciept: false,
             withdrawAmount: 0,
             savingsWithdrawModel: 0,
             withdrawModel: null,
@@ -643,6 +677,43 @@ export default {
       removeMemberDetails(){
           this.model = null
       },
+      getSavingsTransactions(id){
+            try {
+                let key = id
+                let filter = this.Transactions.filter(a=>{
+                    a.baseTime = a.timestamp.toDate()
+                    a.showDate = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
+                    a.baseAmount = a.SavingsDeposit
+                    a.baseID = a.TransactionID
+                    a.baseTransaction = 'Savings Deposit'
+                    return a.MemberID == key && a.SavingsDeposit !== 0 && a.SavingsDeposit !== undefined
+                })
+
+
+                let applications = this.WithdrawalApplications.filter(a=>{
+                    a.baseTime = new Date(a.dateReleased)
+                    a.showDate = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
+                    a.baseAmount = a.Amount
+                    a.baseTransaction = 'Withdraw'
+                    a.baseID = a.CashReleaseTrackingID == undefined ? 'Walk-In Withdrawal' : a.CashReleaseTrackingID
+                    return a.MemberID == key && a.status == 'released'
+                })
+
+
+
+
+                let order = this.$lodash.orderBy([...filter,...applications],a=>{
+                    return a.baseTime
+                },'desc')
+
+
+                console.log(order,'order')
+
+                return order
+            } catch (error) {
+                return []
+            }        
+      },
       getLatestTransationDate(id){
         let filter = this.Transactions.filter(a=>{
           a.dateCheck = a.timestamp.toDate()
@@ -658,15 +729,42 @@ export default {
         }
       },
       onRowClick(props){
-          
-        if(this.selected != props.row)
-        {
-          this.selected = props.row
-          this.drawer = true
+        if(this.tab !== 'Savings Transactions'){
+          if(this.selected != props.row)
+          {
+            this.selected = props.row
+            this.drawer = true
+          } else {
+            this.selected = {}
+            this.drawer = false
+          }
         } else {
-          this.selected = {}
-          this.drawer = false
+          if(this.selected != props.row)
+          {
+            this.selected = props.row
+            console.log(props.row,'props table click')
+            let data = props.row
+            if(data.baseTransaction !== 'Withdraw'){
+              let member = this.getMemberData(data.MemberID)
+              this.selectedSavings = data
+              this.selectedSavings.BillingName = `${member.FirstName} ${member.LastName}`
+              this.savingsReciept = true
+            } else {
+              let member = this.getMemberData(data.MemberID)              
+              this.withdrawData = data
+              this.withdrawData.MemberName = `${member.FirstName} ${member.LastName}`
+              this.withdrawReciept = true            
+            }
+          } else {
+            this.selected = {}
+            this.selectedSavings = {}
+            this.savingsReciept = false
+            this.withdrawData= {}
+            this.withdrawReciept = false
+            console.log(props.row,'props table click')
+          }          
         }
+
 
       },
       approveWithdrawalSavings(){
@@ -859,11 +957,44 @@ export default {
               }
           })
       },
+      viewGo(props){
+          console.log(props,'props')
+          if(props.baseTransaction !== 'Withdraw'){
+            let member = this.getMemberData(props.MemberID)
+            this.selectedSavings = props
+            this.selectedSavings.BillingName = `${member.FirstName} ${member.LastName}`
+            this.savingsReciept = true
+          } else {
+            let member = this.getMemberData(props.MemberID)
+            this.withdrawData = props
+            this.withdrawData.MemberName = `${member.FirstName} ${member.LastName}`
+            this.withdrawReciept = true            
+          }
+
+      },
+        ...mapMutations('SubModule', {
+            closeDrawer: 'setDrawerPrint'
+        }),
+      printMe(){
+          this.closeDrawer()
+          let self = this
+          setTimeout(function(){ 
+          window.print();
+          }, 2000);
+      }
     } // end of methods
 }
 </script>
 <style scoped>
 .no-choice{
     opacity: 0.6;
+}
+@media print {
+   .noPrint {display:none;
+   padding: 0; margin: 0;}
+   .printThis {
+     padding: 0;
+     margin: 0;
+   }
 }
 </style>

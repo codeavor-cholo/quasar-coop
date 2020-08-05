@@ -1,6 +1,7 @@
 <template>
   <div>
     <h6 class="q-ma-none q-pl-md q-pt-md text-teal"> Members <q-icon name="mdi-arrow-right-box" /> Pending Unit/Jeep Applications 
+
     </h6>
     <q-separator />
     <div v-if="loading">
@@ -11,7 +12,56 @@
         class="fixed-center"
       />
     </div>
-    <div v-if="!loading" class="col-xs-10 col-sm-10 col-md-8 q-pa-md">
+
+    <div v-if="!loading" class="q-pb-lg">
+        <q-input v-model="filter" filled type="search" dense class="q-ma-md" label="Search" clearable="" color="teal">
+            <template v-slot:append>
+            <q-icon name="search" />
+            </template>
+        </q-input>
+
+      <q-table
+        :filter="filter"
+        flat=""
+        bordered=""
+        class="q-ma-md"
+        :data="returnJeepneyData"
+        :columns="columns"
+        row-key=".key"
+        :pagination.sync="pagination"
+        table-header-class="bg-teal text-white"
+      >
+        <template v-slot:body="props">
+          <q-tr :props="props">
+            <q-td v-for="col in props.cols.filter(col => col.name !== 'action' && col.name !== 'orcr' && col.name !== 'status')" :key="col.name">
+              {{col.value}}
+            </q-td>
+            <td key="status">
+                <q-icon name="warning" size="md" v-if="props.row.Status == null" color="warning"/>
+                <q-icon name="check_circle" size="md" v-if="props.row.Status == 'approved'" color="teal" />
+                <q-icon name="cancel" size="md" v-if="props.row.Status == 'rejected'" color="red" />                
+            </td>
+            <td key="orcr">
+                <q-btn dense flat icon="visibility" label="view orcr" @click="onClickORCR(props.row.ORCR)" />
+            </td>
+            <td key="action">
+                <div v-if="props.row.Status == null">
+                    <q-btn flat label="REJECT UNIT" icon-right="cancel" @click="rejectUnit(props.row['.key'])"/>
+                    <q-btn flat label="APPROVE UNIT" icon-right="check_circle" @click="approveUnit(props.row['.key'])" color="teal"/>
+                </div>
+                <div v-else-if="props.row.Status == 'rejected'" class="text-red text-weight-bold">
+                    <q-icon name="cancel" class="q-mr-sm"/>{{props.row.rejectReason}}
+                </div>
+                <div v-else>
+                    No actions available.
+                </div>
+            </td>
+          </q-tr>
+        </template>
+      </q-table>
+    </div>
+
+    <!-- <div v-if="!loading" class="col-xs-10 col-sm-10 col-md-8 q-pa-md">
       <q-markup-table separator="horizontal" flat bordered>
         <thead class="bg-teal">
           <tr class="text-h4 q-ml-md text-white">
@@ -46,12 +96,12 @@
                     No actions available.
                 </div>
             </td>
-            <!-- <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td> -->
+            <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td>
           </tr>
         </tbody>
 
     </q-markup-table>
-    </div>
+    </div> -->
     <q-dialog v-model="viewDialog" persistent>
         <q-card style="width:50vw">
             <q-card-section class="row items-center">
@@ -77,10 +127,22 @@ import { firebaseDb, firebaseSto, firefirestore, Auth2 } from 'boot/firebase';
 export default {
     data () {
         return{
+          filter: '',
           loading: false,
           JeepneyData: [],
           selectedURL: null,
           viewDialog: false,
+          columns: [
+              { name: 'platenumber', align: 'left', label: 'Plate Number', field: 'PlateNumber', sortable: true },
+              { name: 'operatorID', align: 'left', label: 'Operator ID', field: 'MemberID', sortable: true },
+              { name: 'status', align: 'left', label: 'Status', field: 'Status', sortable: true },
+              { name: 'orcr', align: 'left', label: 'ORCR',  },
+              { name: 'action', align: 'left', label: 'Action', },
+          ],
+            pagination: {
+              page: 1,
+              rowsPerPage: 10
+            },
         }
     },
     firestore () {

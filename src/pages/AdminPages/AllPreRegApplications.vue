@@ -10,7 +10,64 @@
         class="fixed-center"
       />
     </div>
-    <div v-if="!loading" class="col-xs-10 col-sm-10 col-md-8 q-pa-md">
+
+    <div v-if="!loading" class="q-pb-lg">
+        <q-input v-model="filter" filled type="search" dense class="q-ma-md" label="Search" clearable="" color="teal">
+            <template v-slot:append>
+            <q-icon name="search" />
+            </template>
+        </q-input>
+
+      <q-table
+        :filter="filter"
+        flat=""
+        bordered=""
+        class="q-ma-md"
+        :data="returnRejectAndApproved"
+        :columns="columns"
+        row-key=".key"
+        :pagination.sync="pagination"
+        table-header-class="bg-teal text-white"
+      >
+        <template v-slot:body="props">
+          <q-tr :props="props">
+            <q-td v-for="col in props.cols.filter(col => col.name !== 'action' && col.name !== 'rejectReason' && col.name !== 'status' && col.name !== 'dateProcess')" :key="col.name">
+              {{col.value}}
+            </q-td>
+            <td key="status">
+                <q-icon name="check_circle" size="md" v-if="props.row.approvedBy !== undefined" color="teal" />
+                <q-icon name="cancel" size="md" v-else color="red" />               
+            </td>
+            <td key="rejectReason">
+                 <span v-if="props.row.approvedBy == undefined" class="text-red text-weight-bold"> {{props.row.rejectReason}}</span>
+            </td>           
+             <td key="dateProcess">
+                <span v-if="props.row.approvedBy !== undefined">{{props.row.dateApproved !== undefined ? $moment(props.row.dateApproved.toDate()).format('LLLL') : $moment().format('LLLL')}}</span> <span v-else>{{$moment(props.row.dateRejected.toDate()).format('LLLL')}}</span>
+            </td>
+            <td key="action">
+                <q-btn flat 
+                v-if="props.row.approvedBy !== undefined"
+                color="secondary"
+                class="full-width" 
+                icon-right="mdi-arrow-right" 
+                label="View Profile" 
+                @click="loadProfile(props.row['.key'])"
+                />
+                <q-btn flat 
+                v-else
+                color="red"
+                class="full-width" 
+                icon-right="mdi-arrow-right" 
+                label="View Application" 
+                @click="loadPreReg(props.row['.key'])"
+                />
+            </td>
+          </q-tr>
+        </template>
+      </q-table>
+    </div>
+
+    <!-- <div v-if="!loading" class="col-xs-10 col-sm-10 col-md-8 q-pa-md">
       <q-markup-table separator="horizontal" flat bordered>
         <thead class="bg-teal">
           <tr class="text-h4 q-ml-md text-white">
@@ -56,12 +113,12 @@
                 @click="loadPreReg(PendingReg['.key'])"
                 />
             </td>
-            <!-- <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td> -->
+            <td class="text-left"><q-btn flat label="View Details" class="full-width" icon-right="mdi-arrow-right" @click="loadPreReg(id)"/></td>
           </tr>
         </tbody>
 
     </q-markup-table>
-    </div>
+    </div> -->
     <q-dialog v-model="viewDialog" persistent>
         <q-card style="width:50vw">
             <q-card-section class="row items-center">
@@ -91,6 +148,19 @@ export default {
           JeepneyData: [],
           selectedURL: null,
           viewDialog: false,
+          columns: [
+              { name: 'nameApplicant', align: 'left', label: 'Name of Applicant', field: 'NameApp', sortable: true },
+              { name: 'approver', align: 'left', label: 'Approver / Rejector', field: 'approvedBy', sortable: true },
+              { name: 'status', align: 'left', label: 'Status', field: 'Status' },
+              { name: 'rejectReason', align: 'left', label: 'Reject Reason', field: 'rejectReason', sortable: true },
+              { name: 'dateProcess', align: 'left', label: 'Date Processed' },
+              { name: 'action', align: 'left', label: 'Action', },
+          ],
+            pagination: {
+              page: 1,
+              rowsPerPage: 10
+            },
+          filter: ''
         }
     },
     firestore () {
@@ -134,6 +204,7 @@ export default {
             try {
                 let concat = [...this.RejectedApplications,...this.MemberData]
                 let order = this.$lodash.orderBy(concat,a=>{
+                    a.NameApp = `${a.FirstName} ${a.LastName}`
                     a.baseTime = a.dateApproved == undefined ? a.dateRejected : a.dateApproved
                     // console.log(a.baseTime.toDate())
                     return a.baseTime

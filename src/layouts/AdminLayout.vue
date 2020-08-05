@@ -474,7 +474,7 @@ export default {
       } else if (type == 'savings'){
         return 'account_balance'
       } else if (type == 'loans'){
-        return 'reciept'
+        return 'receipt'
       } else {
         return 'check'
       }
