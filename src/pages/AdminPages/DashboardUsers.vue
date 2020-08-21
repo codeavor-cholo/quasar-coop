@@ -104,7 +104,7 @@ export default {
             filter: '',
             selectedKey: '',
             addUserDialog: false,
-            positionsMap: ['Admin','Collector','Secretary'],
+            positionsMap: ['Admin','Collector'],
             pagination: {
               sortBy: 'position',
               descending: true,

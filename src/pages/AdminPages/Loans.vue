@@ -2,7 +2,7 @@
     <div>
         <q-page>
           <div v-show="allTransactionsReport == false">
-      <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Cash Advance <q-icon name="mdi-arrow-right-box" /> {{tab}}</h6>
+      <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Cash Advance <q-icon name="mdi-arrow-right-box" /> {{returnTab()}}</h6>
        <q-separator />
           <q-splitter
             v-model="splitterModel"
@@ -18,10 +18,10 @@
                 active-color="teal"
                 @click="drawer = false, selected = {}"
               >
-                <q-tab name="Loan Request" icon="queue" label="Loan Request" />
-                <q-tab name="Approved Loans" icon="check" label="Approved Loans" />
-                <q-tab name="Rejected Loans" icon="cancel" label="Rejected Loans" />
-                <q-tab name="Active Loans" icon="autorenew" label="Active Loans" />
+                <q-tab name="Loan Request" icon="queue" label="Cash Advance Request" />
+                <q-tab name="Approved Loans" icon="check" label="Approved Cash Advance" />
+                <q-tab name="Rejected Loans" icon="cancel" label="Rejected Cash Advance" />
+                <q-tab name="Active Loans" icon="autorenew" label="Active Cash Advance" />
                 <q-tab name="Cash Advance Transactions" icon="money" label="Cash Advance Transactions" />
               </q-tabs>
             </div>
@@ -38,7 +38,7 @@
                   >
                     <template v-slot:top>
                       <div class="row justify-between" v-if="tab !== 'Cash Advance Transactions'">
-                        <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}}
+                        <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" />  {{returnTab()}}
                         <br>
                         <div class="text-caption">Click a row to perform transactions.</div>
                         </div>
@@ -968,7 +968,7 @@ export default {
             firebaseDb.collection("CashReleaseTrackers").add({MemberID: data.memberid,requestAmount: data.requestAmount, loanAppID: data.requestID})
             .then((doc)=>{
               let trackID = doc.id.toString().slice(0,10)
-              this.sendSMS(data.Phone,`Your P${data.requestAmount}.00 loan is approved! Use this Tracking# ${trackID.toUpperCase()} to get your cash advance. `)
+              this.sendSMS(data.Phone,`Your P${data.requestAmount}.00 cash advance is approved! Use this Tracking# ${trackID.toUpperCase()} to get your cash advance. `)
               firebaseDb.collection("LoanApplications").doc(data.requestID).update({CashReleaseTrackingID: trackID})
               .then(()=>{
                 this.selected = {}
@@ -1044,7 +1044,7 @@ export default {
                 console.log('memberdata update success')
                 let day = date.formatDate(new Date,'Do')
                 console.log(day,'day')
-                this.sendSMS(data.Phone,`P${data.requestAmount}.00 cash loan is ACTIVE. 2% Interest will add to the balance every ${day} of the month after 2 months.`)
+                this.sendSMS(data.Phone,`P${data.requestAmount}.00 cash advance is ACTIVE. 2% Interest will add to the balance every ${day} of the month after 2 months.`)
                 this.selected = {}
                 this.drawer = false    
                 this.$q.notify({
@@ -1081,7 +1081,7 @@ export default {
           let reasonData = reason
           firebaseDb.collection("LoanApplications").doc(data.requestID).update({Status: 'rejected', RejectReason: reasonData, dateRejected: firefirestore.FieldValue.serverTimestamp()})
           .then(() =>{
-              this.sendSMS(data.Phone,`Your P${data.requestAmount}.00 loan is rejected! For this reason: ${reasonData}.`)
+              this.sendSMS(data.Phone,`Your P${data.requestAmount}.00 cash advance is rejected! For this reason: ${reasonData}.`)
               this.selected = {}
               this.drawer = false
               this.$q.notify({
@@ -1113,6 +1113,14 @@ export default {
         .catch((error) => {
         console.log(error.response)
         })   
+      },
+      returnTab(){
+        let tab = this.tab
+        if(tab == 'Loan Request') return 'Cash Advance Request'
+        if(tab == 'Approved Loans') return 'Approved Cash Advance'
+        if(tab == 'Rejected Loans') return 'Rejected Cash Advance'
+        if(tab == 'Active Loans') return 'Active Cash Advance'
+        if(tab == 'Cash Advance Transactions') return 'Cash Advance Transactions'
       },
       getLoanID(trackNo){
           let filter = this.$lodash.filter(this.returnBillingsWithLoanPayment,a=>{

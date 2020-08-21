@@ -45,7 +45,7 @@
               </q-card-section>
 
               <q-card-section class="q-pt-none text-center text-justify">
-                {{ lorem }}
+                {{ card.desc }}
               </q-card-section>
           </q-card>
         </div>
@@ -62,10 +62,10 @@
               <q-card-section class="q-pt-none">
                   <div class="text-subtitle2">"Earn the Cooperative Way"</div>
               </q-card-section>
-
+              
                <q-video
                 :ratio="16/9"
-                src="https://www.youtube.com/embed/k3_tw44QsZQ?rel=0"
+                src="https://www.youtube.com/embed/G3v1Gnr5V1o"
               />
             </q-card>
         </div>      
@@ -101,24 +101,27 @@
 const cards =  [
 {
   icon: 'mdi-piggy-bank', 
-  title: 'Investment and Savings', 
+  title: 'Savings', 
   link: '/about',
-  desc: ''
+  desc: 'Members can deposit their savings in the cooperative, in any amount they desire. It can be withdrawn anytime.'
 },
 {
   icon: 'mdi-credit-card-clock', 
-  title: 'Loans', 
-  link: '/services'
+  title: 'Cash Advances', 
+  link: '/services',
+  desc: 'Members are allowed to withdraw parts of their share-capital. In case of emergency members can opt to withdraw even if they have outstanding balances. '
 },
 {
   icon: 'mdi-gift', 
   title: 'Benefits', 
-  link: '/services'
+  link: '/services',
+  desc: 'Members are rewarded with various benefits, including monetary assistance on License Renewal and emergencies, documentary assistance on franchise renewals and groceries on holidays.'
 },
 {
   icon: 'mdi-account-cash',
   title: 'Account Inquiry',
-  link: '/login'
+  link: '/login',
+  desc: 'Members are rewarded with various benefits, including monetary assistance on License Renewal and emergencies, documentary assistance on franchise renewals and groceries on holidays.'
 }
 ]
 

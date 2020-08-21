@@ -199,7 +199,7 @@
                     <div class="text-caption q-pl-md q-pb-sm">Select advances payment option:</div>
                     <q-option-group
                         v-model="AdvanceOption"
-                        :options="[{label:'All Daily Charges',value:'daily'},{label:'Specific Loan Payment',value:'specific'}]"
+                        :options="[{label:'All Daily Charges',value:'daily'},{label:'Specific Cash Advance Payment',value:'specific'}]"
                         color="teal"
                         type="radio"
                         inline=""
@@ -966,10 +966,19 @@ export default {
                 })[0]                
             }
 
+            if(this.idMember !== null && this.idMember !== undefined){
+                let val = this.idMember.split('&')
+                let sumthing = val[0]
+                return this.MemberData.filter(d => {
+                    return d['.key'] === sumthing
+                })[0]                
+            }
+
             if(this.model == null){
                 return this.MemberData.filter(d => {
                     return d['.key'] === this.model2.id
                 })[0]
+
             } else {
                 return this.MemberData.filter(d => {
                     return d['.key'] === this.model.id

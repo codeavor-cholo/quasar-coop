@@ -83,6 +83,34 @@
              <apexchart max-width="500" type="line" :options="lines" :series="returnSlantings"></apexchart>
           </div>
       </div>
+      <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12
+        bg-teal-3">
+          <div class="q-pa-xl">
+            <div class="text-h6 q-mb-lg text-center text-white text-weight-bold">Top 50 Share of Stocks</div>
+            <q-table
+                class="q-pa-xl"
+                :data="returnShareHolders"
+                :columns="columns"
+                row-key=".key"
+                :separator="false"
+                flat
+                :pagination.sync="initialPagination"
+                :filter="filter"
+            >     
+                <template v-slot:body="props">
+                    <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
+                    <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
+                        <span v-if="col.typeOf !== 'money'" class="">{{ col.value }}</span>
+                        <span v-else>{{ col.value | currency }}</span>
+                    </q-td>
+                    <!-- <q-td key="Actions" class="noPrint">
+                        <q-btn color="teal" icon="receipt" label="view receipt" @click="viewGo(props.row)" flat/>
+                    </q-td> -->
+                    </q-tr>
+                </template> 
+            </q-table>       
+          </div>
+      </div>
     </div>
 
   </div>
@@ -93,6 +121,19 @@ import { firebaseAuth,firebaseApp,firebaseDb,firefirestore } from 'boot/firebase
 export default {
   data() {
     return {
+      filter: '',
+      initialPagination: {
+          descending: false,
+          page: 1,
+          rowsPerPage:0
+          // rowsNumber: xx if getting data from a server
+      }, 
+      columns: [
+          { name: 'Rank', align: 'left', label: 'Rank', field: 'Rank', sortable: true },
+          { name: 'MemberID', align: 'left', label: 'Member ID', field: 'MemberID', sortable: true },
+          { name: 'Name', align: 'left', label: 'Name', field: 'Name', sortable: true },
+          { name: 'TotalShares', align: 'left', label: 'Total Share of Stocks', field: 'Total', sortable: true, typeOf: 'money' },         
+      ],
       charts:{
         xaxis: {
           categories: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
@@ -141,11 +182,29 @@ export default {
       PreRegPersonalData: firebaseDb.collection('PreRegPersonalData'),
       JeepneyData: firebaseDb.collection('JeepneyData'),
       MemberData: firebaseDb.collection('MemberData'),
+      TopShares: firebaseDb.collection('MemberData').orderBy("ShareCapital", "desc").where("ShareCapital", ">", 0),
       ZMemberInactiveness: firebaseDb.collection('FixedPayments').doc('ZMemberInactiveness'),
 
     }
   }, 
   computed:{
+      returnShareHolders(){
+          try {
+              console.log(this.TopShares,'ordered already')
+              let i = 0
+              this.TopShares.forEach(a=>{
+                  i = i + 1
+                  a.Rank = i
+                  a.Name = `${a.FirstName} ${a.LastName}`
+                  a.MemberID = a['.key']
+                  a.Total = a.ShareCapital
+              })
+              return this.TopShares
+          } catch (error) {
+              console.log(error,'returnShareHolders')
+              return []
+          }
+      },
     returnSlantings(){
       try {
         let months = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November']

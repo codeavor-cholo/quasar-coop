@@ -19,8 +19,8 @@
               @click="drawer = false, selected = {}"
             >
               <q-tab name="All" icon="people" label="All" />
-              <q-tab name="No Show" icon="close" label="No Show" />
-              <q-tab name="Unpaid" icon="warning" label="Unpaid" />
+              <q-tab name="No Show" icon="close" label="Unpaid" />
+              <q-tab name="Unpaid" icon="warning" label="Pay Later" />
               <q-tab name="Paid" icon="money" label="Paid" />
             </q-tabs>
           </div>
@@ -194,7 +194,8 @@ export default {
       JeepneyData: firebaseDb.collection('JeepneyData'),   
       ManagementFeeDriver: firebaseDb.collection('FixedPayments').doc('ManagementFeeDriver'),
       ManagementFeeOperator: firebaseDb.collection('FixedPayments').doc('ManagementFeeOperator'),
-      ShareOfStocks: firebaseDb.collection('FixedPayments').doc('ShareOfStocks')   
+      ShareOfStocks: firebaseDb.collection('FixedPayments').doc('ShareOfStocks'),
+      ZMemberInactiveness: firebaseDb.collection('FixedPayments').doc('ZMemberInactiveness'),   
     }
   },
   computed:{
@@ -231,21 +232,24 @@ export default {
             console.log(members,'members')
             if(this.tab == 'Unpaid'){
                 return members.filter(a=>{
-                    return a.StatusOfPaymentToday == 'UnPaid'
+                    return a.StatusOfPaymentToday == 'UnPaid' && this.checkIfActive(a['.key']) == 'active'
                 })
             } 
             else if(this.tab == 'Paid')
             {
                 return members.filter(a=>{
-                    return a.StatusOfPaymentToday == 'Paid'
+                    return a.StatusOfPaymentToday == 'Paid' && this.checkIfActive(a['.key']) == 'active'
                 })
             } 
             else if(this.tab == 'No Show'){
                 return members.filter(a=>{
-                    return a.StatusOfPaymentToday == 'NoShow'
+                    return a.StatusOfPaymentToday == 'NoShow' && this.checkIfActive(a['.key']) == 'active'
                 })                   
             } else { 
-                return this.$lodash.orderBy(members,'StatusOfPaymentToday','desc')
+                let filter = members.filter(a=>{
+                  return this.checkIfActive(a['.key']) == 'active'
+                })
+                return this.$lodash.orderBy(filter,'StatusOfPaymentToday','desc')
             }
 
         } catch (error) {
@@ -483,6 +487,24 @@ export default {
             console.log(error,'error getting number')
             return 0
         }
+    },
+    checkIfActive(memberID){
+      let today = new Date()
+      let monthsBase = date.subtractFromDate(today, {month: this.ZMemberInactiveness.amount})
+
+      let transactions = this.Transactions.filter(a=>{
+        return a.MemberID == memberID && a.timestamp.toDate() >= monthsBase && a.timestamp.toDate() <= today
+      })
+
+
+      if(transactions.length == 0){
+        // console.log(memberID + ' ' + transactions.length+ 'payments',)
+        return 'inactive'
+      } else {
+        // console.log(memberID + ' ' + transactions.length+ 'payments',)
+        return 'active'
+      }
+
     },
 
 

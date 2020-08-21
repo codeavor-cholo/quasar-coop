@@ -183,6 +183,10 @@ const routes = [
       {
         path: "/admin/addstaff",
         component: () => import("pages/AdminPages/AddStaff.vue")
+      },
+      {
+        path: "/admin/topshares",
+        component: () => import("pages/AdminPages/Top50Shares.vue")
       }
     ]
   }

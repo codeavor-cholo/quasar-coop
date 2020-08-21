@@ -305,6 +305,16 @@
                   <q-item-section>MEMBER PAYMENTS</q-item-section>
                 </q-item>  
 
+                <q-item
+                to="/admin/topshares"
+                exact
+                >
+                  <q-item-section avatar>
+                      <q-icon name="leaderboard" />
+                  </q-item-section>
+                  <q-item-section>TOP SHARE OF STOCKS</q-item-section>
+                </q-item> 
+
              </q-expansion-item>
 
        </q-list>
