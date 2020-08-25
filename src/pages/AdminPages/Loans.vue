@@ -369,7 +369,7 @@
               </q-list>
             </q-card-section>
             <q-card-actions align="center" vertical >
-              <q-btn flat label="Approve Loan Request" color="teal " v-close-popup @click="approveCashAdvance" class="full-width" v-if="tab == 'Loan Request'"/>             
+              <q-btn flat label="Approve Cash Advance Request" color="teal " v-close-popup @click="approveCashAdvance" class="full-width" v-if="tab == 'Loan Request'"/>             
               <q-btn flat label="Deny Request" color="red " v-close-popup @click="rejectLoanRequest" class="full-width" v-if="tab == 'Loan Request'"/>  
               <q-btn label="Release Cash Advance" color="teal" icon="money" v-close-popup @click="releaseCashAdvance" class="full-width" v-else/>  
               <q-btn flat label="Close Dialog" color="grey" v-close-popup class="full-width" />
@@ -1086,7 +1086,7 @@ export default {
               this.drawer = false
               this.$q.notify({
                 type: 'negative',
-                message: `Loan Application Rejected.`
+                message: `Cash Advance Application Rejected.`
               })  
           })
           .catch(error=>{
@@ -1102,7 +1102,7 @@ export default {
         let header= {
               'Access-Control-Allow-Origin': '*',
         }
-        let apinumber = 2
+        let apinumber = 4
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         console.log(data)

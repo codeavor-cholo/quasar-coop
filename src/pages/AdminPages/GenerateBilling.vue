@@ -22,8 +22,8 @@
               >
                 <q-tab name="New" icon="fiber_new" label="New Statements (Quota)" />
                 <q-tab name="Sent" icon="present_to_all" label="Sent Statements (Quota)"/>
-                <q-tab name="New Loan" icon="fiber_new" label="New Statement (Loans)" />
-                <q-tab name="Sent Loan" icon="present_to_all" label="Sent Statement (Loans)"/>
+                <q-tab name="New Loan" icon="fiber_new" label="New Statement (Cash Advance)" />
+                <q-tab name="Sent Loan" icon="present_to_all" label="Sent Statement (Cash Advance)"/>
 
 
               </q-tabs>
@@ -446,9 +446,9 @@ export default {
                   b.BillingName = this.getMemberData(no).FirstName + ' ' + this.getMemberData(no).LastName
                   b.BillingPhone = this.getMemberData(no).Phone
                   b.BillingMonth = lastMonth+ ' '+lastMonthYear
+                  b.CheckMonth = lastMonth
                   let str = b.BillingName+b.BillingMonth+b.PlateNumber
                   b.SentID = str.replace(/\s/g, "");
-
 
 
                 })
@@ -470,8 +470,10 @@ export default {
             let withBalance = []
             let noBalance = []
 
+
             pays.forEach(a=>{
-              if(a.Count < 18){
+
+              if(a.Count < 18){     
                 let noPay = 18 - a.Count
                 let balance = parseInt(this.ManagementFeeOperator.amount) * noPay
                 a.AmountPerDay = parseInt(this.ManagementFeeOperator.amount)
@@ -628,6 +630,40 @@ export default {
         }
     },
     methods:{
+      checkIfNeedPaused(a){
+            const pause = {
+              PlateNumber: 'ABC-123',
+              PauseStartDate: Date.now(),
+              DaySpan: 3
+            }
+
+            let PauseStartDateEnd = date.endOfDate(pause.PauseStartDate, 'month')
+            let EndPauseDate = date.addToDate(pause.PauseStartDate,{ days: pause.DaySpan})
+            let EndPauseDateEnd = date.endOfDate(EndPauseDate,'month')
+
+            // console.log(PauseStartDateEnd,'PauseStartDateEnd')
+            // console.log(EndPauseDate,'EndPauseDate')
+            if(a.PlateNumber === pause.PlateNumber){
+              console.log('been here')
+              if(this.returnMonth(pause.PauseStartDate) == this.returnMonth(EndPauseDate)){
+                console.log('status505: isan month lng sila')
+
+              } else {
+                console.log('status505: they are not')
+                // get differences
+                let startDiff = date.getDateDiff(PauseStartDateEnd, pause.PauseStartDate,  'days')
+
+                let endDiff = date.getDateDiff(EndPauseDateEnd, EndPauseDate,  'days')
+
+                console.log(`difference start ${startDiff} end ${endDiff}`)
+              }
+            }
+            //check if pasok sa isang month
+
+      },
+      returnMonth(params){
+        return date.formatDate(params,'MMM')
+      },
       getIndexActiveLoans(array,cashID){
         let index = this.$lodash.findIndex(array,a=>{
           return a.CashReleaseTrackingID == cashID
@@ -746,7 +782,7 @@ export default {
                       .then((doc)=>{
                         console.log('created billing tracker')
                         let trackID = doc.id.toString().slice(0,10)
-                        this.sendSMS(data.BillingPhone,`${data.Status}, P${data.BillingBalance}.00 worth of balances in your loans. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                        this.sendSMS(data.BillingPhone,`${data.Status}, P${data.BillingBalance}.00 worth of balances in your cash advance. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
                         console.log('sent sucess!')
 
 

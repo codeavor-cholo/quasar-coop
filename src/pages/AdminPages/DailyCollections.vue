@@ -6,8 +6,8 @@
         </h6>   
         <q-separator class="noPrint"/>     
         <div class="fit  table-cut">
-        <div class="fit yesPrint">
-            <div class="text-h6 row justify-between fit q-mb-md">
+        <div class="fit yesPrint q-px-lg">
+            <div class="text-h6 row justify-between fit q-mb-md ">
                 <div>
                     Daily Collections Report
                     <div class="text-caption">Prepared By: {{returnLogged.FirstName}} {{returnLogged.LastName}}</div>
@@ -16,7 +16,7 @@
                     {{$moment(today).format('LL')}}
                 </div>
             </div>
-            <hr style="border-height:1px;border-color:#444444" class="full-width">
+            <hr style="border-height:1px;border-color:#444444" class="">
         </div>
         <q-table
             class="q-pa-md"
@@ -249,10 +249,11 @@ export default {
                 { name: 'OrNo', align: 'left', label: 'OrNo#', field: 'OrNo', sortable: true },            
                 { name: 'TransactionType', align: 'left', label: 'Transaction Type', field: 'TransactionType', sortable: true },
                 { name: 'MF', align: 'left', label: 'MGT.FEE', field: 'ManagementFee', sortable: true, typeOf: 'money' }, 
+                { name: 'FS', align: 'left', label: 'F/S', field: 'FS', sortable: true, typeOf: 'money' }, 
                 { name: 'SS', align: 'left', label: 'S/S', field: 'ShareCapital', sortable: true, typeOf: 'money' }, 
                 { name: 'MSD', align: 'left', label: 'MSD', field: 'SavingsDeposit', sortable: true, typeOf: 'money' }, 
                 { name: 'ADV', align: 'left', label: 'ADV.', field: 'AdvancesAmount', sortable: true, typeOf: 'money' }, 
-                { name: 'AR', align: 'left', label: 'AR', field: 'AmountPaid', sortable: true, typeOf: 'money' }, 
+                { name: 'AR', align: 'left', label: 'AR', field: 'AR', sortable: true, typeOf: 'money' }, 
                 { name: 'Total', align: 'left', label: 'Total', field: 'Total', sortable: true, typeOf: 'money' },     
                 { name: 'Actions', align: 'left', label: 'Actions', }, 
             ],
@@ -319,6 +320,8 @@ export default {
                     let member = this.getMemberData(a.MemberID)
                     if(member !== undefined){
                         a.BillingName = `${member.FirstName} ${member.LastName}`
+                        a.AR = a.TransactionType == 'Bills Payment' ? a.Total : 0
+                        a.FS = this.finfFS(a)
                         return date.formatDate(a.timestamp.toDate(),'MMM DD YYYY') == date.formatDate(this.today,'MMM DD YYYY')
                     }
                 })
@@ -334,6 +337,20 @@ export default {
     },
 
     methods:{
+        finfFS(transaction){
+            if(transaction.Others !== undefined){
+                let other = transaction.Others.filter(a=>{
+                    return a.description == 'F/S'
+                })
+
+                if(other.length > 0){
+                    return other[0].totalPrice
+                }
+                return 0
+            }
+
+            return 0
+        },
         getMemberData(id){
             try {
                 return this.MemberData.filter(a=>{
@@ -373,8 +390,9 @@ export default {
     }
 }
 </script>
-<style type = "text/css">
+<style type = "text/css" scoped>
    .yesPrint {display:none;}
+   
 @media print {
    .noPrint {display:none;}
    .yesPrint {display:block;}
@@ -388,6 +406,7 @@ export default {
         margin: 0;
         padding: 0;
         height: 100%;
+        zoom: 80%
     }
 
     div .q-table__top{
