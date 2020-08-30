@@ -59,10 +59,10 @@ export default {
 
             firebaseAuth.signInWithEmailAndPassword(emailAdd, this.password)
               .then(result => {
-              console.log(result, 'result')
+              // console.log(result, 'result')
 
             //   let user = result.user
-            //   console.log(user,'user')
+            //   // console.log(user,'user')
 
             //   let findUser = this.Users.filter(a=>{
             //       return a.MemberID == `NGTSC${this.email}`
@@ -74,7 +74,7 @@ export default {
 
               firebaseAuth.setPersistence(this.$firebase.auth.Auth.Persistence.LOCAL)
                   .then(function() {
-                    console.log('setPersistence!')
+                    // console.log('setPersistence!')
                     // Existing and future Auth states are now persisted in the current
                     // session only. Closing the window would clear any existing state even
                     // if a user forgets to sign out.
@@ -87,13 +87,13 @@ export default {
                     
                     var errorCode = error.code;
                     var errorMessage = error.message;
-                    console.log(errorMessage)
+                    // console.log(errorMessage)
                   });
                     self.$router.push('/admin/dashboard')
 
               })
               .catch(err =>{
-                console.log(err, 'error')
+                // console.log(err, 'error')
                 self.$q.dialog({
                     title: `${err.message}`,
                     type: 'negative',

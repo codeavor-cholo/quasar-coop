@@ -93,7 +93,7 @@ export default {
     returnNotif(){
 
       let all = [...this.Transactions,...this.WithdrawalApplications,...this.LoanApplications,...this.PreRegPersonalData,...this.JeepneyData]
-      // console.log(all.length,'all')
+      // // console.log(all.length,'all')
       let today = all.filter(a=>{
         if(a.ORCR !== undefined){
           a.timestamp = a.dateAdded
@@ -119,13 +119,13 @@ export default {
 
         return a.timestamp !== null && a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')
       })
-      console.log(today,'today')
+      // console.log(today,'today')
       let notifs = []
       today.forEach(a=>{
         notifs.push(this.mapNotifications(a,a.notifType))
       })
 
-      console.log(notifs,'notifs')
+      // console.log(notifs,'notifs')
       return this.$lodash.orderBy(notifs,'dateTime','desc')
     },
     returnNotToday(){
@@ -156,13 +156,13 @@ export default {
 
             return a.timestamp !== undefined && date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY') !== date.formatDate(new Date(),'MM-DD-YYYY')
         })
-        console.log(today,'today')
+        // console.log(today,'today')
         let notifs = []
         today.forEach(a=>{
             notifs.push(this.mapNotifications(a,a.notifType))
         })
 
-        console.log(notifs,'notifs')
+        // console.log(notifs,'notifs')
         return this.$lodash.orderBy(notifs,'dateTime','desc')
         
     }
@@ -176,7 +176,7 @@ export default {
                 this.loading = false
             }, 3000)
         } else {
-            console.log(this.showMore,'wtf')
+            // console.log(this.showMore,'wtf')
             this.noMore = true
         }
     },

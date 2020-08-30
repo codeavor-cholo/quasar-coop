@@ -31,7 +31,7 @@
         >
           <q-tab name="membership" label="Membership" />
           <q-tab name="savingsdeposit" label="Savings and Deposit" />
-          <q-tab name="loans" label="Loans" />
+          <q-tab name="loans" label="Cash Advance" />
         </q-tabs>
 
         <q-separator />
@@ -66,10 +66,10 @@
                 <template>
                     <div class="text-h6 text-teal-4"><q-icon class="q-mr-xs" color="teal" name="mdi-check-circle" />ACCESS TO AFFORDABLE PRODUCTS AND SERVICES <br>
                         - As a member, you have access to competitive financial and relevant services to support your socio-economic needs.</div>
-                    <div class="text-h6 text-teal-4"><q-icon class="q-mr-xs" color="teal" name="mdi-check-circle" />LOAN INSURANCE <br>
-                        - Your loan availment is covered by the insurance. In case of death, payment of outstanding balance will be shouldered by the insurance provider</div>
+                    <div class="text-h6 text-teal-4"><q-icon class="q-mr-xs" color="teal" name="mdi-check-circle" />CASH ADVANCE INSURANCE <br>
+                        - Your cash advance availment is covered by the insurance. In case of death, payment of outstanding balance will be shouldered by the insurance provider</div>
                     <div class="text-h6 text-teal-4"><q-icon class="q-mr-xs" color="teal" name="mdi-check-circle" />PATRONAGE REFUND <br>
-                        - If loaning, you are entitled for patronage refund (Rebates in cash and gifts every December)</div>
+                        - If you avail the cash advance, you are entitled for patronage refund (Rebates in cash and gifts every December)</div>
                     <div class="text-h6 text-teal-4"><q-icon class="q-mr-xs" color="teal" name="mdi-check-circle" />LICENSE BENEFIT <br>
                         - As a you're paying the fees consistently, you will recieve a ₱700.00 license renewal money.</div>
                 </template>
@@ -104,18 +104,18 @@
           </q-tab-panel>
 
           <q-tab-panel name="loans">
-            <div class="text-h3 text-teal q-mb-md">Loans</div>
+            <div class="text-h3 text-teal q-mb-md">Cash Advance</div>
             <q-separator  />
              <br>
                <q-img
-                    src="../../statics/icons/Loans.jpg"
+                    src="../../statics/icons/Cash-Advance-Loans.jpg"
                     class="time-deposit height: 100px; width: 100px;"
                     color="teal"
                     spinner-color="teal"
                     spinner-size="82px"
                   />
                   <div class="text-h6 text-teal-4 q-ma-md">
-                    New Gsis Cooperative offers the most affordable loan packages. 
+                    New Gsis Cooperative offers the most affordable cash advance packages. 
                     In order to provide speedy financial assistance 
                     to its members not only for their day to day needs, New Gsis Cooperative ensures that excellent 
                     and efficient Service is rendered to all.  New Gsis Cooperative wishes to uplift the lives of its

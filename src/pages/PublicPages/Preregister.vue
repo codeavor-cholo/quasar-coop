@@ -90,7 +90,7 @@
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
                   />
                   <q-select color="teal-4" v-model="PreRegData.CivilStatus"
-                  :options="['Single', 'Married', 'Widow']"
+                  :options="['Single', 'Married', 'Widowed', 'Separated', 'Divorced']"
                   label="Civil Status"
                   lazy-rules
                   :rules="[ val => val && val.length > 0 || 'Please type something']"
@@ -459,13 +459,13 @@ export default {
   },
   methods: {
     changeMemberDetails(val){
-      console.log(val,'operator chosen')
+      // console.log(val,'operator chosen')
       var optDetails = this.Operators.filter(function(e) {
 
         return e['.key'] === val.id
       })[0]
 
-      console.log(optDetails,'opt Details')
+      // console.log(optDetails,'opt Details')
       this.OperatorDetails = optDetails
       this.isOperatorFound = true
     },  
@@ -555,7 +555,7 @@ export default {
       let childurl = ''
       this.PreRegData.timestamp = firefirestore.FieldValue.serverTimestamp()
       this.PreRegData.Phone = this.returnNumberNoMask
-      // console.log(this.PreRegData)
+      console.log(this.PreRegData)
       this.$firestore.PreReg.add(this.PreRegData).then((doc) => {
         id = doc.id
         return id
@@ -564,14 +564,14 @@ export default {
 
         const filename = this.LicenseImage.name
         const ext = filename.slice(filename.lastIndexOf('.'))
-        console.log(id, 'id')
+        // console.log(id, 'id')
         childurl = id + ext
         return firebaseSto.ref('PreReg/' + childurl).put(this.LicenseImage)
         .then(snapshot => {
             return snapshot.ref.getDownloadURL();
         }).
         then(downloadURL => {
-            console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
+            // console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
             return firebaseDb.collection("PreRegPersonalData").doc(id).update({
               imageUrlLic: downloadURL,
               imageUrlPro: 'https://cdn2.iconfinder.com/data/icons/4web-3/139/header-account-image-line-512.png'
@@ -587,7 +587,7 @@ export default {
         })
         .catch(error => {
             // Use to signal error if something goes wrong.
-            console.log(`Failed to upload file and get link - ${error.message}`);
+            // console.log(`Failed to upload file and get link - ${error.message}`);
             this.$q.loading.hide()
          })
       })
@@ -597,14 +597,14 @@ export default {
         this.JeepneyList.forEach(a=>{
           const filename = a.ORCR.name
           const ext = filename.slice(filename.lastIndexOf('.'))
-          console.log(id, 'id')
+          // console.log(id, 'id')
           let childurl = a.PlateNumber+'_'+id + ext
           return firebaseSto.ref('JeepUploads/' + childurl).put(a.ORCR)
           .then(snapshot => {
               return snapshot.ref.getDownloadURL();
           }).
           then(downloadURL => {
-              console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
+              // console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
 
               let toSave = {
                 PlateNumber: a.PlateNumber,
@@ -616,7 +616,7 @@ export default {
           })
           .catch(error => {
               // Use to signal error if something goes wrong.
-              console.log(`Failed to upload file and get link - ${error.message}`);
+              // console.log(`Failed to upload file and get link - ${error.message}`);
           })
         })
     },
@@ -641,11 +641,11 @@ export default {
       })
       fileReader.readAsDataURL(files[0])
       this.LicenseImage = files[0]
-      console.log(this.LicenseImage,'image')
+      // console.log(this.LicenseImage,'image')
     },
     onFilePicked2(event){
       const files = event.target.files
-      console.log(files,'files input')
+      // console.log(files,'files input')
       let filename = files[0].name
       if (filename.lastIndexOf('.') <= 0){
         return alter('Please add a valid file!')
@@ -657,7 +657,7 @@ export default {
       })
       fileReader.readAsDataURL(files[0])
       this.JeepneyDetails.ORCR = files[0]
-      console.log(this.JeepneyDetails.ORCR,'ORCR')
+      // console.log(this.JeepneyDetails.ORCR,'ORCR')
     },
     onSubmit () {
     this.$q.loading.show({
@@ -695,13 +695,13 @@ export default {
       this.$refs.imginput2.resetValidation()
     },
     test () {
-      console.log(this.Operators)
-      console.log(this.Operator)
+      // console.log(this.Operators)
+      // console.log(this.Operator)
       let operatorDetails = this.Operators.forEach(function(e) {
         let optname = e.FirstName + ' ' + e.LastName
         let MemberID = e['.key']
 
-        console.log(e)
+        // console.log(e)
         if(optname == this.Operator){
            var optdetails = {
             MemberID: MemberID,
@@ -736,14 +736,14 @@ export default {
       let apinumber = 4
 
       var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
-      console.log(data)
+      // console.log(data)
       axios.post('https://toned-tabulation.000webhostapp.com/index.php', data )
       .then(response => {
-        console.log(response)
+        // console.log(response)
         this.$refs.stepper.next()
       })
       .catch((error) => {
-      console.log(error.response)
+      // console.log(error.response)
       })   
     },
     addJeep2List(){
@@ -757,7 +757,7 @@ export default {
         this.JeepneyDetails.PlateNumber = this.JeepneyDetails.PlateNumber.toUpperCase()
         this.JeepneyList.push(this.JeepneyDetails)
         this.resetJeepForm()
-        console.log(this.JeepneyList,'jeep list')
+        // console.log(this.JeepneyList,'jeep list')
       }      
     },
     resetJeepForm(){
@@ -772,7 +772,7 @@ export default {
       })
     },
     onDelete(jeep,i){
-      console.log(jeep,i)
+      // console.log(jeep,i)
       this.JeepneyList.splice(i,1)
     },
     createValue (val, done) {
@@ -829,7 +829,7 @@ export default {
     },
     returnNumberNoMask(){
       let number = this.PreRegData.Phone.toString()
-      console.log(number.replace(/[^a-zA-Z0-9]/g, ""),'number')
+      // console.log(number.replace(/[^a-zA-Z0-9]/g, ""),'number')
       return number.replace(/[^a-zA-Z0-9]/g, "")
     },
     membersIdOptions () {
@@ -841,7 +841,7 @@ export default {
           id: d['.key'],
         }
       })
-      console.log(opt,'opt')
+      // console.log(opt,'opt')
       return opt
       // Object.freeze(options)
     },

@@ -167,7 +167,7 @@ export default {
     computed:{
         returnFixedPayments(){
             try {
-                console.log(this.FixedPayments,'fixed')
+                // console.log(this.FixedPayments,'fixed')
                 return this.FixedPayments                
             } catch (error) {
                 return []
@@ -215,7 +215,7 @@ export default {
                     color: 'teal-4',
                     textColor: 'white',
                     icon: 'check',
-                    message: "Success Saving Changes in "+ this.description,
+                    message: "Success Saving Changes in "+ save.description,
                     })               
             })
 

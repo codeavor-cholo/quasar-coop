@@ -108,13 +108,14 @@ export default {
   
 }
 </script>
-<style type = "text/css">
+<style>
   @media print {
     #printMe {
       padding: 0px;
       margin: 0px;
-      page-break-after: avoid;
+      page-break-inside: avoid;
     }
+
    .noPrint {display:none;}
    .yesPrint {display:block;}
 

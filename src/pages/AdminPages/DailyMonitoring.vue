@@ -37,7 +37,7 @@
                   >
                     <template v-slot:top>
                       <div class="row justify-between">
-                        <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{tab}} Members
+                        <div class="text-h6 text-weight-regular"><q-icon :name="returnIconofTable" /> {{returnTitle(tab)}} Members
                         <br>
                         <div class="text-caption">Click a row to perform transactions.</div>
                         </div>
@@ -213,10 +213,10 @@ export default {
             members.forEach(a=>{
                 let today = date.formatDate(new Date(this.today),'MM/DD/YYYY')
                 let filter = this.Transactions.filter(b=>{
-                    return b.MemberID == a['.key'] && today == date.formatDate(new Date(b.timestamp.toDate()),'MM/DD/YYYY')
+                    return b.TransactionType !== 'Bills Payment' && b.ManagementFee !== undefined && b.ManagementFee !== 0 && b.MemberID == a['.key'] && today == date.formatDate(new Date(b.timestamp.toDate()),'MM/DD/YYYY')
                 })
 
-                // console.log(filter,'filter')
+                console.log(filter,'filter')
 
                 a.StatusOfPaymentToday = filter.length > 0 ? 'Paid' : 'NoShow'
 
@@ -400,7 +400,12 @@ export default {
       }
 
       if(this.returnSelectRow.jeepUnit == 'NONE' || this.returnSelectRow.jeepUnit == null){
-
+          let units = null
+          if(this.selected.Designation == 'Driver'){
+              units = this.selected.Operator.MemberID
+          } else {
+              units = this.selected['.key']
+          }
           this.$q.dialog({
           title: 'Jeepney Plate Number',
           message: 'Choose a jeep / unit:',
@@ -408,7 +413,7 @@ export default {
               type: 'radio',
               model: 'opt1',
               // inline: true
-              items: this.getUnitsOfOperator(this.selected['.key'])
+              items: this.getUnitsOfOperator(units)
           },
           cancel: true,
           persistent: true
@@ -506,6 +511,11 @@ export default {
       }
 
     },
+    returnTitle(tab){
+      if(tab == 'No Show') return 'Unpaid'
+      if(tab == 'Unpaid') return 'Pay Later'
+      return tab
+    }
 
 
   }

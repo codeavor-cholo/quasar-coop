@@ -257,7 +257,7 @@
             <q-card-section class="row items-center">
               <q-avatar icon="warning" color="white" text-color="warning"/>
               <span class="q-ml-sm" v-if="tab == 'Loan Request'">Do you want to approve this cash advance request ?</span>
-              <span class="q-ml-sm" v-else>Do you confirm this <b>CASH RELEASE</b> for this loan ?
+              <span class="q-ml-sm" v-else>Do you confirm this <b>CASH RELEASE</b> for this Cash Advance ?
               <br> This transaction cannot be undone.
               </span>
             </q-card-section>
@@ -582,7 +582,7 @@ export default {
               OperatorID: opID
           }
           })
-          console.log(opt,'opt')
+          // console.log(opt,'opt')
           return opt
           // Object.freeze(options)
       },
@@ -620,7 +620,7 @@ export default {
           let req = this.LoanApplications.filter(b=>{return b.Status == 'onprocess'})
           let map = req.map(a=>{
             let id = a.MemberID
-            console.log(this.getMemberData(id),'member')
+            // console.log(this.getMemberData(id),'member')
             
 
             let sumLoans = this.$lodash.sumBy(this.getMemberData(id).activeLoans,a=>{
@@ -648,7 +648,7 @@ export default {
                   Phone: this.getMemberData(id).Phone    
             }
           })
-          console.log(map,'loans')
+          // console.log(map,'loans')
           return map          
         } catch (error) {
           return []
@@ -661,7 +661,7 @@ export default {
             return this.approvedSample[0]
           } else {
             this.selected.avatar = this.selected.firstname.charAt(0)
-            console.log(this.selected,'selectedrow')
+            // console.log(this.selected,'selectedrow')
             return this.selected
           }
         } catch (error) {
@@ -685,7 +685,7 @@ export default {
           
           withLoans.forEach(q=>{
             q.activeLoans.forEach(w=>{
-              console.log('loan data',w)
+              // console.log('loan data',w)
               let total = w.TotalBalance == undefined ? w.toPayAmount : w.TotalBalance
               let object = {
                 memberid: q['.key'],
@@ -703,12 +703,12 @@ export default {
 
             })
           })
-          console.log(withLoans,'withLoans')
-          console.log(mapDisplay,'active loans display')
+          // console.log(withLoans,'withLoans')
+          // console.log(mapDisplay,'active loans display')
 
           return mapDisplay
         } catch (error) {
-          console.log(error,'returnActiveLoans')
+          // console.log(error,'returnActiveLoans')
           return []
         }
       },
@@ -740,7 +740,7 @@ export default {
                     }
                 })
 
-                console.log(loanRelated,'loanRelated')
+                // console.log(loanRelated,'loanRelated')
 
                 let apps = this.$lodash.map(this.LoanApplications,a=>{
                     let appli = {...a}
@@ -748,7 +748,7 @@ export default {
                     return appli
                 })
 
-                console.log(apps,'apps')
+                // console.log(apps,'apps')
                 let ids = []
                 
                 apps.forEach(a=>{
@@ -757,7 +757,7 @@ export default {
                     }
                 })
 
-                console.log(ids,'ids')
+                // console.log(ids,'ids')
 
                 let pullRequest = []
 
@@ -803,18 +803,18 @@ export default {
                     })
                 })
 
-                console.log(apps, 'apps')
-                console.log(pullRequest,'pullRequest')
+                // console.log(apps, 'apps')
+                // console.log(pullRequest,'pullRequest')
 
                 
                 let order = this.$lodash.orderBy([...loanRelated,...pullRequest],a=>{
                     return a.loanRelatedDate
                 },'desc')
 
-                console.log(order,'order')
+                // console.log(order,'order')
                 return order
             } catch (error) {
-                console.log(error,'returnTransactions')
+                // console.log(error,'returnTransactions')
                 return []
             }        
       },
@@ -823,7 +823,7 @@ export default {
           let filter = this.BillingTrackers.filter(a=>{
               return a.InterestAmount !== undefined && a.MemberID == key
           })
-          console.log('filter',filter)
+          // console.log('filter',filter)
           return filter
       },
     },
@@ -835,7 +835,7 @@ export default {
           return filter
       },
       changeMemberDetails(val){
-          console.log(val,'selected val')
+          // console.log(val,'selected val')
       },  
       removeMemberDetails(){
           this.model = null
@@ -877,15 +877,15 @@ export default {
       },      
       returnMapping(req){
         try {
-          console.log(req,'req')
+          // console.log(req,'req')
           let map = req.map(a=>{
             let id = a.MemberID
-            console.log(this.getMemberData(id),'member')
+            // console.log(this.getMemberData(id),'member')
             
 
             let sumLoans = this.$lodash.sumBy(this.getMemberData(id).activeLoans,a=>{
               return parseInt(a.Amount)})
-              console.log(sumLoans,'sumLoans')
+              // console.log(sumLoans,'sumLoans')
             let balance = (this.getMemberData(id).ShareCapital / 2) - sumLoans
 
             return {
@@ -913,7 +913,7 @@ export default {
                   Phone: this.getMemberData(id).Phone    
             }
           })
-          console.log(map,'loans')
+          // console.log(map,'loans')
           return map          
         } catch (error) {
           return []
@@ -926,7 +926,7 @@ export default {
           return id == a.MemberID && a.Advances != null && a.Advances != 0
         })
         let order = this.$lodash.orderBy(filter,'dateCheck','desc')
-        // console.log(id, order)
+        // // console.log(id, order)
         if(order.length == 0){
           return []
         } else {
@@ -953,18 +953,18 @@ export default {
       },
       approveCashAdvance(){
         let data = this.returnSelectRow
-        console.log(data,'data')
+        // console.log(data,'data')
         this.$q.dialog({
-          title: 'Confirm Loan Approval',
-          message: 'Would you like to approve this loan request?',
+          title: 'Confirm Cash Advance Approval',
+          message: 'Would you like to approve this Cash Advance request?',
           cancel: true,
           persistent: true
         }).onOk(() => {
-          console.log('>>>> OK')
+          // console.log('>>>> OK')
           //approve loan application => change status only
           firebaseDb.collection("LoanApplications").doc(data.requestID).update({Status: 'approved',dateApproved: firefirestore.FieldValue.serverTimestamp()})
           .then(()=>{
-            console.log('update success! approved')
+            // console.log('update success! approved')
             firebaseDb.collection("CashReleaseTrackers").add({MemberID: data.memberid,requestAmount: data.requestAmount, loanAppID: data.requestID})
             .then((doc)=>{
               let trackID = doc.id.toString().slice(0,10)
@@ -979,33 +979,33 @@ export default {
                 })  
               })
               .catch(error=>{
-                console.log('update error',error)
+                // console.log('update error',error)
               })
             })
             //send SMS that loan is approved
           })
           .catch(error=>{
-            console.log(error,'error')
+            // console.log(error,'error')
           })
 
         }).onCancel(() => {
-          console.log('>>>> Cancel')
+          // console.log('>>>> Cancel')
           this.confirmDialog = true
         })       
 
       },
       releaseCashAdvance(){
         let data = this.returnSelectRow
-        console.log('row data',data)
+        // console.log('row data',data)
 
         let releaseID = this.CashReleaseTrackers.filter(a=>{
           return data.requestID == a.loanAppID
         })[0]
 
-        console.log(releaseID['.key'],'getId')
+        // console.log(releaseID['.key'],'getId')
         const newday = new Date()
         let today = newday.getTime()
-        console.log(today,'today')
+        // console.log(today,'today')
 
         this.$q.dialog({
           title: `Confirm Cash Release`,
@@ -1013,7 +1013,7 @@ export default {
           cancel: true,
           persistent: true
         }).onOk(() => {
-          console.log('start update data')
+          // console.log('start update data')
           // update cashreleased tracker
           // update loan applications
           // update member data activeLoans and advances
@@ -1022,17 +1022,17 @@ export default {
 
           firebaseDb.collection("CashReleaseTrackers").doc(releaseID['.key']).update({Status: 'released',dateReleased: today })
           .then(()=>{
-            console.log('cash trackers update success')
+            // console.log('cash trackers update success')
             firebaseDb.collection("LoanApplications").doc(data.requestID).update({Status: 'released',dateReleased: today, requestID: data.requestID })
             .then(()=>{
-              console.log('loan app update success')
+              // console.log('loan app update success')
 
               let apply = this.LoanApplications.filter(q=>{return q['.key'] == data.requestID})[0]
               let obj = {...apply}
               obj.paidAmount = 0
               obj.dateActivated = today
               delete obj['.key']
-              console.log(obj,'obj')
+              // console.log(obj,'obj')
 
               let array = data.activeLoans
               array.push(obj)
@@ -1041,9 +1041,9 @@ export default {
 
               firebaseDb.collection("MemberData").doc(data.memberid).update({activeLoans: array,Advances: sum})
               .then(()=>{
-                console.log('memberdata update success')
+                // console.log('memberdata update success')
                 let day = date.formatDate(new Date,'Do')
-                console.log(day,'day')
+                // console.log(day,'day')
                 this.sendSMS(data.Phone,`P${data.requestAmount}.00 cash advance is ACTIVE. 2% Interest will add to the balance every ${day} of the month after 2 months.`)
                 this.selected = {}
                 this.drawer = false    
@@ -1052,16 +1052,16 @@ export default {
                   message: `Cash Release Confirmation Success`
                 })           
               }).catch(error=>{
-                console.log('memberdata update error',error)
+                // console.log('memberdata update error',error)
               })
             }).catch(error=>{
-              console.log('loan application update error',error)
+              // console.log('loan application update error',error)
             })
           }).catch(error=>{
-            console.log('tracker update error',error)
+            // console.log('tracker update error',error)
           })
         }).onCancel(() =>{
-          console.log('>>>> Cancel')
+          // console.log('>>>> Cancel')
           this.confirmDialog = true          
         })
       },
@@ -1077,7 +1077,7 @@ export default {
           cancel: true,
           persistent: true
         }).onOk(reason => {
-          console.log('>>>> OK, received', reason)
+          // console.log('>>>> OK, received', reason)
           let reasonData = reason
           firebaseDb.collection("LoanApplications").doc(data.requestID).update({Status: 'rejected', RejectReason: reasonData, dateRejected: firefirestore.FieldValue.serverTimestamp()})
           .then(() =>{
@@ -1090,10 +1090,10 @@ export default {
               })  
           })
           .catch(error=>{
-            console.log(error,'error')
+            // console.log(error,'error')
           })
         }).onCancel(() => {
-          console.log('>>>> Cancel')
+          // console.log('>>>> Cancel')
           this.confirmDialog = true
         })        
       },
@@ -1105,13 +1105,13 @@ export default {
         let apinumber = 4
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
-        console.log(data)
+        // console.log(data)
         axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
         .then(response => {
-          console.log(response)
+          // console.log(response)
         })
         .catch((error) => {
-        console.log(error.response)
+        // console.log(error.response)
         })   
       },
       returnTab(){

@@ -368,7 +368,7 @@ export default {
                 OperatorID: opID
             }
             })
-            console.log(opt,'opt')
+            // console.log(opt,'opt')
             return opt
             // Object.freeze(options)
         },
@@ -401,7 +401,7 @@ export default {
             }),b=>{
                 return parseFloat(b.Total)
             })
-            console.log(sum,'returnSumDailyCollectionsPayment')
+            // console.log(sum,'returnSumDailyCollectionsPayment')
             return sum
         },
         returnSumDailyCollections(){
@@ -420,7 +420,7 @@ export default {
                     a.basisDate = a.timestamp.toDate()
                     return a.MemberID == this.model.id
                 })
-                console.log(filter,'filter')
+                // console.log(filter,'filter')
 
                 if(this.goFilter){
                     let baseStart = null
@@ -430,7 +430,7 @@ export default {
                         })
                     } else {
                         filter = filter.filter(a=>{
-                            if (date.isBetweenDates(a.timestamp.toDate(),new Date(this.filterDateFrom), new Date(this.filterDateTo), { inclusiveFrom: true, inclusiveTo: false })) {
+                            if (date.isBetweenDates(a.timestamp.toDate(),new Date(this.filterDateFrom), new Date(this.filterDateTo), { inclusiveFrom: true, inclusiveTo: true, onlyDate: true  })) {
                                 return a
                             }
                         })
@@ -441,7 +441,7 @@ export default {
                     return a.timestamp.toDate()
                 },'desc')
             } catch (error) {
-                console.log(error,'returnMemberPayments')
+                // console.log(error,'returnMemberPayments')
                 return []
             }
         }
@@ -449,7 +449,7 @@ export default {
 
     methods:{
         changeMemberDetails(val){
-            console.log(val,'selected val')
+            // console.log(val,'selected val')
         },  
         removeMemberDetails(){
             this.model = null
@@ -462,7 +462,7 @@ export default {
                     return a['.key'] == id
                 })[0]                
             } catch (error) {
-                console.log(error,'get')
+                // console.log(error,'get')
                 return []
             }
 
@@ -472,13 +472,13 @@ export default {
             if(this.selected != props.row)
             {
             this.selected = props.row
-            console.log(this.selected,'selected')
+            // console.log(this.selected,'selected')
             } else {
             this.selected = {}
             }
         },
         viewGo(props){
-            console.log(props,'props')
+            // console.log(props,'props')
             this.selected = props
             this.payDialog = true
         },
@@ -529,11 +529,11 @@ export default {
         },
         showInputData(){
             this.goFilter = true
-            console.log(this.filterDateInput, 'specific')
+            // console.log(this.filterDateInput, 'specific')
 
-            console.log(this.filterDateFrom, 'from')
+            // console.log(this.filterDateFrom, 'from')
 
-            console.log(this.filterDateTo, 'to')
+            // console.log(this.filterDateTo, 'to')
         }
     }
 }

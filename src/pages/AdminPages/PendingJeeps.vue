@@ -155,7 +155,7 @@ export default {
       // Binding Collections
     //   this.$bindAsArray("JeepneyData", firebaseDb.collection("JeepneyData"))
     //   .then((JeepneyData) => {
-    //     console.log(JeepneyData,'JeepneyData')
+    //     // console.log(JeepneyData,'JeepneyData')
     //     this.loading = false
     //   })
     },
@@ -168,15 +168,15 @@ export default {
                     }
                     return a.MemberID !== null && a.MemberID !== undefined && a.dateAdded !== undefined
                 })
-                console.log(filter,'filter')
+                // console.log(filter,'filter')
 
                 let order = this.$lodash.orderBy(filter,a=>{
                     return a.dateAdded
                  },'desc')
-                console.log(order,'order')
+                // console.log(order,'order')
                 return order
             } catch (error) {
-                console.log(error)
+                // console.log(error)
                 return []
             }
         }
@@ -209,14 +209,14 @@ export default {
             this.viewDialog = true
         },
         approveUnit(id){
-            console.log(id,'id')
+            // console.log(id,'id')
             this.$q.dialog({
             title: 'Confirm Unit/Jeep Approval',
             message: 'Would you like to approve this unit/jeep application?',
             cancel: true,
             persistent: true
             }).onOk(() => {
-                console.log('ok')
+                // console.log('ok')
                 firebaseDb.collection("JeepneyData").doc(id).update({
                     Status: 'approved',
                     dateApproved: firefirestore.FieldValue.serverTimestamp()
@@ -224,7 +224,7 @@ export default {
             })            
         },
         rejectUnit(id){
-            console.log(id,'id')
+            // console.log(id,'id')
             this.$q.dialog({
             title: 'Confirm Unit/Jeep Rejection',
             message: 'Would you like to reject this unit/jeep application? If Yes, State your reason below.',
@@ -235,7 +235,7 @@ export default {
                 type: 'text', // optional
             },
             }).onOk(data => {
-                console.log('ok',data)
+                // console.log('ok',data)
                 firebaseDb.collection("JeepneyData").doc(id).update({
                     Status: 'rejected',
                     dateRejected: firefirestore.FieldValue.serverTimestamp(),

@@ -296,7 +296,7 @@
                             </q-chip>
                         </template>
                     </q-select>    
-                    <div v-show="MDetails.memberDesignation !== 'Operator' && MDetails.defaultUnit == null"><q-checkbox v-model="defaultUnit" :disable="defaultUnitDisabled" @input="defaultUnitCheck"/> Do you want <b>{{jeepneyDetails}}</b> to be your default Unit/Jeep recorded in your payments?</div>   
+                    <div v-show="MDetails.memberDesignation !== 'Operator' && MDetails.defaultUnit == undefined"><q-checkbox v-model="defaultUnit" :disable="defaultUnitDisabled" @input="defaultUnitCheck"/> Do you want <b>{{jeepneyDetails}}</b> to be your default Unit/Jeep recorded in your payments?</div>   
                 </div>
                 <div v-else>
                     <q-banner class="bg-warning text-white" v-show="MDetails.memberDesignation !== 'Driver'">
@@ -393,7 +393,7 @@
                             <q-separator />
                             <q-item>
                                 <q-item-section class="text-weight-bold">Quota Balance</q-item-section>
-                                <q-item-section side>₱ {{returnModel2Data.QuotaBalance | currency}}.00</q-item-section>
+                                <q-item-section side>{{returnModel2Data.QuotaBalance | currency}}.00</q-item-section>
                             </q-item>
                             <div v-show="returnModel2Data.paymentStatus == 'Partial Payment'">
                             <q-separator />
@@ -879,7 +879,7 @@ export default {
                   return {
                       paidAmount: a.DailyCharge,
                       trackID: a.CashReleaseTrackingID,
-                      requestID: a.requestID
+                      requestID: a.requestID ?? null
                   }
                 })
 
@@ -887,7 +887,7 @@ export default {
                   return {
                       paidAmount: a.MemberPayAmount,
                       trackID: a.CashReleaseTrackingID,
-                      requestID: a.requestID                      
+                      requestID: a.requestID ?? null                     
                   }
               })
 
@@ -1318,8 +1318,17 @@ export default {
                 // this.MDetails.defaultUnit = this.plateNumbers
 
                 console.log('dto 1')
-                if(member.Designation == 'Driver' && member.defaultUnit !== undefined){
+                if(member.Designation == 'Driver' && member.defaultUnit == undefined){
                     this.MDetails.defaultUnit =  null
+                    this.jeepneyDetails = val.plateNumbers    
+                    this.defaultUnitDisabled = false
+                    this.defaultUnit = true  
+                }
+
+                if(member.Designation == 'Driver' && member.defaultUnit !== undefined){
+                    console.log('dto 1meron')
+                    let sumthingYeah = this.idMember.split('&')
+                    this.MDetails.defaultUnit = sumthingYeah[1]
                     this.jeepneyDetails = val.plateNumbers    
                     this.defaultUnitDisabled = false
                     this.defaultUnit = true  
@@ -1614,6 +1623,7 @@ export default {
 
 
         this.payLaterCheckerDeleter(payment)
+        console.log(payment,'payment check')
 
         firebaseDb.collection('Transactions').add(payment)
           .then(async (doc) => {
@@ -1702,6 +1712,7 @@ export default {
               }
 
               this.payLaterCheckerDeleter(includeOperatorPayment) 
+
               firebaseDb.collection('Transactions').add(includeOperatorPayment)
                 .then(async (doc) => {
                   await firebaseDb.collection('MemberData').doc(includeOperatorPayment.MemberID).update({
@@ -1865,11 +1876,14 @@ export default {
       payLaterCheckerDeleter(data){
           try {
               let check = data
+              console.log('payLaterCheckerDeleter', check.Designation)
 
               console.log(data,'data payLaterCheckerDeleter')
               let today = date.formatDate(new Date(),'MM-DD-YYYY')
+              console.log(today,'today')
               let filter = this.$lodash.filter(this.PayLater,a=>{
                   let payDate = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
+                  console.log(payDate,'payDate')
                   return a.memberID == check.MemberID && a.plateNumber == check.jeepneyDetails.PlateNumber && today == payDate
               })[0]
 

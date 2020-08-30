@@ -142,7 +142,7 @@
             </div>
 
             <div class="q-pa-md">
-              <q-select v-model="MemberData.Designation" :options="['Driver', 'Operator', 'Other']" label="Designation" :readonly="upd">
+              <q-select disable v-model="MemberData.Designation" :options="['Driver', 'Operator', 'Other']" label="Designation" :readonly="upd">
                 <template v-slot:before>
                  <q-icon name="mdi-human-handsup" />
                 </template>

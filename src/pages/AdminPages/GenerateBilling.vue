@@ -1,6 +1,6 @@
 <template>
     <q-page>
-        <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Generate Billing <q-icon name="mdi-arrow-right-box" /> {{tab}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span> 
+        <h6 class="q-ma-none q-pl-md q-pt-md text-teal-4">Generate Billing <q-icon name="mdi-arrow-right-box" /> {{returnTitle(tab)}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span> 
           <!-- <q-btn color="primary" icon="check" label="OK" @click="test" class="float-right q-mr-md" dense/> -->
           <q-btn color="grey-10" class="float-right q-mr-md" flat dense="" icon="event" label="adjust date" @click="adjustDate = true" /> 
           <!-- <q-btn color="pink" class="float-right q-mr-md" flat dense="" icon="event" label="delele today sent" @click="deleteTodayShortCut" />  -->
@@ -35,12 +35,14 @@
                       :pagination.sync="pagination"
                       row-key="SentID"
                       flat
+                      :loading="loadingData"
+                      loading-label="Loading your Data..."
                       class="cursor-pointer"
                       :filter="filter"
                   >
                     <template v-slot:top>
                       <div class="row justify-between">
-                        <div class="text-h6 text-weight-regular"> {{tab}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span>
+                        <div class="text-h6 text-weight-regular"> {{returnTitle(tab)}} Statements <span v-show="tab != 'Sent'">({{returnToday}})</span>
                         <br>
                         <div class="text-caption">Click a row to see billing details.</div>
                         </div>
@@ -137,6 +139,8 @@ export default {
             },
             adjustDate: false,
             selected: {},
+            loadingData: false,
+            backdoor: 0
         }
     },
     firestore () {
@@ -158,62 +162,81 @@ export default {
           return date.formatDate(new Date(this.today),'MMMM DD, YYYY')
         },
         returnDataofTable(){
-            // console.log(this.returnJeepneyTransactions,'///')
-            // console.log(this.returnWithBalance,'///')
-            let bills = this.returnWithBalance
+            // // // console.log(this.returnJeepneyTransactions,'///')
+            // // // console.log(this.returnWithBalance,'///')
+            let bills = this.returnWithBalance.filter(a=>{
+                  if(this.$lodash.findIndex(this.BillingTrackers, x=> {return a.SentID == x.SentID}) == -1)
+                  {
+                    return a
+                  }
+                })
 
             let unsent = []
-            let sent = []
+
+            let billFilterSent = this.BillingTrackers.filter(a=>{
+              return a.PlateNumber !== undefined
+            })
+            let sent = billFilterSent.map(b=>{
+              return {
+                ...b,
+                DateSent: date.formatDate(this.getDateSent(b.SentID).timestamp.toDate(),'MM/DD/YYYY'),
+                trackID: this.getDateSent(b.SentID)['.key'].toString().slice(0,10)
+              }
+            })
+
+            // // console.log(bills,'returnWithBalance')
 
             bills.forEach(b=>{
               if(this.$lodash.findIndex(this.BillingTrackers, a=>{ return a.SentID == b.SentID}) == -1){
                 unsent.push(b)
-              } else {
-                b.DateSent = date.formatDate(this.getDateSent(b.SentID).timestamp.toDate(),'MM/DD/YYYY')
-                b.trackID = this.getDateSent(b.SentID)['.key'].toString().slice(0,10)
-                sent.push(b)
-              }
+              } 
             })
+
+            // console.log(unsent,'XXXXX')
+            // console.log(sent,'sent items')
 
             let dataSaved = []
             let withoutBills = []
 
-            let cloneUnsent = this.$lodash.clone(unsent)
+            let cloneUnsent = this.$lodash.clone(unsent) 
             let otherUnsent = []
 
             if(cloneUnsent.length > 0){
-              let withRemainingBalanceBills = this.$lodash.clone(this.returnWithQuotaBalanceLastMonth)
-              // console.log(withRemainingBalanceBills,'after unsent')
+              // console.log('CHECKXXXXXXXXXXXXXXXXX', cloneUnsent)
+              let withRemainingBalanceBills = this.$lodash.uniq(this.returnWithQuotaBalanceLastMonth,'SentID')
+              // // console.log(withRemainingBalanceBills,'after unsent')
               withRemainingBalanceBills.forEach(a=>{
-                cloneUnsent.forEach(q=>{
-                  if(a.PlateNumber == q.PlateNumber && a.BillingName == q.BillingName){
-                    console.log(a,'same')
-                    let obj = {...q}
-                    console.log(obj,'obj')
-                    obj.thisMonthQuota = q.QuotaBalance
-                    obj.QuotaBalance = a.lastBillBalance + q.QuotaBalance
-                    obj.BillingMonth = q.BillingMonth
-                    obj.lastMonthBillingStatement = {...a}
-                    delete obj.billPaidAmount
-                    delete obj.trackID
-                    delete obj.DateSent
-                    obj.Transactions = q.Transactions
-                    obj.NoPayDays = q.NoPayDays
-                    obj.Count = q.Count
-                    obj.AmountPerDay = q.AmountPerDay
-                    
-                    dataSaved.push(obj)
-                  } 
-                })
-                  let index = this.$lodash.findIndex(dataSaved,x=>{
-                    return x.PlateNumber == a.PlateNumber && x.BillingName == a.BillingName
+                if(this.$lodash.findIndex(this.BillingTrackers, x=> {return a.SentID == x.SentID}) == -1){
+                  cloneUnsent.forEach(q=>{
+                    if(a.PlateNumber == q.PlateNumber && a.BillingName == q.BillingName){
+                      // console.log(a,'same')
+                      let obj = {...q}
+                      // console.log(obj,'obj')
+                      obj.thisMonthQuota = q.QuotaBalance
+                      obj.QuotaBalance = a.lastBillBalance + q.QuotaBalance
+                      obj.BillingMonth = q.BillingMonth
+                      obj.lastMonthBillingStatement = {...a}
+                      delete obj.billPaidAmount
+                      delete obj.trackID
+                      delete obj.DateSent
+                      obj.Transactions = q.Transactions
+                      obj.NoPayDays = q.NoPayDays
+                      obj.Count = q.Count
+                      obj.AmountPerDay = q.AmountPerDay
+                      
+                      dataSaved.push(obj)
+                    } 
                   })
+                    let index = this.$lodash.findIndex(dataSaved,x=>{
+                      return x.PlateNumber == a.PlateNumber && x.BillingName == a.BillingName
+                    })
 
-                  if(index < 0){
-                    let obj = {...a}
-                    obj.lastMonthBillingStatement = {...a}
-                    dataSaved.push(obj)
-                  }
+                    if(index < 0){
+                      let obj = {...a}
+                      obj.lastMonthBillingStatement = {...a}
+                      dataSaved.push(obj)
+                    }
+                }
               }) 
  
               
@@ -229,20 +252,24 @@ export default {
 
               otherUnsent = [...dataSaved,...withoutBills]
 
-              console.log(this.payLaterCheckerFunction(otherUnsent),'start of paylater checking')
 
-
-              unsent = this.payLaterCheckerFunction(this.$lodash.clone(otherUnsent))
-              console.log(dataSaved,'dataSaved')
-              console.log(withoutBills,'without')
-              console.log('otherUnsent concat',otherUnsent)
+              unsent = this.$lodash.uniq(this.payLaterCheckerFunction(this.$lodash.clone(otherUnsent)),'SentID')
+              // console.log(dataSaved,'dataSaved')
+              // console.log(withoutBills,'without')
+              // console.log('otherUnsent concat',otherUnsent)
 
 
             } else {
-              otherUnsent = this.returnWithQuotaBalanceLastMonth
-              console.log(this.payLaterCheckerFunction(otherUnsent),'start of paylater checking without billing')
-              console.log('otherUnsent',otherUnsent)
-              unsent = this.payLaterCheckerFunction(this.$lodash.clone(otherUnsent))
+              const passOn = this.$lodash.uniq(this.returnWithQuotaBalanceLastMonth,'SentID')
+              let arrayShowForSending = passOn.filter(a=>{
+                if(this.$lodash.findIndex(this.BillingTrackers, x=> {return a.SentID == x.SentID}) == -1)
+                {
+                  return a
+                }
+              })
+
+              unsent = this.$lodash.uniq(this.payLaterCheckerFunction(arrayShowForSending),'SentID')
+              // console.log('XXXCHECK',unsent)
             }
 
             let loans = this.returnWithAdvancesInterest
@@ -266,13 +293,14 @@ export default {
             let todayBase = new Date(this.today)
             let todayStartMonth = date.startOfDate(todayBase,'month')
             let todayBase1week = date.addToDate(todayStartMonth,{days: 7})
-            console.log(todayStartMonth,'todayStart')
-            console.log(todayBase1week,'todayBase1week')
+            // console.log(todayStartMonth,'todayStart')
+            // console.log(todayBase1week,'todayBase1week')
             if (date.isBetweenDates(todayBase,todayStartMonth, todayBase1week, { inclusiveFrom: true, inclusiveTo: false })) {
-              if(this.tab == 'New') return unsent
+              console.log(this.$lodash.uniqBy(unsent,'SentID'),'sent id')
+              if(this.tab == 'New') return this.$lodash.uniqBy(unsent,'SentID')
             }
 
-            // console.log(this.payLaterCheckerFunction(sent,true),'start of paylater checking sent')
+            // // console.log(this.payLaterCheckerFunction(sent,true),'start of paylater checking sent')
             if(this.tab == 'New') return []
             else if(this.tab == 'Sent'){ return sent }
             else if(this.tab == 'New Loan'){ return unsentloans }
@@ -317,8 +345,8 @@ export default {
             let payLaterDate = `${payLaterMonth} ${payLaterMonthYear}`
 
 
-            console.log('returnPayLaterLastMonth')
-            console.log(lastMonth,'lastMonth')
+            // console.log('returnPayLaterLastMonth')
+            // console.log(lastMonth,'lastMonth')
             let filter = this.$lodash.filter(this.PayLater,a=>{
               let dateBase = a.timestamp.toDate()
               let dateMonth = date.formatDate(dateBase,'MMM')
@@ -328,25 +356,25 @@ export default {
               return payLaterDate == payLaterDateBase
             })
 
-            console.log(filter,'filter date months')
+            // console.log(filter,'filter date months')
 
-            console.log('returnPayLaterLastMonth')
+            // console.log('returnPayLaterLastMonth')
             return filter
           } catch (error) {
-            console.log(error,'returnPayLaterLastMonth')
+            // console.log(error,'returnPayLaterLastMonth')
             return []
           }
         },
         returnWithQuotaBalanceLastMonth(){
           try {
-            const bills = this.$lodash.clone(this.LastBillingTrackers)
-            console.log(bills,'bills')
+            const bills = this.LastBillingTrackers
+            // console.log(bills,'bills')
             let lastMonth2 = date.subtractFromDate(new Date(this.today),{month: 2})
-            // console.log(lastMonth,'lastMonth')
+            // // console.log(lastMonth,'lastMonth')
             let billingMonth = date.formatDate(lastMonth2,'MMM')
             let billingMonthYear = date.formatDate(lastMonth2,'YYYY')    
             let lastBillingMonth = billingMonth+' '+billingMonthYear
-            console.log(lastBillingMonth,'lastBillingMonth')
+            // console.log(lastBillingMonth,'lastBillingMonth')
             let withRemainingBalanceBills = []
 
             bills.forEach(a=>{
@@ -359,9 +387,8 @@ export default {
               }
             })
             
-            console.log(withRemainingBalanceBills,'withRemainingBalanceBills')
             let today = this.today
-            // console.log(today,'today base')
+            // // console.log(today,'today base')
             let todayDate = date.formatDate(today,'DD')
             let todayMonth = date.formatDate(today,'M')
             let todayYear = date.formatDate(today,'YYYY')
@@ -370,7 +397,7 @@ export default {
             let lastMonth = date.formatDate(lastMonthStart,'MMM')
             let lastMonthYear = date.formatDate(lastMonthStart,'YYYY')
 
-            const out = []
+            let out = []
             
             withRemainingBalanceBills.forEach(a=>{
                   a.BillingMonth = lastMonth+ ' '+lastMonthYear
@@ -386,12 +413,17 @@ export default {
                   delete object2Push.timestamp
                   delete object2Push.Transactions
                   a.LastMonthBillStatement = object2Push
-                  out.push(object2Push)   
+                  out.push(object2Push) 
             })
-            console.log(out,'out')
-            return out
+
+            return out.filter(a=>{
+                  if(this.$lodash.findIndex(this.BillingTrackers, x=> {return a.SentID == x.SentID}) == -1)
+                  {
+                    return a
+                  }
+                })
           } catch (error) {
-            console.log(error,'returnWithQuotaBalanceLastMonth')
+            // console.log(error,'returnWithQuotaBalanceLastMonth')
             return []
           }
         },
@@ -399,7 +431,7 @@ export default {
           try {
 
               let today = this.today
-              // console.log(today,'today base')
+              // // console.log(today,'today base')
               let todayDate = date.formatDate(today,'DD')
               let todayMonth = date.formatDate(today,'M')
               let todayYear = date.formatDate(today,'YYYY')
@@ -408,17 +440,17 @@ export default {
               let lastMonth = date.formatDate(lastMonthStart,'MMM')
               let lastMonthYear = date.formatDate(lastMonthStart,'YYYY')
 
-              // console.log(todayDate,'today Date')
-              // console.log(todayMonth,'month')
-              // console.log(todayYear,'todayYear')
-              // console.log(lastMonthStart,'lastMonthStart')
-              // console.log(lastMonthEnd,'lastMonthEnd')
+              // // console.log(todayDate,'today Date')
+              // // console.log(todayMonth,'month')
+              // // console.log(todayYear,'todayYear')
+              // // console.log(lastMonthStart,'lastMonthStart')
+              // // console.log(lastMonthEnd,'lastMonthEnd')
 
               if(todayDate >= 1 && todayDate <=7){
                 let withJeeps = this.Transactions.filter(a=>{
                   if(a.jeepneyDetails !== undefined && a.jeepneyDetails !== null){
                     a.PlateNumber = a.jeepneyDetails.PlateNumber
-                    // console.log(a.timestamp.toDate(),'time')
+                    // // console.log(a.timestamp.toDate(),'time')
                     if (date.isBetweenDates(a.timestamp.toDate(),lastMonthStart, lastMonthEnd, { inclusiveFrom: true, inclusiveTo: true })) {
                       return a
                     }
@@ -426,10 +458,10 @@ export default {
                   }
                 }) 
 
-                // console.log(withJeeps,'withJeeps')
+                // // console.log(withJeeps,'withJeeps')
 
                 let groupings = this.$lodash.groupBy(withJeeps,'PlateNumber')
-                // console.log(groupings,'grouping')
+                // // console.log(groupings,'grouping')
 
                 let map = this.$lodash.map(groupings,function(value,key){
                   return {
@@ -453,7 +485,12 @@ export default {
 
                 })
 
-                return map
+                return map.filter(a=>{
+                  if(this.$lodash.findIndex(this.BillingTrackers, x=> {return a.SentID == x.SentID}) == -1)
+                  {
+                    return a
+                  }
+                })
               } else {
                 return  []
               }
@@ -485,7 +522,12 @@ export default {
               }
             })
 
-            return withBalance
+            return withBalance.filter(a=>{
+                  if(this.$lodash.findIndex(this.BillingTrackers, x=> {return a.SentID == x.SentID}) == -1)
+                  {
+                    return a
+                  }
+                })
           } catch (error) {
             return []
           }
@@ -497,14 +539,14 @@ export default {
             })
             return withCashAdvance            
           } catch (error) {
-            console.log(error,'returnWithAdvances')
+            // console.log(error,'returnWithAdvances')
             return []
           }
         },
         returnWithAdvancesInterest(){
           try {
             let today = this.today
-            // console.log(today,'today base')
+            // // console.log(today,'today base')
             let todayDate = date.formatDate(today,'DD')
             let todayMonth = date.formatDate(today,'M')
             let todayYear = date.formatDate(today,'YYYY')
@@ -517,10 +559,10 @@ export default {
             withCashAdvance.forEach(w=>{
               w.activeLoans.forEach(q=>{
                 let activated = new Date(q.dateActivated)
-                // console.log(activated,'date activated')
+                // // console.log(activated,'date activated')
                 let dueInterestDate = date.addToDate(activated,{month: 2})
                 let dueInterestDateStart = date.startOfDate(dueInterestDate,'day')
-                // console.log(dueInterestDateStart, 'due interest')
+                // // console.log(dueInterestDateStart, 'due interest')
 
                 let base = 0
                 if(q.TotalBalance == undefined){
@@ -529,36 +571,36 @@ export default {
                   base = parseFloat(q.TotalBalance)
                 }
                 let balance  = base - parseFloat(q.paidAmount)
-                let str = w.FirstName+ ' '+w.LastName+date.formatDate(today,'MMMDDYYYY')+q.CashReleaseTrackingID
+                let str = w.FirstName+ ' '+w.LastName+date.formatDate(today,'MMMYYYY')+q.CashReleaseTrackingID
                 let SentID = str.replace(/\s/g, "");  
 
                 if(new Date(today) >= new Date(dueInterestDateStart)){
-                  console.log('due na advances mo with interest na')
+                  // console.log('due na advances mo with interest na')
                   // every month add interest to the remaining balance
 
                   let diff = date.getDateDiff(new Date(today),new Date(activated),  'months')
-                  console.log(diff,'diff')
+                  // console.log(diff,'diff')
 
                   let dueDate = date.addToDate(activated,{month: diff})
                   
                   let dueDateStart = date.startOfDate(dueDate,'day')
-                  console.log(dueDateStart,'dueDateStart')
+                  // console.log(dueDateStart,'dueDateStart')
 
                   let dueDate1week = date.addToDate(new Date(dueDateStart),{days: 7})
-                  console.log(dueDate1week,'dueDate1week')
+                  // console.log(dueDate1week,'dueDate1week')
 
                   if (date.isBetweenDates(new Date(today), new Date(dueDateStart), new Date(dueDate1week), { inclusiveFrom: true, inclusiveTo: true })) {
                     // Do something with dateTarget
-                    console.log('due na advances mo')
+                    // console.log('due na advances mo')
                     //compute Interest to be added
                     
                     let interestRate = parseInt(this.InterestRates.amount) / 100
                     let interestAmount = balance * interestRate
-                    console.log(balance,'advances to pay')
-                    console.log(interestRate,'interestRate')
-                    console.log(interestAmount,'interestAmount')
+                    // console.log(balance,'advances to pay')
+                    // console.log(interestRate,'interestRate')
+                    // console.log(interestAmount,'interestAmount')
                     let total2Pay = balance + interestAmount
-                    console.log(total2Pay,'total2Pay')
+                    // console.log(total2Pay,'total2Pay')
                   
                     let arrayUpdate = {...q}
                     let toAdd = 0
@@ -587,17 +629,17 @@ export default {
                       arrayUpdate: arrayUpdate,
                       arrayRemove: {...q}
                     }
-                    console.log(object,'object')
+                    // console.log(object,'object')
                     withInterest.push(object)
                   } 
 
                 } else {
                     let AMonthAfter = date.addToDate(activated,{month: 1})
                     let AMonthAfterStart = date.startOfDate(AMonthAfter,'day')
-                    // console.log(AMonthAfterStart,'AMonthAfterStart')
+                    // // console.log(AMonthAfterStart,'AMonthAfterStart')
 
                     let AMonthAfter1week = date.addToDate(new Date(AMonthAfterStart),{days: 7})
-                    // console.log(AMonthAfter1week,'AMonthAfter1week')
+                    // // console.log(AMonthAfter1week,'AMonthAfter1week')
                     if (date.isBetweenDates(new Date(today), new Date(AMonthAfterStart), new Date(AMonthAfter1week), { inclusiveFrom: true, inclusiveTo: true })) {
                       let object = {
                         BillingName: w.FirstName+ ' '+w.LastName,
@@ -614,7 +656,7 @@ export default {
                         Status: 'Notice To Pay',
                         CashReleaseTrackingID: q.CashReleaseTrackingID,
                       }      
-                      // console.log(object,'object')
+                      // // console.log(object,'object')
                       withInterest.push(object)    
                     }        
                 }
@@ -624,7 +666,7 @@ export default {
             
             return withInterest
           } catch (error) {
-            console.log(error,'returnWithAdvancesInterest')
+            // console.log(error,'returnWithAdvancesInterest')
             return []
           }
         }
@@ -641,21 +683,21 @@ export default {
             let EndPauseDate = date.addToDate(pause.PauseStartDate,{ days: pause.DaySpan})
             let EndPauseDateEnd = date.endOfDate(EndPauseDate,'month')
 
-            // console.log(PauseStartDateEnd,'PauseStartDateEnd')
-            // console.log(EndPauseDate,'EndPauseDate')
+            // // console.log(PauseStartDateEnd,'PauseStartDateEnd')
+            // // console.log(EndPauseDate,'EndPauseDate')
             if(a.PlateNumber === pause.PlateNumber){
-              console.log('been here')
+              // console.log('been here')
               if(this.returnMonth(pause.PauseStartDate) == this.returnMonth(EndPauseDate)){
-                console.log('status505: isan month lng sila')
+                // console.log('status505: isan month lng sila')
 
               } else {
-                console.log('status505: they are not')
+                // console.log('status505: they are not')
                 // get differences
                 let startDiff = date.getDateDiff(PauseStartDateEnd, pause.PauseStartDate,  'days')
 
                 let endDiff = date.getDateDiff(EndPauseDateEnd, EndPauseDate,  'days')
 
-                console.log(`difference start ${startDiff} end ${endDiff}`)
+                // console.log(`difference start ${startDiff} end ${endDiff}`)
               }
             }
             //check if pasok sa isang month
@@ -701,13 +743,13 @@ export default {
 
         var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
         await this.delay();
-        console.log(data)
+        // console.log(data)
         axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
         .then(response => {
-          console.log(response)
+          // console.log(response)
         })
         .catch((error) => {
-        console.log(error.response)
+        // console.log(error.response)
         })   
       },
       generateQuotaBilling(){
@@ -721,6 +763,11 @@ export default {
             cancel: true,
             persistent: true
           }).onOk(() => {
+            this.$q.loading.show({
+              message: 'Generating Billing.'
+            })      
+            
+            this.loadingData = true
             if(this.tab == 'New' || this.tab == 'Sent'){
               if(this.tab == 'New'){
 
@@ -730,22 +777,26 @@ export default {
 
                 //     firebaseDb.collection("BillingTrackers").add(data)
                 //       .then((doc)=>{
-                //         console.log('created billing tracker')
+                //         // console.log('created billing tracker')
                 //         let trackID = doc.id.toString().slice(0,10)
                 //         this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
-                //         console.log('sent sucess!')
+                //         // console.log('sent sucess!')
 
                 //       })
                 //       .catch(error=>{
-                //         console.log('bill generation error',error)
+                //         // console.log('bill generation error',error)
                 //       })                  
                   
                 // })
-
+                this.$q.loading.show({
+                  message: 'Sending Billing.'
+                })  
                 this.processArray(withBalance)
 
                 this.tab = 'Sent'
-                // this.$forceUpdate()
+                this.$q.loading.hide()
+                this.$forceUpdate()
+                this.loadingData = false
                 
               } else {
                 this.$q.dialog({
@@ -754,13 +805,20 @@ export default {
                   cancel: true,
                   persistent: true
                 }).onOk(() => {
+                  this.$q.loading.show({
+                    message: 'Resending Billing.'
+                  })      
+                  this.loadingData = true
                   let sentAll = []
                   withBalance.forEach(a=>{
                     let data = a
                     if(date.formatDate(new Date(a.DateSent),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')){
-                      this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
+                      this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance} worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
                       sentAll.push(a)
-                      console.log('sent sucess!')
+                      // console.log('sent sucess!')
+                      this.$q.loading.hide()
+                      this.$forceUpdate();
+                      this.loadingData = false
                     } 
 
                   })
@@ -769,22 +827,33 @@ export default {
                         type: 'negative',
                         message: `NO RECENT BILLINGS TO SEND`
                       })  
+                      this.$q.loading.hide()
+                      this.$forceUpdate();
+                      this.loadingData = false
                   }
               
                 })
               }
             } else {
                if(this.tab == 'New Loan'){
+                  this.$q.loading.show({
+                    message: 'Generating Billing.'
+                  }) 
+                  this.loadingData = true
+                    this.$q.loading.show({
+                      message: 'Sending Billing.'
+                    })   
                  withAdvances.forEach(a=>{
                    let data = a
                    data.timestamp = firefirestore.FieldValue.serverTimestamp()
                     firebaseDb.collection("BillingTrackers").add(data)
                       .then((doc)=>{
-                        console.log('created billing tracker')
+                        // console.log('created billing tracker')
                         let trackID = doc.id.toString().slice(0,10)
-                        this.sendSMS(data.BillingPhone,`${data.Status}, P${data.BillingBalance}.00 worth of balances in your cash advance. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
-                        console.log('sent sucess!')
-
+                      
+                        this.sendSMS(data.BillingPhone,`${data.Status}, P${data.BillingBalance} worth of balances in your cash advance. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                        // console.log('sent sucess!')
+                    
 
                         if(data.Status == 'Interest Rate Added'){
                           firebaseDb.collection('MemberData').doc(data.MemberID).update({
@@ -792,26 +861,35 @@ export default {
                               activeLoans: firefirestore.FieldValue.arrayRemove(data.arrayRemove),
                               // activeLoans: firefirestore.FieldValue.arrayUnion(data.arrayUpdate),
                           }).then(()=>{
-                            console.log('active Loans remove success')
+                            // console.log('active Loans remove success')
                             firebaseDb.collection('MemberData').doc(data.MemberID).update({
                                 // Advances: firefirestore.FieldValue.increment(data.InterestAmount),
                                 // activeLoans: firefirestore.FieldValue.arrayRemove(data.arrayRemove),
                                 activeLoans: firefirestore.FieldValue.arrayUnion(data.arrayUpdate),
                             }).then(()=>{
-                              console.log('active Loans union success')
-                              this.tab = 'Sent Loan'
+                              // console.log('active Loans union success')
+                              
                             }).catch(error=>{
-                            console.log(error,'active Loans union  error')
+                            // console.log(error,'active Loans union  error')
                             })   
                           }).catch(error=>{
-                            console.log(error,'active Loans remove error')
+                            // console.log(error,'active Loans remove error')
                           })                          
                         }
+
+
                       }).catch(error=>{
-                        console.log('bill generation error',error)
+                        // console.log('bill generation error',error)
                       })   
                  })
-
+                  
+                  this.tab = 'Sent Loan'
+                  
+                  this.$q.loading.hide()
+                  
+                  this.loadingData = false
+                  // console.log('umaabot nmn dto ee')
+                  this.$forceUpdate();
                } else {
                 this.$q.dialog({
                   title: 'Resend billing ?',
@@ -819,20 +897,30 @@ export default {
                   cancel: true,
                   persistent: true
                 }).onOk(() => {
+                    this.$q.loading.show({
+                      message: 'Re-sending Billing.'
+                    })  
+                    this.loadingData = true
                   let sentAll = []
                   withBalance.forEach(a=>{
                     let data = a
                     if(date.formatDate(new Date(a.DateSent),'MM-DD-YYYY') == date.formatDate(new Date(),'MM-DD-YYYY')){
-                      this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
+                      this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance} worth of balances. Use this Tracking# ${data.trackID.toUpperCase()} to pay. `)
                       sentAll.push(a)
-                      console.log('sent sucess!')
+                      // console.log('sent sucess!')
+                      this.$q.loading.hide()
+                      this.$forceUpdate();
+                      this.loadingData = false
                     }
                   })
                   if(sentAll.length == 0){
                       this.$q.notify({
                         type: 'negative',
                         message: `NO RECENT BILLINGS TO SEND`
-                      })  
+                      })
+                      this.$q.loading.hide()  
+                      this.$forceUpdate();
+                      this.loadingData = false
                   }
               
                 })
@@ -840,20 +928,18 @@ export default {
             }
           })
         } catch (error) {
-          console.log(error,'error')
+          // console.log(error,'error')
         }
       },
       getDateSent(SentID){
         return this.BillingTrackers.filter(a=>{return SentID == a.SentID})[0]
       },
       test(){
-        console.log(this.returnWithQuotaBalanceLastMonth)
+        // console.log(this.returnWithQuotaBalanceLastMonth)
       },
       payLaterCheckerFunction(arrayset){
         try {
           const paylater = this.returnPayLaterLastMonth 
-
-
           
           let group = this.$lodash.groupBy(paylater,'plateNumber')
 
@@ -870,6 +956,7 @@ export default {
             })
           })
 
+
           let payLaterAdded = []
           arrayset.forEach(a=>{
             let filterPay = this.$lodash.filter(map,x=>{
@@ -885,20 +972,16 @@ export default {
 
           })
 
+          // console.log('arraysetXXXX',arrayset)
+          // console.log(paylater,'paylater')
+          // console.log(group,'group')
+          // console.log(map,'map')
+          // console.log(payLaterAdded,'payLaterAdded')
 
-
-          console.log(paylater,'paylater')
-          console.log(group,'group')
-          console.log(map,'map')
-          console.log(payLaterAdded,'payLaterAdded')
-
-          
-
-
-          return arrayset
+          return this.$lodash.uniq(arrayset,'SentID')
         } catch (error) {
-          console.log(error,'payLaterCheckerFunction')
-          return arrayset
+          // console.log(error,'payLaterCheckerFunction')
+          return this.$lodash.uniq(arrayset,'SentID')
         }
       },
       async processArray(array) {
@@ -908,39 +991,47 @@ export default {
 
             await firebaseDb.collection("BillingTrackers").add(data)
               .then(async (doc)=>{
-                console.log('created billing tracker')
+                // console.log('created billing tracker')
                 let trackID = doc.id.toString().slice(0,10)
-                await this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance}.00 worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
-                console.log('sent sucess!')
+                await this.sendSMS(data.BillingPhone,`As of ${data.BillingMonth}, You have P${data.QuotaBalance} worth of balances. Use this Tracking# ${trackID.toUpperCase()} to pay. `)
+                // console.log('sent sucess!')
 
               })
               .catch(error=>{
-                console.log('bill generation error',error)
+                // console.log('bill generation error',error)
               }) 
           
         })
       },
       deleteTodayShortCut(){
-        let showToday = this.BillingTrackers.filter(a=>{
-          let today = date.formatDate(this.today,'MM-DD-YYYY')
-          let time = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
-          console.log(today)
-          console.log(time)
-          return a.timestamp !== undefined && today == time
-        })
+        let uniq = this.$lodash.uniqBy(this.returnDataofTable,'PlateNumber')
+          // console.log(uniq,'ASDF')
+      
+        // let showToday = this.BillingTrackers.filter(a=>{
+        //   let today = date.formatDate(this.today,'MM-DD-YYYY')
+        //   let time = date.formatDate(a.timestamp.toDate(),'MM-DD-YYYY')
+        //   // console.log(today)
+        //   // console.log(time)
+        //   return a.timestamp !== undefined && today == time
+        // })
 
-        console.log(showToday,'showToday')
-        if(showToday.length > 0){
-          showToday.forEach(a=>{
-            firebaseDb.collection("BillingTrackers").doc(a['.key']).delete()
-            .then(()=>{
-              console.log('success delete')
-            })
-          })
-        }
+        // // console.log(showToday,'showToday')
+        // if(showToday.length > 0){
+        //   showToday.forEach(a=>{
+        //     firebaseDb.collection("BillingTrackers").doc(a['.key']).delete()
+        //     .then(()=>{
+        //       // console.log('success delete')
+        //     })
+        //   })
+        // }
 
-          console.log(showToday,'showToday')
+        //   // console.log(showToday,'showToday')
         
+      },
+      returnTitle(tab){
+        if(tab == 'New Loan') return 'New Cash Advance'
+        if(tab == 'Sent Loan') return 'Sent Cash Advance'
+        return tab
       }
     }
 }

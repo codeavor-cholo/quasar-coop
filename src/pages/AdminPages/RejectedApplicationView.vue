@@ -178,7 +178,7 @@ export default {
         //   ref: firebaseDb.collection('PreRegPersonalData').doc(this.penRegId),
         //   objects: true,
         //   resolve: (data) => {
-        //     console.log(data)
+        //     // console.log(data)
         //   }
         // },
         lastMember: firebaseDb.collection('Users').orderBy('MemberID', 'desc').limit(5),
@@ -191,7 +191,7 @@ export default {
     }
   },
   created(){
-    console.log(this.lastMember)
+    // console.log(this.lastMember)
   },
   methods: {
     regMember () {
@@ -218,7 +218,7 @@ export default {
           var date = new Date()
           var id = 'NGTSC' + date.getFullYear() + pad(++lastNumber, 3)
 
-          console.log(id, 'not empty member data id to reg')
+          // console.log(id, 'not empty member data id to reg')
           this.$firestore.MemberData.doc(id).set({
             ...this.PenReg,
             isNewMember: true,
@@ -254,7 +254,7 @@ export default {
                   let apinumber = 2
 
                   var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
-                  console.log(data)
+                  // console.log(data)
                   // https://maleficent-sms.000webhostapp.com/index.php
 
                   const options = {
@@ -268,7 +268,7 @@ export default {
                   // axios(options)
                   axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
                   .then(response => {
-                    console.log(response)
+                    // console.log(response)
                     this.$q.notify({
                       icon: 'info',
                       message: 'Approved',
@@ -282,7 +282,7 @@ export default {
                     // load the member form
                   })
                   .catch((error) => {
-                  console.log(error.response)
+                  // console.log(error.response)
                   this.$q.loading.hide()
                   })   
 
@@ -292,7 +292,7 @@ export default {
 
           })
           .catch(err => {
-            console.log(err)
+            // console.log(err)
             this.$q.notify({
               icon: 'info',
               message: 'An error occur',
@@ -305,7 +305,7 @@ export default {
           var date = new Date()
           let id = 'NGTSC' + date.getFullYear() + '000'
           // delete this.PenReg['.key']
-          console.log('empty memberdata', id)
+          // console.log('empty memberdata', id)
           this.$firestore.MemberData.doc(id).set({
             ...this.PenReg,
             isNewMember: true,
@@ -337,11 +337,11 @@ export default {
                   let message = 'Please pay P500.00 Membership Fee to activate your account. Tracking# '+ trackID.toUpperCase()
 
                   var data = 'number=' + number + '&' + 'message=' + message + 'apinumber=' + 2
-                  console.log(data)
+                  // console.log(data)
                   // https://maleficent-sms.000webhostapp.com/index.php
                   axios.post('https://toned-tabulation.000webhostapp.com/index.php', data)
                   .then(response => {
-                    console.log(response)
+                    // console.log(response)
 
                         this.$q.notify({
                           icon: 'info',
@@ -354,7 +354,7 @@ export default {
                     // load the member form
                   })
                   .catch((error) => {
-                  console.log(error.response)
+                  // console.log(error.response)
                   this.$q.loading.hide()
                   })   
 
@@ -363,7 +363,7 @@ export default {
             })
           })
           .catch(err => {
-            console.log(err)
+            // console.log(err)
             this.$q.notify({
               icon: 'info',
               message: 'An error occur',
@@ -389,7 +389,7 @@ export default {
         let approver = this.DashboardUsers.filter(a=>{
           return a['.key'] == user.uid
         })[0]
-        console.log(approver)
+        // console.log(approver)
         this.$q.dialog({
           title: 'Reject Member Application',
           message: 'Note below why you are rejecting this application.',
@@ -404,7 +404,7 @@ export default {
             message: '<h6>Some important <b>process</b> is in progress.<br/><span class="text-teal">Hang on...</span></h6>'
           })
           let reason = data
-          console.log('>>>> OK, received', data)
+          // console.log('>>>> OK, received', data)
           let obj = {...this.PenReg}
           let key = obj['.key']
           delete obj['.key']
@@ -416,7 +416,7 @@ export default {
               rejectedBy: approver.Username,
               rejectReason: reason
             }).then(()=>{
-              console.log('reject success')
+              // console.log('reject success')
               this.$q.loading.hide()
               this.$q.notify({
                 icon: 'info',
@@ -442,7 +442,7 @@ export default {
             })
           })
         }).onCancel(() => {
-          // console.log('>>>> Cancel')
+          // // console.log('>>>> Cancel')
         })
         
       // this.$firestore.PenReg.delete()
@@ -455,20 +455,20 @@ export default {
         this.Jeeps.forEach(a=>{
           firebaseDb.collection('JeepneyData').doc(a['.key']).update({MemberID: id})
           .then(()=>{
-            console.log('updated',a['.key'])
+            // console.log('updated',a['.key'])
           })
         })
       } else {
-        console.log('not operator')
+        // console.log('not operator')
       }
     },
     test () {
       // NGTSC2020012
       const query = firebaseDb.collection('MemberData').where('Operator.MemberID', '==', 'NGTSC2020012')
       query.get().then((snapshot) => {
-        console.log(snapshot, 'snap')
+        // console.log(snapshot, 'snap')
         snapshot.forEach(doc => {
-          console.log(doc.data(), 'data')
+          // console.log(doc.data(), 'data')
         })
       })
     },
@@ -478,10 +478,10 @@ export default {
         const password = Math.random().toString(36).slice(-6).toUpperCase()
 
           await this.sendAccountMessage(memberID,password,mobile)
-          console.log('sent message')
+          // console.log('sent message')
           Auth2.createUserWithEmailAndPassword(email, password)
             .then(async (data) => {
-              console.log(data, 'data')
+              // console.log(data, 'data')
               const userID = data.uid
               await firebaseDb.collection('Users').doc(data.user.uid).set({
                 Email: email,
@@ -493,12 +493,12 @@ export default {
               }).then((doc) => {
                 resolve(doc)
               }).catch((err) => {
-                console.log(err)
+                // console.log(err)
               })
               
             })
             .catch(err => {
-              console.log(err)
+              // console.log(err)
             })          
 
       })
@@ -508,15 +508,15 @@ export default {
 
         let message = `You passed the evaluation! Your AccountNo. is ${id} and your Temporary Password is ${password}.`
         var senddata = 'number=' + mobile + '&' + 'message=' + message + '&' + 'apinumber=' + 3
-        console.log(senddata,'data')
+        // console.log(senddata,'data')
 
         axios.post('https://toned-tabulation.000webhostapp.com/index.php', senddata)
         .then(response => {
-          console.log(response,'response')
+          // console.log(response,'response')
           resolve(response)
         })
         .catch(err =>{
-          console.log('err',err)
+          // console.log('err',err)
         })
       })  
     }
