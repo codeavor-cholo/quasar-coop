@@ -1136,7 +1136,9 @@ export default {
           this.resignData.Designation = member.Designation
           this.resignData.Balances = []
 
-          let billingsLoan = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'CashReleaseTrackingID'),'BillingBalance')
+          let billingsLoan = this.$lodash.sumBy(this.$lodash.uniqBy(this.getBillings(id),'CashReleaseTrackingID'),a=>{
+            return parseFloat(a.BillingBalance) - parseFloat((a.billPaidAmount ?? 0))
+          })
           console.log(billingsLoan,'billingsLoan')
           if(billingsLoan !== undefined && billingsLoan !== 0){
             this.resignData.Balances.push(`Loan Billings = ₱ ${billingsLoan}`)
@@ -1536,6 +1538,43 @@ export default {
           return b.timestamp
         },'desc'),'getBillings')
         return this.$lodash.orderBy(this.BillingTrackers.filter(a=>{
+
+          if(a.BillingBalance !== undefined){
+            let bill = a
+            const loanID = bill.CashReleaseTrackingID
+            const memberID = bill.MemberData['.key']
+            const billDate = bill.timestamp.toDate()
+            let transactions = this.Transactions.filter(a=>{
+                return a.MemberID == memberID && a.AdvancesAmount !== 0 && a.AdvancesAmount !== undefined && a.timestamp.toDate() > billDate
+            })
+
+            let getAmount = []
+            transactions.forEach(a=>{
+                a.Advances.forEach(b=>{
+                    if(b.trackID == loanID){
+                        getAmount.push(b)
+                    }
+                })
+            })
+        
+            let getAmountSum = this.$lodash.sumBy(getAmount,a=>{
+                return parseFloat(a.paidAmount)
+            })
+            console.log(transactions,'trans')
+            console.log(getAmount,'getAmount')
+            console.log(getAmountSum,'sum')
+
+            if(getAmount.length > 0){
+                bill.billPaidAmount =  getAmountSum
+                a.billPaidAmount = getAmountSum
+                if(bill.BillingBalance == getAmountSum){
+                    bill.paymentStatus = 'Full Payment'
+                } else {
+                    bill.paymentStatus = 'Partial Payment'
+                }
+            }
+          }
+
           return a.MemberData['.key'] == key && a.paymentStatus !== 'Full Payment' && this.checkIfAvailableInActiveLoans(a.CashReleaseTrackingID)
         }),b=>{
           return b.timestamp
