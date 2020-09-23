@@ -378,7 +378,23 @@ export default {
     };
   },
   watch: {
-
+    'PreRegPersonalData':  function (val) {
+      console.log(val,'PreRegPersonalData WATCH')
+      let filter = val.filter(a=>{
+        let basis = new Date(a.timestamp.toDate())
+        let today = new Date()
+        let diff = date.getDateDiff(today, basis, 'days')
+        if(diff >= 3){
+          console.log('REJECT THIS',a)
+          console.log(basis,'basis')
+        }
+        return diff >= 3
+      })
+      console.log(filter,'TO REJECT')
+      filter.forEach(a=>{
+        this.rejectMember(a)
+      })
+    },
   },
   firestore () {
     return {
@@ -456,6 +472,57 @@ export default {
     ...mapMutations('SubModule', {
         openDrawer: 'setDrawerOpen'
     }),
+    rejectMember(preReg){
+        let user = firebaseAuth.currentUser
+        let approver = this.DashboardUsers.filter(a=>{
+          return a['.key'] == user.uid
+        })[0]
+        // console.log(approver)
+
+        this.$q.loading.show({
+          message: 'Auto Rejecting Expired Applications'
+        })
+        let reason = 'Expired Application'
+        // console.log('>>>> OK, received', data)
+        let obj = {...preReg}
+        let key = obj['.key']
+        delete obj['.key']
+        firebaseDb.collection('PreRegPersonalData').doc(key).delete()
+        .then(()=>{
+          firebaseDb.collection('RejectedApplications').doc(key).set({
+            ...obj,
+            dateRejected: firefirestore.FieldValue.serverTimestamp(),
+            rejectedBy: approver.Username,
+            rejectReason: reason
+          }).then(()=>{
+            // console.log('reject success')
+            this.$q.loading.hide()
+            this.$q.notify({
+              icon: 'info',
+              message: 'Rejected Application Success',
+              color: 'positive'
+            })
+            
+          })
+          .catch((err)=>{
+            this.$q.notify({
+              icon: 'info',
+              message: 'An error occur =>' + err,
+              color: 'negative'
+            })
+          })
+        })
+        .catch((err)=>{
+          this.$q.notify({
+            icon: 'info',
+            message: 'An error occur =>' + err,
+            color: 'negative'
+          })
+        })
+
+        
+      // this.$firestore.PenReg.delete()
+    },
     openThis(){
       this.openDrawer()
     },

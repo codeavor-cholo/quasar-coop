@@ -92,13 +92,12 @@
                 :data="returnShareHolders"
                 :columns="columns"
                 row-key=".key"
-                :separator="false"
                 flat
                 :pagination.sync="initialPagination"
                 :filter="filter"
             >     
                 <template v-slot:body="props">
-                    <q-tr :props="props"  :class="props.row == selected ? 'bg-teal-1 text-weight-bold text-teal' : ''">
+                    <q-tr :props="props" >
                     <q-td v-for="col in props.cols.filter(col => col.name !== 'Actions')" :key="col.name" >
                         <span v-if="col.typeOf !== 'money'" class="">{{ col.value }}</span>
                         <span v-else>{{ col.value | currency }}</span>

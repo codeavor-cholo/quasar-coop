@@ -113,7 +113,7 @@
           <!-- <q-item>
             <q-btn flat icon="error" label="report violation" color="red" @click="drawer = !drawer, selected = {}" class="full-width" />
           </q-item> -->
-
+          <div v-show="returnShowOptions(returnSelectRow)">
           <q-item v-show="checkIfPaidForLaterToday == false && selected.StatusOfPaymentToday !== 'Paid'">
             <q-btn flat icon="warning" label="Pay Later" color="warning" @click="drawer = !drawer, payLater()" class="full-width"/>
           </q-item>
@@ -121,6 +121,7 @@
           <q-item v-show="selected.StatusOfPaymentToday !== 'Paid'">
             <q-btn flat icon="money" label="Pay Now" color="teal" @click="drawer = !drawer, payNow()" class="full-width" />
           </q-item>
+          </div>
           </div>
           <q-item>
             <q-btn flat icon="close" label="close" color="grey-10" @click="drawer = !drawer, selected = {}" class="full-width" />
@@ -207,7 +208,7 @@ export default {
 
             let members = this.MemberData.filter(a=>{
                 a.MemberID = a['.key']
-                return a.isNewMember == false
+                return a.isNewMember == false && a.resigned !== true
             })
 
             members.forEach(a=>{
@@ -379,6 +380,7 @@ export default {
       //send sms to notify that this will be added to the billing if unpaid within the day
       //what needs to be saved
 
+
       let payLater = {
           memberID: this.returnSelectRow.memberid,
           plateNumber: this.returnSelectRow.jeepUnit,
@@ -515,6 +517,10 @@ export default {
       if(tab == 'No Show') return 'Unpaid'
       if(tab == 'Unpaid') return 'Pay Later'
       return tab
+    },
+    returnShowOptions(selected){
+      if(selected.designation === 'Driver' && selected.jeepUnit === 'NONE') return false
+      return true
     }
 
 

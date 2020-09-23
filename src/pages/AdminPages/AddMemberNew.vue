@@ -258,7 +258,8 @@
                     label="Expiration Date"
                     type="date"
                     lazy-rules
-                    :rules="[ val => val && val.length > 0 || 'Please type something']"
+                    :rules="[ val => val && val.length > 0 || 'Please type something',
+                    val => checkDate(val) || 'Invalid Date']"
                     />
                   </div>
 
@@ -525,6 +526,7 @@ export default {
             LastName: this.OperatorDetails.LastName,
             FullName: this.OperatorDetails.LastName + ', ' + this.OperatorDetails.FirstName
           }
+          this.sendSMSOperator(this.OperatorDetails.Phone)
         } else {
           this.$q.notify({
             color: 'red-4',
@@ -571,6 +573,7 @@ export default {
           } else {
              this.$q.loading.hide()
           }
+          this.sendSMS2()
         })
         .catch(error => {
             // Use to signal error if something goes wrong.
@@ -726,7 +729,7 @@ export default {
       let apinumber = 4
 
       var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
-      // console.log(data)
+      console.log(data)
       //https://smsapisender.000webhostapp.com/index.php
       axios.post('https://toned-tabulation.000webhostapp.com/index.php', data )
       .then(response => {
@@ -736,6 +739,45 @@ export default {
       })
       .catch((error) => {
         this.$q.loading.hide()
+      // console.log(error.response)
+      })   
+    },
+    sendSMS2(){
+      // this.$refs.stepper.next()
+      let header= {
+            'Access-Control-Allow-Origin': '*',
+      }
+      let message = 'Thank you for your application. Please note that, If membership fee is not paid within 3 days, this application will be rejected. Thank you.'
+      let number = this.returnNumberNoMask.toString()
+      let apinumber = 4
+
+      var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+      console.log(data)
+      axios.post('https://toned-tabulation.000webhostapp.com/index.php', data )
+      .then(response => {
+        // console.log(response)
+        this.$refs.stepper.next()
+      })
+      .catch((error) => {
+      // console.log(error.response)
+      })   
+    },
+    sendSMSOperator(number){
+      // this.$refs.stepper.next()
+      let header= {
+            'Access-Control-Allow-Origin': '*',
+      }
+      let message = `You have been used as operator reference of a Driver named ${this.PreRegData.FirstName} ${this.PreRegData.LastName}. Please report to admin if the driver is not under your supervision. Thank you.`
+      let apinumber = 4
+
+      var data = 'number=' + number + '&' + 'message=' + message + '&' + 'apinumber=' + apinumber
+      console.log(data)
+      axios.post('https://toned-tabulation.000webhostapp.com/index.php', data )
+      .then(response => {
+        // console.log(response)
+        this.$refs.stepper.next()
+      })
+      .catch((error) => {
       // console.log(error.response)
       })   
     },
@@ -807,6 +849,10 @@ export default {
             }
         })
     },
+    checkDate(val){
+      if(new Date(val) > new Date()) return true
+      return false
+    }
   },
   mounted(){
     this.datetoday();

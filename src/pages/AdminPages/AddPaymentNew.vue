@@ -152,7 +152,7 @@
         </div>
 
         <q-stepper-navigation class="text-right">
-            <q-btn @click="step = 2" color="grey-10" label="Continue" :disable="MDetails.memberID == ''"/>
+            <q-btn @click="clickChecker()" color="grey-10" label="Continue" :disable="MDetails.memberID == ''"/>
         </q-stepper-navigation>
         </q-step>
 
@@ -477,7 +477,7 @@ import Vue from "vue";
 import money from 'v-money'
 import { mapGetters } from 'vuex'
 import VueQrcodeReader from "vue-qrcode-reader";
-import { date } from 'quasar'
+import { date, TouchSwipe } from 'quasar'
 import axios from 'axios'
 
 Vue.use(money, {precision: 4})
@@ -677,17 +677,19 @@ export default {
                 let op = {...d.Operator}
                 opID = op.MemberID 
             }
-          return {
-            label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
-            value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
-            fullName: full,
-            id: d['.key'],
-            designation: d.Designation,
-            OperatorID: opID
-          }
+            return {
+                label: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                value: d['.key'] +' - '+full.toUpperCase() + ' ('+d.Designation+')',
+                fullName: full,
+                id: d['.key'],
+                designation: d.Designation,
+                OperatorID: opID,
+                resigned: d.resigned == undefined ? false : true
+            }
+        
         })
         console.log(opt,'opt')
-        return opt
+        return opt.filter(a=>{return a.resigned == false})
         // Object.freeze(options)
       },
       membersIdOptionsTracking () {
@@ -1093,9 +1095,19 @@ export default {
         },
         onDecode (decodedString) {
             console.log(decodedString,'on decode')
-            this.changeMemberDetails({id: decodedString})
-            this.scanner = false
-            this.onDecodeID = decodedString
+
+            if(this.MemberData.filter(a=>{return a['.key'] == decodedString && a.resigned == true}).length > 0){
+                this.$q.notify({
+                    icon: 'info',
+                    color: 'negative',
+                    message: 'Member is resigned! Choose another QRCODE'
+                })      
+            } else {
+                this.changeMemberDetails({id: decodedString})
+                this.scanner = false
+                this.onDecodeID = decodedString
+            }
+
         },
         clearForm(){
             console.log('back click')
@@ -1565,7 +1577,7 @@ export default {
                 color: 'negative',
                 message: 'An error occur'
                 })
-                console.log(err)
+                console.log(err,'err')
             })
 
         },
@@ -1645,6 +1657,7 @@ export default {
                 let upMoved = []
                 activeLoansData.forEach(a=>{
                     let paidAlready = a.paidAmount
+                    console.log(this.getPaidAmount(a.CashReleaseTrackingID),'CHECK_OUTPUT')
                     a.paidAmount = parseInt(a.paidAmount) + parseInt(this.getPaidAmount(a.CashReleaseTrackingID))
 
                     if((parseInt(a.toPayAmount) - parseInt(a.paidAmount)) == 0){
@@ -1746,7 +1759,7 @@ export default {
                     color: 'negative',
                     message: 'An error occur'
                   })
-                  console.log(err)
+                  console.log(err,'err')
                 })
             } else {
               
@@ -1767,6 +1780,7 @@ export default {
               color: 'negative',
               message: err.message
             })
+            console.log(err,'err')
           })
       },
       sendSMS(paymentid,memberID,amount){
@@ -1814,9 +1828,14 @@ export default {
           }
       },
       getPaidAmount(id){
-          return this.saveAdvancesData.filter(a=>{
-              return a.trackID == id
-          })[0].paidAmount
+          try {
+            if(this.saveAdvancesData.filter(a=>{return a.trackID == id}).length == 0) return 0
+            let update = this.saveAdvancesData.filter(a=>{return a.trackID == id})[0].paidAmount
+            return update == undefined || update == null ? 0 : update     
+          } catch (error) {
+             console.log(error,'error getPaidAmount') 
+          }
+
       },
       removeDefaultUnit(){
         this.$q.dialog({
@@ -1902,8 +1921,28 @@ export default {
           } catch (error) {
               console.log(error,'payLaterCheckerDeleter')
           }
+      },
+      clickChecker(){
+          console.log(this.MDetails,'mdetails clickChecker')
+          let member = this.MDetails
+          if(member.memberDesignation === 'Operator'){
+              this.step = 2
+          } else {
+              if(member.isNewMember){
+                  this.step = 2
+              } else {
+                  if(member.defaultUnit === null){
+                        this.$q.dialog({
+                            title: `NO UNIT ASSIGNED!`,
+                            message: 'Please contact your operator.',
+                            persistent: true
+                        }).onOk(() => {
+                            this.step = 1
+                        })                          
+                  }
+              }
+          }
       }
-
     }
 }
 </script>
