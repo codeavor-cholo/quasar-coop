@@ -467,9 +467,11 @@ export default {
         return e['.key'] === val.id
       })[0]
 
-      // console.log(optDetails,'opt Details')
-      this.OperatorDetails = optDetails
-      this.isOperatorFound = true
+      console.log(optDetails,'opt Details')
+      if(optDetails){
+        this.OperatorDetails = optDetails
+        this.isOperatorFound = true
+      }
     },  
     removeMemberDetails(){
       this.OperatorDetails = {}

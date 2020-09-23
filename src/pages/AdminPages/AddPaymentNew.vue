@@ -1939,6 +1939,8 @@ export default {
                         }).onOk(() => {
                             this.step = 1
                         })                          
+                  } else {
+                      this.step = 2
                   }
               }
           }

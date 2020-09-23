@@ -453,8 +453,10 @@ export default {
       })[0]
 
       // console.log(optDetails,'opt Details')
-      this.OperatorDetails = optDetails
-      this.isOperatorFound = true
+      if(optDetails){
+        this.OperatorDetails = optDetails
+        this.isOperatorFound = true
+      }
     },  
     removeMemberDetails(){
       this.OperatorDetails = {}
