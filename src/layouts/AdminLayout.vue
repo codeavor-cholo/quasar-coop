@@ -384,11 +384,11 @@ export default {
         let basis = new Date(a.timestamp.toDate())
         let today = new Date()
         let diff = date.getDateDiff(today, basis, 'days')
-        if(diff >= 3){
+        if(diff >= 1){
           console.log('REJECT THIS',a)
           console.log(basis,'basis')
         }
-        return diff >= 3
+        return diff >= 1
       })
       console.log(filter,'TO REJECT')
       filter.forEach(a=>{
